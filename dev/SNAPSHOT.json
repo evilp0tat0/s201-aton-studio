@@ -1,8 +1,8 @@
 {
   "what": "S-201 AtoN Studio — redistributable snapshot of the essential files",
   "source_repo": "https://github.com/evilp0tat0/s201-aton-studio-dev",
-  "source_commit": "1e06464b985697477912f340179032c4a9438845",
-  "app_version": "1.10.2",
+  "source_commit": "b387482379650324213522a0c090cfbb8279888b",
+  "app_version": "1.10.3",
   "reference_material": "not shipped — dev/spec-sources/MANIFEST.md lists every file with its SHA-256 and official source",
   "built_by": "dev/scripts/build-public-snapshot.py",
   "not_shipped": [

@@ -1,10 +1,10 @@
 # S-201 AtoN Studio
 
-A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201.
+A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **1.10.2**. No install, no build step, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **1.10.3**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
-This repository is the **redistributable snapshot** of the project: the app, the assets it needs, the machine-readable rule corpora, the scripts that verify a change, sample data, a manifest of the specification sources the code cites, and documentation written for someone picking the code up. It was cut from commit `1e06464` of the development repository by `build-public-snapshot.py`; see [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
+See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
 ---
 
@@ -34,7 +34,7 @@ Opening the HTML file directly also works, but the preview then falls back to a 
 
 | Tab | Purpose |
 |---|---|
-| **Drawing** | Paste a dataset: every feature is parsed and rendered with its Annex D symbol (topmark and light flare composed on the body), listed as a parent/child tree with a summary and a filterable check table, and plotted on an auto-scaled map. |
+| **Drawing** | Paste data in GML format: every feature is parsed and rendered with its Annex D symbol (topmark and light flare composed on the body), listed as a parent/child tree with a summary and a filterable check table, and plotted on an auto-scaled map. |
 | **Builder** | A step-by-step form for authoring datasets from scratch — every S-201 feature type, component stacking (lights, topmarks, fog signals, AIS, mooring), multi-colour bands, DMS or decimal positions, parent/peer references, several aids in one dataset. Hands the GML to the Validator. |
 | **Validator** | Structural GML checks, per-feature rules from the S-100, S-158, S-201 and IALA sources, Exchange-Set ZIP ingest with package checks and CRC verification, inline "Apply fix" buttons, downloads of the dataset or a complete Exchange Set, and SHA-256 delivery-integrity checks. Findings use the IHO S-158 classification (critical / error / warning) plus an advisory info tier for IALA best practice. |
 | **Compare** | The change record between two deliveries — two `.gml` files or two Exchange Set `.zip`s: features added, removed and modified with old and new values, geometry moves, metadata changes, renumbering hints. |
@@ -85,16 +85,10 @@ python dev/scripts/run-browser-smoke-gate.py     # once: pip install playwright 
 
 The app implements the **IALA S-201 Product Specification 2.0.0** (May 2025) on the IHO S-100 framework. Every enumeration, multiplicity, symbol rule, colour value and validator rule is taken from a primary document — the S-201 Feature Catalogue 2.0.0 XML, the S-201 DCEG and Portrayal Catalogue, IHO S-100 Ed 5.2.0, IHO S-158, and the IALA R- and G-series recommendations (R1001 Maritime Buoyage System, R0110 rhythmic characters, R0106, R0126, R0201, R0202, R0108 and others). The rule corpus in `dev/validator-rules.json` carries the citation of every rule.
 
-None of that reference material is redistributed here — not the publications, not the Feature Catalogue XML, not the schema families, not the text extracts the source cites by line number. All of it is freely available from its official source, and `dev/spec-sources/MANIFEST.md` lists every file with its size, SHA-256 and where to obtain it (the IHO Geospatial Information Registry, iho.int, iala.int, schemas.opengis.net, schemas.isotc211.org, w3.org). Fetch the file, check the hash, place it at the manifest path, and the citations in the source resolve byte-for-byte.
+The publications, the Feature Catalogue XML, the schemas and the text extracts are not included; all are freely available from their official sources, and `dev/spec-sources/MANIFEST.md` lists each file with its size, SHA-256 and where to obtain it.
 
 ---
 
 ## License
 
 The application code, scripts and documentation are licensed under the **MIT License** ([LICENSE](LICENSE)). Bundled third-party material keeps its own terms, stated in [NOTICE.txt](NOTICE.txt): the Annex D portrayal library is © IHO / IALA (reproduced without IHO endorsement or verification, and the one third-party component shipped because the app cannot render without it), the fonts are Apache-2.0, and Leaflet is BSD-2-Clause.
-
----
-
-## About this repository
-
-Development happens in the maintainer's development repository (https://github.com/evilp0tat0/s201-aton-studio-dev), which holds the full history, the architecture reference and the complete reference corpus. This tree is re-cut from it at each release; it is not where changes are made. If you build on it, fork it and keep `NOTICE.txt` with the Annex D material.
