@@ -1,0 +1,43 @@
+S-201 AtoN Studio - Attribution & Acknowledgements
+===================================================
+
+PORTRAYAL LIBRARY (IHO / IALA)
+------------------------------
+This software reproduces the official portrayal symbols, fonts and Portrayal
+Catalogue from Annex D of the IHO/IALA S-201 Product Specification (Aids to
+Navigation), found in the Annex_D/ folder.
+
+This material is copyright of the International Hydrographic Organization (IHO)
+and the International Association of Marine Aids to Navigation and Lighthouse
+Authorities (IALA).
+
+  - The incorporation of material sourced from the IHO shall not be construed as
+    constituting an endorsement by the IHO of this product.
+  - This product has not been checked by the IHO, and the IHO takes no
+    responsibility for the accuracy of the reproduction.
+  - The IHO logo and other IHO identifiers are not used in this product.
+
+Reproduction of IHO copyright material may require prior written permission from
+the IHO; obtaining any permission required for your distribution is the
+responsibility of the distributor.
+
+SPECIFICATION DOCUMENTS AND SCHEMAS
+-----------------------------------
+The IHO and IALA specification publications consulted while building the
+validator, the S-201 Feature Catalogue XML, the IHO S-100 / S-201 schema
+families with the OGC, ISO and W3C schemas they import, the S-158 check tables,
+the S-62 producer-code data and the plain-text extracts derived from the
+publications are NOT redistributed in the public repository. All of them are
+freely available from their official sources; the file
+dev/spec-sources/MANIFEST.md lists every one (name, size, SHA-256, where to
+obtain it) so a local working copy can be assembled that matches what the
+validator's citations were checked against.
+
+FONTS
+-----
+Droid Sans, Droid Sans Bold, Open Sans and Open Sans Bold are licensed under the
+Apache License, Version 2.0 - see Annex_D/Fonts/LICENSE.
+
+BUNDLED LIBRARIES
+-----------------
+Leaflet - BSD 2-Clause License - see lib/leaflet/LICENSE

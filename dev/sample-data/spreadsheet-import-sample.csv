@@ -1,0 +1,13 @@
+Name;Aid type;Position lat;Position lon;Light;Colour;Shape;Ref no.;Installed;Notes
+Alfa Approach;safe water;15°30.000'N;88°12.000'E;LFl 10s 8M;red/white;pillar sphere;XX-001;15/03/2019;Fairway buoy
+Bravo Point;port lateral;15°31.002'N;88°13.002'E;Fl R 4s 5M;red;can;XX-002;01/06/2020;
+Charlie Shoal;stbd lateral;15°31.998'N;88°13.998'E;Fl G 4s 5M;green;cone;XX-003;01/06/2020;Marks shoal <2 m>
+Delta North;N Cardinal;15°33.000'N;88°15.000'E;VQ 5s 6M;black/yellow;pillar;XX-004;20/11/2018;
+Echo South;S Cardinal;15°33.498'N;88°15.498'E;Q(6)+LFl 15s 6M;yellow/black;pillar;XX-005;20/11/2018;
+Foxtrot Special;special;15°34.002'N;88°16.002'E;Fl Y 5s 4M;yellow;spar X-top;XX-006;10/01/2021;Spoil ground & works
+Golf Sector;sector;15°34.998'N;88°16.998'E;Oc W 8s 10M;white;tower;XX-007;04/07/2015;
+Hotel Light;minor light;15°36.000'N;88°18.000'E;Fl W 3s 4M;white;pole;XX-008;28/02/2017;
+India Pref;P to Stbd lateral;15°37.002'N;88°19.002'E;Fl(2+1) R 6s 5M;red/green/red;can;XX-009;01/06/2020;
+Juliet Beacon;beacon;15°37.998'N;88°19.998'E;Fl 4s 3M;white;metal;XX-010;09/09/2016;
+Kilo Harbour;harbour light;15°39.000'N;88°21.000'E;Fl R 5s 2M;white;pole;XX-011;18/04/2022;
+Lima Pile;stbd lateral with pile;15°40.002'N;88°22.002'E;Fl G 3s 4M;green;pile cone;XX-012;01/12/2019;Unlit during works

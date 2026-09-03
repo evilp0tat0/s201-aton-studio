@@ -1,0 +1,13 @@
+National Number,Name,Type,IALA Cat,Shape and Topmark,Position,Character,Range
+XX-001,Alfa Approach,safe water,,pillar sphere,10 30.000N 100 15.000E,LFl 10s,8
+XX-002,Bravo Point,port lateral,,can,10 31.000N 100 16.000E,Fl R 4s,5
+XX-003,Charlie Shoal,stbd lateral,,cone,10 32.000N 100 17.000E,Fl G 4s,5
+XX-004,Delta North,N Cardinal,,pillar,10 33.000N 100 18.000E,VQ 5s,6
+XX-005,Echo South,S Cardinal,,pillar,10 33.500N 100 18.500E,Q(6)+LFl 15s,6
+XX-006,Foxtrot Special,special,,spar X-top,10 34.000N 100 19.000E,Fl Y 5s,4
+XX-007,Golf Sector,sector,,tower,10 35.000N 100 20.000E,Oc W 8s,10
+XX-008,Hotel Light,minor light,,pole,10 36.000N 100 21.000E,Fl W 3s,4
+XX-009,India Pref,P to Stbd lateral,,can,10 37.000N 100 22.000E,Fl(2+1) R 6s,5
+XX-010,Juliet Beacon,beacon,,metal,10 38.000N 100 23.000E,Fl 4s,3
+XX-011,Kilo Harbour,harbour light,,pole,10 39.000N 100 24.000E,Fl R 5s,2
+XX-012,Lima Pile,stbd lateral with pile,,pile cone,10 40.000N 100 25.000E,Fl G 3s,4

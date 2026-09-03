@@ -1,0 +1,68 @@
+<!-- ════════════════════════════════════════════════════════════════════════
+     PLACEHOLDER TEMPLATE — NOT A REAL S-201 DATASET
+     ════════════════════════════════════════════════════════════════════════
+     This file is a structural template from the IHO/IALA S-201 data-
+     production training course. It is NOT round-trip-valid GML and will
+     fail validation in the S-201 AtoN Studio (most fields are filled with
+     the underscore placeholder `__________` for student instruction).
+
+     For real round-trip / smoke-test fixtures, use:
+       - `dev/sample-data/External-Producer-S201-Sample.gml` (~1 MB,
+          full-feature round-trip-valid example from an external producer)
+       - The 4 `exGML[]` samples bundled in `s201_aton_studio.html` (Builder
+          tab default content; covers Lateral / Cardinal / SPM / Lighthouse)
+
+     Pass 135 (round-6 audit Agent D R6-D-6) annotated this header to make
+     the placeholder nature explicit; pre-pass-135 a casual reader could
+     mistake the underscores for real-but-redacted data.
+     ════════════════════════════════════════════════════════════════════════ -->
+<S201:DataSet xsi:schemaLocation=" http://www.iho.int/S201/gml/1.0 ../../../schemas/S201/1.0/S201.xsd" gml:id="S201_UA_TRAINING_001">
+<!--
+ ================= DATASET EXTENT =================
+-->
+<gml:boundedBy>
+<gml:Envelope srsName="EPSG:4326" srsDimension="2">
+<gml:lowerCorner>30.000 45.700</gml:lowerCorner>
+<gml:upperCorner>31.200 46.200</gml:upperCorner>
+</gml:Envelope>
+</gml:boundedBy>
+<!--
+ ========== DATASET IDENTIFICATION METADATA ========== 
+-->
+<DatasetIdentificationInformation>
+<S100:encodingSpecification>__________</S100:encodingSpecification>
+<S100:encodingSpecificationEdition>__________</S100:encodingSpecificationEdition>
+<S100:productIdentifier>_____________________</S100:productIdentifier>
+<S100:datasetFileIdentifier>__________</S100:datasetFileIdentifier>
+<S100:datasetTitle>__________</S100:datasetTitle>
+<S100:datasetReferenceDate>__________</S100:datasetReferenceDate>
+<S100:datasetLanguage>EN</S100:datasetLanguage>
+<S100:datasetEdition>1</S100:datasetEdition>
+<S100:datasetTopicCategory>__________</S100:datasetTopicCategory>
+</DatasetIdentificationInformation>
+<!-- ================= FEATURE 1 ================= -->
+<member>
+<S201:AtoN gml:id="________">
+<S201:identifier>__________</S201:identifier>
+<S201:name>____________</S201:name>
+<S201:category>__________</S201:category>
+<S201:status>__________</S201:status>
+<!-- Optional light information -->
+<S201:lightCharacteristic>
+<S201:characteristic>__________</S201:characteristic>
+<S201:colour>__________</S201:colour>
+<S201:period>__________</S201:period>
+</S201:lightCharacteristic>
+<!-- Optional range -->
+<S201:nominalRange uom="__________">__________</S201:nominalRange>
+<!-- Geometry -->
+<S201:geometry>
+<S100:pointProperty>
+<S100:Point gml:id="______">
+<gml:pos>___________</gml:pos>
+</S100:Point>
+</S100:pointProperty>
+</S201:geometry>
+</S201:AtoN>
+</member>
+</S201:DataSet>

@@ -1,0 +1,583 @@
+[
+  {
+    "number": 1,
+    "name": "IHO/IALA > OGC precedence",
+    "theme": "Spec authority",
+    "addedPass": 19,
+    "addedSession": 23,
+    "summary": "When IHO/IALA spec sources conflict with OGC GML, the IHO/IALA source wins.",
+    "scope": [
+      "all spec citations",
+      "all rule ref strings",
+      "all generator emissions"
+    ],
+    "citations": [
+      "S-201 PS 2.0.0",
+      "S-100 Pt 10b §10b-11",
+      "FC 2.0.0",
+      "OGC GML 3.2.2"
+    ],
+    "relatedRules": [
+      2,
+      5,
+      8,
+      14,
+      20
+    ]
+  },
+  {
+    "number": 2,
+    "name": "Use notes for context, verify facts",
+    "theme": "Spec authority",
+    "addedPass": 20,
+    "addedSession": 23,
+    "summary": "Official documents ARE the facts. Comments and narratives describe but do not authoritatively define — every existing claim must be verifiable against an Official document.",
+    "scope": [
+      "inline code comments",
+      "rule ref fields",
+      "HANDOFF spec citations",
+      "CHANGELOG narratives"
+    ],
+    "citations": [
+      "bundled FC 2.0.0 XML",
+      "bundled S-201 PS PDF",
+      "bundled DCEG PDF",
+      "bundled S-100 Pt 10b PDF",
+      "bundled R1001/R0106/R0202 PDFs",
+      "bundled OGC GML 3.2.2 XSDs",
+      "bundled W3C XML Schema XSDs"
+    ],
+    "relatedRules": [
+      1,
+      5,
+      20
+    ]
+  },
+  {
+    "number": 3,
+    "name": "Rule prefix taxonomy",
+    "theme": "Quality & naming",
+    "addedPass": 38,
+    "addedSession": 23,
+    "summary": "Every validator rule's ID prefix declares its spec source (one prefix family per spec document); the canonical per-prefix list lives in dev/HANDOFF.md § Rule prefix taxonomy (Rule 23 single source — not enumerated here to avoid drift).",
+    "scope": [
+      "RULES array entries",
+      "validateGMLStructure findings"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § Rule prefix taxonomy"
+    ],
+    "relatedRules": [
+      17
+    ]
+  },
+  {
+    "number": 4,
+    "name": "Parser backward-compat policy",
+    "theme": "Code correctness",
+    "addedPass": 38,
+    "addedSession": 23,
+    "summary": "Parser must accept evolving generator output across versions; a renamed/relocated emission keeps a fallback read path until 2 major versions deprecate it.",
+    "scope": [
+      "parseGML / parseAllGML",
+      "all parser sub-helpers"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § Parser backward-compat policy"
+    ],
+    "relatedRules": [
+      10,
+      15
+    ]
+  },
+  {
+    "number": 5,
+    "name": "Spec-compliance verification",
+    "theme": "Spec authority",
+    "addedPass": 55,
+    "addedSession": 23,
+    "summary": "Every code change touching a spec-defined construct must be verified against a primary IHO/IALA source BEFORE implementing, with the citation documented in the inline comment at the change site (per-pass narrative belongs in the CHANGELOG per Rule 21).",
+    "scope": [
+      "new validator rules",
+      "renamed/relocated emissions",
+      "new generator outputs",
+      "rule severity changes"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 5 row)"
+    ],
+    "relatedRules": [
+      1,
+      2,
+      8,
+      12,
+      14,
+      20
+    ]
+  },
+  {
+    "number": 6,
+    "name": "Documentation synchronization requirement",
+    "theme": "Process discipline",
+    "addedPass": 63,
+    "extendedPass": 68,
+    "addedSession": 23,
+    "summary": "Every code change that affects an observable property must be accompanied in the same pass by synchronized updates to all four doc files (HANDOFF + CHANGELOG + README + dev/README) AND any inline HTML code comment that references that property. Pass 68 extended with interactive-browser-verification requirement.",
+    "scope": [
+      "s201_aton_studio.html",
+      "dev/HANDOFF.md",
+      "dev/CHANGELOG.md",
+      "README.md",
+      "dev/README.md"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 6 row)"
+    ],
+    "relatedRules": [
+      13,
+      19,
+      21
+    ]
+  },
+  {
+    "number": 7,
+    "name": "Best-outcome principle",
+    "theme": "Quality & naming",
+    "addedPass": 80,
+    "addedSession": 23,
+    "summary": "Any solution that does not follow best practices is unacceptable. Time and effort considerations are not valid reasons to deviate from best practices.",
+    "scope": [
+      "UX design",
+      "API design",
+      "validator rule design",
+      "Builder field placement",
+      "parser/generator architecture",
+      "documentation design"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 7 row)"
+    ],
+    "relatedRules": [
+      16,
+      17,
+      18,
+      19
+    ]
+  },
+  {
+    "number": 8,
+    "name": "Zero fabrications",
+    "theme": "Spec authority",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "No spec claim ships without a bundled-source citation. Targets fabricated enum values, non-existent section refs, misattributed formulas, fabricated element emissions, fabricated document refs.",
+    "scope": [
+      "all enum constants",
+      "all rule ref strings",
+      "all generator element names",
+      "all spec citations"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 8 row)"
+    ],
+    "relatedRules": [
+      1,
+      5,
+      14,
+      16,
+      18,
+      20
+    ]
+  },
+  {
+    "number": 9,
+    "name": "No silent passes",
+    "theme": "Code correctness",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "Validator predicates must positively assert presence first then validity. The shape `!f.X || f.X === 'valid'` is forbidden because empty f.X silently passes.",
+    "scope": [
+      "all validator rule predicates t(f)"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 9 row)"
+    ],
+    "relatedRules": [
+      10,
+      17
+    ]
+  },
+  {
+    "number": 10,
+    "name": "Round-trip integrity",
+    "theme": "Code correctness",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "parse(generate(parse(text))) === parse(text). Deep-equal verification on all 4 bundled exGML samples.",
+    "scope": [
+      "parseGML/generateGML pair",
+      "every Builder field that round-trips"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 10 row)"
+    ],
+    "relatedRules": [
+      4,
+      9,
+      15,
+      18
+    ]
+  },
+  {
+    "number": 11,
+    "name": "Smoke-test-or-die",
+    "theme": "Process discipline",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "No change is 'done' until smoke + browser load + round-trip + Builder UI verify (when applicable) all pass with zero errors.",
+    "scope": [
+      "every code-touching pass"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 11 row)"
+    ],
+    "relatedRules": [
+      13,
+      18,
+      19
+    ]
+  },
+  {
+    "number": 12,
+    "name": "Audit-driven major batches",
+    "theme": "Process discipline",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "Multi-feature / multi-rule / multi-subsystem changes require parallel-agent primary-source audits BEFORE code. Verify-prior-fixes-INTACT step mandatory.",
+    "scope": [
+      "any pass touching >2 feature types OR >3 rules OR multiple subsystems"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 12 row)"
+    ],
+    "relatedRules": [
+      5
+    ]
+  },
+  {
+    "number": 13,
+    "name": "Atomic delivery",
+    "theme": "Process discipline",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "Code + APP_VERSION + HTML preface + HANDOFF + CHANGELOG + READMEs + smoke + browser + round-trip ship together as one indivisible unit. 'I'll do it later' is forbidden.",
+    "scope": [
+      "every pass"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 13 row)",
+      "dev/HANDOFF.md § What ships together as one atomic unit (Rule 13 expansion)"
+    ],
+    "relatedRules": [
+      6,
+      11,
+      19,
+      21
+    ]
+  },
+  {
+    "number": 14,
+    "name": "Error messages teach the spec",
+    "theme": "Spec authority",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "Every validator msg cites the source in prose AND ref resolves to a bundled-doc range. 'invalid value' alone is forbidden.",
+    "scope": [
+      "every validator rule's m + ref fields",
+      "applyQuickFix decorated messages",
+      "downloadValReport report"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 14 row)"
+    ],
+    "relatedRules": [
+      1,
+      5,
+      8,
+      16,
+      17,
+      20
+    ]
+  },
+  {
+    "number": 15,
+    "name": "No hidden state",
+    "theme": "Code correctness",
+    "addedPass": 81,
+    "addedSession": 23,
+    "summary": "Feature object is the single source of truth. Builder UI is a view; module-scope state arrays must serialize to/from feat keys; DOM is not state.",
+    "scope": [
+      "every Builder field",
+      "module-scope state arrays (compStack, builderSectors, etc.)"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 15 row)"
+    ],
+    "relatedRules": [
+      4,
+      10,
+      16
+    ]
+  },
+  {
+    "number": 16,
+    "name": "Structured finding fields",
+    "theme": "Code correctness",
+    "addedPass": 100,
+    "addedSession": 23,
+    "summary": "Every validator finding carries actual + expected as structured fields, not prose embedded in messages. Prose is generated from these fields, not the other way around.",
+    "scope": [
+      "every fix-equipped validator rule",
+      "validator runVal() loop",
+      "renderAllVal output",
+      "downloadValReport output"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 16 row)",
+      "S-201 PS §10.7 Unknown Attribute Values",
+      "OGC GML 3.2.2 NilReasonType"
+    ],
+    "relatedRules": [
+      7,
+      8,
+      14,
+      15
+    ]
+  },
+  {
+    "number": 17,
+    "name": "Layered validation hierarchy",
+    "theme": "Quality & naming",
+    "addedPass": 100,
+    "addedSession": 23,
+    "summary": "Every validator rule lives in exactly one of 4 layers — syntax (GML-STR-01) → schema (GML-STR-02..23, S100-*, S158-*) → FC semantic (S201-*) → business (R1001-*, R0106-*, R0110-*, R0126-*, R0201-*, R0108-*, RNG-*, GEO-*, ENC-* — the business-layer prefix set per the Rule-3 taxonomy). Fix order follows layer order.",
+    "scope": [
+      "every validator rule prefix",
+      "applyQuickFix layer-order honouring (a layer-2 fix can be applied even if layer-3 rules fail downstream)"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 17 row)",
+      "dev/HANDOFF.md § Layered validation hierarchy (Rule 17 expansion)"
+    ],
+    "relatedRules": [
+      3,
+      7,
+      9,
+      14
+    ]
+  },
+  {
+    "number": 18,
+    "name": "Determinism guarantee",
+    "theme": "Code correctness",
+    "addedPass": 100,
+    "addedSession": 23,
+    "summary": "Identical input must produce byte-identical output across runs. No network calls, no random values, no date/time-dependent behavior in validation, parser, or generator.",
+    "scope": [
+      "validateGMLStructure",
+      "RULES predicates",
+      "parseGML/generateGML",
+      "runSmokeTests"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 18 row)"
+    ],
+    "relatedRules": [
+      7,
+      8,
+      10,
+      11
+    ]
+  },
+  {
+    "number": 19,
+    "name": "Machine-readable foundational rules",
+    "theme": "Process discipline",
+    "addedPass": 100,
+    "addedSession": 23,
+    "summary": "HANDOFF foundational-rule sections mirrored in dev/foundational-rules.json + in-app FOUNDATIONAL_RULES const. Three surfaces kept in sync via smoke test. HANDOFF is canonical, JSON + in-app const are downstream.",
+    "scope": [
+      "dev/foundational-rules.json",
+      "HANDOFF.md § 2. Foundational engineering rules table (one row per rule + expansion subsections where they exist — counts not restated here per Rule 23)",
+      "in-app FOUNDATIONAL_RULES const"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 19 row)"
+    ],
+    "relatedRules": [
+      6,
+      7,
+      11,
+      13,
+      21
+    ]
+  },
+  {
+    "number": 20,
+    "name": "Official IHO/S-201 nomenclature verbatim",
+    "theme": "Spec authority",
+    "addedPass": 111,
+    "addedSession": 23,
+    "summary": "Every user-facing label, dropdown value, validator message, form-field label, and code/comment vocabulary that names a spec concept MUST use the exact nomenclature from the canonical IHO/S-201 source — no paraphrasing, no synonyms, no translation, no simplification. FC code-list values keep their parenthetical qualifiers verbatim (e.g., 'Stripes (Direction Unknown)' from FC code 5 — Title Case per the FC label, not 'unknown direction stripes'; the app normalizes to lowercase internally and Title-Cases on emit).",
+    "scope": [
+      "dropdown / select option values",
+      "validator finding messages and expected.values[]",
+      "form-field labels naming FC SimpleAttributes",
+      "HANDOFF/README/CHANGELOG when referring to FC concepts",
+      "code identifiers mirroring FC element names (camelCase / PascalCase per FC convention)",
+      "inline code comments citing spec sources"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 20 row)",
+      "dev/spec-sources/201_Feature_Catalogue_2.0.0.xml (S100FC:label and S100FC:code fields)",
+      "S-201 Ed 1.1.0 XSD enumeration values",
+      "DCEG Annex C-1 vocabulary"
+    ],
+    "relatedRules": [
+      1,
+      2,
+      5,
+      8,
+      14
+    ]
+  },
+  {
+    "number": 21,
+    "name": "Documentation roles + concision discipline",
+    "theme": "Process discipline",
+    "addedPass": 139,
+    "addedSession": 23,
+    "summary": "Each project doc file has a single role and must be concise. (a) HANDOFF.md is REFERENCE MATERIAL for anyone (new dev / future Claude session) picking the project up at any point — it is NOT a session log. (b) CHANGELOG.md keeps FACTS ONLY — what was done / found / changed in each pass. No user dialogue, no recap of conversational flow. (c) README.md (root) is for END USERS only — what the app is and how to use it. All dev / Claude / engineering content lives in dev/README.md. Root README.md is NOT a log.",
+    "scope": [
+      "README.md (root)",
+      "dev/README.md",
+      "dev/HANDOFF.md",
+      "dev/CHANGELOG.md"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 21 row)"
+    ],
+    "relatedRules": [
+      6,
+      13,
+      19
+    ]
+  },
+  {
+    "number": 22,
+    "name": "Verification-first communication",
+    "theme": "Process discipline",
+    "addedPass": 232,
+    "addedSession": 23,
+    "summary": "Before starting any task, state how the work could be verified. The verification plan must be communicated upfront — not deferred until after the work is done. Sister rule to Rule 11 (Smoke-test-or-die); applies to ALL work types. For code changes: name the gate (precommit / browser smoke / manual UI check) and the specific assertion that proves the change works. For doc changes: name the file/section that should be cross-checked + the consistency invariant. For audits: name the spec source / line range / grep pattern that would confirm the finding. For verification-impossible work (rare — e.g. UI feel, third-party integration that can't be exercised in the sandbox): say so explicitly upfront so the user can decide whether to proceed without verification. Forces success criteria to be testable from the start; catches wishful claims of completion before they ship; aligns with Rule 11's 'no change is done until smoke + browser + round-trip + Builder UI verify' by making the verification plan a precondition rather than an afterthought.",
+    "scope": [
+      "all task initiations",
+      "agent prompts",
+      "user-facing responses before work begins",
+      "audit reports",
+      "fix proposals"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 22 row)",
+      "Rule 11 (Smoke-test-or-die)",
+      "Rule 12 (Audit-driven major batches — verify-prior-fixes-INTACT step is the same pattern)",
+      "Rule 13 (Atomic delivery — gate verification is part of the 12-item checklist)"
+    ],
+    "relatedRules": [
+      5,
+      11,
+      12,
+      13
+    ]
+  },
+  {
+    "number": 23,
+    "name": "Single-source-or-gate for shared state",
+    "theme": "Process discipline",
+    "addedPass": 259,
+    "addedSession": 23,
+    "summary": "Any factual claim that appears in more than one document or code surface — line numbers, counts (rules, passes, smoke tests, feature types), version strings, anchor positions, source-file region boundaries, taxonomy listings, ground-truth constants — must satisfy one of two conditions: (a) every surface where the claim appears is covered by an automated freshness gate (precommit check, smoke test, or equivalent), OR (b) the claim is stated in exactly one source and every other surface that needs to mention it points to that source rather than duplicating it. Ungated duplication is forbidden because the cost of keeping N copies in sync grows linearly while the probability of catching drift drops to zero between explicit audits. Example: a CLAUDE.md architecture table that duplicated HANDOFF's Source-file tour without gate protection drifted by hundreds of lines; the fix was to delete the duplicate (collapse to a pointer), not to refresh it. Scope: BOTH doc state (.md prose / tables / link anchors) AND in-code state (.py constants, HTML inline comments, ground-truth dicts). Exception: a deliberately denormalised one-liner stat (e.g. the `Live State` footer's `Pre-commit gate count` one-liner) is fine — short form makes drift detection trivial during pass review; the rule targets snapshot tables, paragraph-length duplicated state, and count-phrase prose claims. Practical application: before adding a fact to a doc, check if it already lives elsewhere → if yes, point to it; when refactoring docs, prefer 'collapse to pointer' over 'refresh in place' if the duplicated surface is not gate-protected; when the gate stack adds a new check, ask which surfaces it covers — any uncovered surfaces with the same state must be deduplicated, not just left behind.",
+    "scope": [
+      "all docs (CLAUDE.md, root README.md, dev/README.md, dev/HANDOFF.md, dev/CHANGELOG.md)",
+      "all script-side code (dev/scripts/*.py)",
+      "HTML inline comments and preface",
+      "in-code ground-truth constants like _COUNT_GROUND_TRUTH",
+      "markdown link anchors like [s201_aton_studio.html:NNN]"
+    ],
+    "citations": [
+      "dev/CHANGELOG.md pass 258 (CLAUDE.md architecture-table drift discovery)",
+      "dev/CHANGELOG.md passes 253, 254, 256 (smaller-scale drift in count-phrases and prose)",
+      "Rule 7 (Best-outcome principle — most durable fix wins)",
+      "Rule 9 (No silent passes — ungated drift is silent rot)",
+      "Rule 12 (Audit-driven batches — Rule 23 audits surface ungated duplication)",
+      "Rule 13 (Atomic delivery — Rule 23 fixes ship in the same pass as the rule add)",
+      "Rule 21 (Documentation roles — each doc has one role; duplication across roles is a Rule-21+Rule-23 dual violation)"
+    ],
+    "relatedRules": [
+      6,
+      7,
+      9,
+      12,
+      13,
+      19,
+      21
+    ]
+  },
+  {
+    "number": 24,
+    "name": "Local working copy tracks every push",
+    "theme": "Process discipline",
+    "addedPass": 565,
+    "addedSession": 23,
+    "summary": "Whenever a pass is pushed to the remote, the user's canonical local working copy — the main git tree at the project root, NOT the per-session worktree the pass was authored in — must be brought to the pushed commit in the SAME step; the main tree is never left stale relative to what was pushed. Rationale: development happens on a worktree branch, but the files the user actually runs (start-server.bat, s201_aton_studio.html) are the main-tree copies, so a push that updates only the remote (or only the worktree) leaves the user running old code. Landing sequence: commit on the worktree branch → fast-forward the main tree to that commit, preserving any unrelated main-tree WIP → push. A push is not complete until the main tree's HEAD equals the pushed commit.",
+    "scope": [
+      "every push to the remote",
+      "worktree branch -> main-tree fast-forward",
+      "the main git tree at the project root",
+      "the files the user runs (start-server.bat, s201_aton_studio.html)"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 24 row)"
+    ],
+    "relatedRules": [
+      6,
+      11,
+      13
+    ]
+  },
+  {
+    "number": 25,
+    "name": "Data custody",
+    "theme": "Code correctness",
+    "addedPass": 579,
+    "addedSession": 23,
+    "summary": "User data moving between the app's surfaces (Builder gmlOut, Drawing gmlIn, Validator valIn, clipboard, downloaded .gml, Exchange-Set ZIP dataset member) ships byte-verbatim, or through a transform the user explicitly confirmed with the change disclosed. Read-only operations — validation, notices, tab switches, reports — are byte-neutral by contract: runVal's entry/exit sentinel restores the textarea verbatim and banners any breach, and rule predicates receive a deep-frozen parse. Every hop through the in-memory feat model (import → candidate Builder state → canonical re-emission) is fidelity-measured against the user's OWN file before commit (_importFidelityReport: element-census + per-gml:id drift probes), surfaced as an informed choice — never silent. Any new movement path ships with a behavioral byte-equality test (captured Blob / real function call), not just a source lock.",
+    "scope": [
+      "every surface-to-surface movement of dataset text",
+      "runVal + every read-only operation on user data",
+      "_importGMLTextToBuilder and every hop through the feat model",
+      "every download/clipboard/exchange-set export path",
+      "the smoke suite's own fixture mounting (harness-finally restore)"
+    ],
+    "relatedRules": [
+      9,
+      10,
+      15,
+      18,
+      22
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 25 row)"
+    ]
+  }
+]

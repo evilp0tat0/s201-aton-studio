@@ -1,0 +1,22 @@
+{
+  "what": "S-201 AtoN Studio — redistributable snapshot of the essential files",
+  "source_repo": "https://github.com/evilp0tat0/s201-aton-studio-dev",
+  "source_commit": "1e06464b985697477912f340179032c4a9438845",
+  "app_version": "1.10.2",
+  "reference_material": "not shipped — dev/spec-sources/MANIFEST.md lists every file with its SHA-256 and official source",
+  "built_by": "dev/scripts/build-public-snapshot.py",
+  "not_shipped": [
+    "CLAUDE.md",
+    ".claude/",
+    "dev/HANDOFF.md",
+    "dev/CHANGELOG.md",
+    "dev/README.md",
+    "dev/future-features.md",
+    "dev/*.md audit ledgers and design blueprints",
+    "dev/tmp_verify_imgs/",
+    "dev/spec-sources/** except MANIFEST.md (IHO / IALA / OGC / ISO / W3C reference material — the manifest lists each file, its SHA-256 and where to obtain it)",
+    "dev/pdf-extracts/ (text extracts of the IHO / IALA publications — listed in the same manifest)",
+    "dev/public-snapshot/ (the README + DEVELOPER-NOTES templates)",
+    "dev/scripts/build-public-snapshot.py"
+  ]
+}
