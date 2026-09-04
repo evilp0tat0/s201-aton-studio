@@ -2,25 +2,30 @@
 # ---------------------------------------------------------------------------
 # Generate dev/validator-rules.json from the in-app RULES array.
 #
-# Per Rule 19 (Machine-readable foundational rules) extended in pass 116:
-# the canonical authoring surface is the inline RULES array in
+# Per Rule 19 (Machine-readable foundational rules), extended to the validator
+# corpus: the canonical authoring surface is the inline RULES array in
 # s201_aton_studio.html (grep `const RULES=[` for its current position —
 # the file grows every pass, so no line number is stated here). The
-# downstream JSON mirror exists for
-# external tooling that wants to query the rule corpus without parsing JS.
+# downstream JSON mirror exists for external tooling that wants to query the
+# rule corpus without parsing JS.
 #
 # Approach:
 #   1. Read s201_aton_studio.html
-#   2. Find the RULES array bounds via "const RULES=[" + matching "];" using
-#      a brace-counting state machine that respects string/comment boundaries
+#   2. Find the RULES array bounds via `const RULES=` + matching `];` using
+#      a brace-counting state machine that respects string/comment/regex
+#      boundaries
 #   3. Walk each top-level rule entry (each starts with `{` at depth 1)
 #   4. For each entry, extract serializable fields via targeted regex:
-#        id, ref, s, m, noFix, expected.kind, expected.values (if static enum const)
-#        fix.field, fix.inputType, fix.label, fix.placeholder, fix.options
-#        fix.kind, fix.wrapper, fix.target, fix.childType, fix.min, fix.max,
-#        fix.step (number OR the "any" string form), fix.unit, fix.skipFts,
-#        fix.skipNote, fix.fields (compound multi-field presets, each
-#        {field, wrapper?, value}), fix.keys / fix.keysConst
+#        id, ref, s (-> severity), m (-> message), noFix,
+#        expected.kind, expected.values (literal string array) or
+#        expected.valuesConst (+ valuesExclude for the `CONST.filter(x=>x!=="lit")`
+#        form), expected.regex, expected.description, expected.min/max,
+#        fix.field, fix.inputType, fix.label, fix.placeholder, fix.kind,
+#        fix.wrapper, fix.target, fix.options (literal) or fix.optionsConst
+#        (+ optionsExclude), fix.childType, fix.skipFts, fix.skipNote,
+#        fix.fields (compound multi-field presets, each {field, wrapper?, value}),
+#        fix.keys / fix.keysConst, fix.min, fix.max, fix.step (number OR the
+#        "any" string form), fix.unit
 #      Skip (deliberately not mirrored — functions, and their presence is
 #      already smoke-locked in-app by the Rule-16 census):
 #        t (validator predicate function)
@@ -29,22 +34,24 @@
 #      with the structural extractor, and _selftest() re-proves it on every
 #      invocation (a walker bug feeds the byte-identity check its own garbled
 #      output, so without the self-test it would be gate-invisible).
-#   5. Also walk validateGMLStructure(text) function for the GML-STR-NN structural rules
-#      — these are emitted in a different code shape (push to results array
-#      with id/severity/message). Pass 135 added GML-STR-17 (xlink:href fragment
-#      resolution); pre-pass-172 docstring stale at "16 GML-STR rules".
+#   5. Also walk the validateGMLStructure(text) function body for the
+#      GML-STR-NN structural rules — these are emitted in a different code
+#      shape (push("GML-STR-NN", severity, ref, message, ...) to a results
+#      array; sourceLayer "structural").
 #   5b. Same walk over validateExchangeSet(ctx) for the exchange-set package
 #      corpus (push("S158-PKG-NN"|"S201-ES-NN", …) — sourceLayer "exchange-set");
 #      both function-body corpora share one extraction core (extract_push_rules).
-#   6. Write the combined corpus to dev/validator-rules.json
+#   6. Write the combined corpus to dev/validator-rules.json (per-feature
+#      entries in array order, then the structural and exchange-set corpora
+#      sorted by id)
 #
 # Usage:
 #   python dev/scripts/generate-validator-rules-json.py            # write file
 #   python dev/scripts/generate-validator-rules-json.py --check    # exit non-zero if drift
 #
 # Per Rule 11 (Smoke-test-or-die) + Rule 13 (Atomic delivery):
-#   the pre-commit gate calls this script in --check mode to detect drift
-#   between the in-app RULES array and the checked-in JSON mirror.
+#   the pre-commit gate (check #5) calls this script in --check mode to detect
+#   drift between the in-app RULES array and the checked-in JSON mirror.
 # ---------------------------------------------------------------------------
 
 import json
@@ -59,13 +66,14 @@ JSON_PATH = os.path.join(REPO_ROOT, 'dev', 'validator-rules.json')
 
 
 # ---------------------------------------------------------------------------
-# JS string-literal escape decoder (pass 132, round-6 audit Agent D R6-D-1)
+# JS string-literal escape decoder
 # ---------------------------------------------------------------------------
-# Replaces the pre-pass-132 `s.encode('utf-8').decode('unicode_escape', errors='replace')`
-# pattern, which double-decoded UTF-8 bytes via Latin-1 reinterpretation —
-# every `§` became `Â§`, `–` became `â`, etc. (95 occurrences in the output
-# corpus). The pre-commit `--check` mode (line 599-601) compares regen-to-file
-# byte-for-byte, so the bug was self-consistent and the gate masked it.
+# Replaces a naive `s.encode('utf-8').decode('unicode_escape', errors='replace')`
+# decode, which double-decoded UTF-8 bytes via Latin-1 reinterpretation —
+# every `§` became `Â§`, `–` became `â`, etc., across the whole output corpus.
+# Because `--check` (see main()) compares regen-to-file byte-for-byte, such a
+# bug is self-consistent and the gate masks it — the mirror looked in sync
+# while carrying mojibake.
 #
 # Why `unicode_escape` is wrong: it's a Python-2-era codec that interprets
 # the input as Latin-1 + handles Python-style escapes. When fed UTF-8 bytes
@@ -173,11 +181,11 @@ def find_array_bounds(src: str, decl_pattern: str) -> tuple[int, int]:
             i = j + 1 if j != -1 else n
             continue
         # regex literal — the quote/bracket/brace characters inside (e.g. /["']/ or
-        # an unbalanced [{]) must not corrupt the string/depth state. Same pass-571
-        # tokenizer fix extract_structural_rules already carries; the RULES-array
-        # walkers previously treated a regex as plain code, so ONE quote-bearing
-        # regex in a future predicate collapsed extraction (mutation-verified:
-        # 195 per-feature rules extracted as 1).
+        # an unbalanced [{]) must not corrupt the string/depth state. Same
+        # tokenizer guard extract_push_rules carries; without it the RULES-array
+        # walkers treated a regex as plain code, so ONE quote-bearing regex in a
+        # predicate collapsed extraction (mutation-verified: the whole per-feature
+        # corpus extracted as a single rule).
         if c == '/' and _starts_regex(src, i):
             j = _regex_end(src, i, n)
             if j is not None:
@@ -253,7 +261,7 @@ def walk_rule_entries(inner: str):
             j = inner.find('\n', i + 2)
             i = j + 1 if j != -1 else n
             continue
-        # regex literal — see find_array_bounds (same pass-571 tokenizer guard)
+        # regex literal — see find_array_bounds (same tokenizer guard)
         if c == '/' and _starts_regex(inner, i):
             j = _regex_end(inner, i, n)
             if j is not None:
@@ -422,7 +430,7 @@ def _extract_subobject(entry: str, key: str) -> Optional[str]:
             j = entry.find('\n', i + 2)
             i = j + 1 if j != -1 else n
             continue
-        # regex literal — see find_array_bounds (same pass-571 tokenizer guard)
+        # regex literal — see find_array_bounds (same tokenizer guard)
         if c == '/' and _starts_regex(entry, i):
             j = _regex_end(entry, i, n)
             if j is not None:
@@ -485,11 +493,11 @@ def project_rule(entry: str, source_layer: str = 'per-feature') -> Optional[dict
         if vals is not None:
             exp['values'] = vals
         else:
-            # Pass-527 fix (wave-2 audit P526-03): `values:CONST.filter(x=>x!=="lit")` — the
-            # bare const-ref regex matched the CONST name and silently DROPPED the .filter,
-            # so the JSON mirror stamped the FULL const (whose element [0] is the "none" UI
-            # sentinel) for rules whose in-app expected set deliberately excludes it.
-            # Emit valuesConst + valuesExclude so the mirror carries the same set as the app.
+            # `values:CONST.filter(x=>x!=="lit")` — the bare const-ref regex matched
+            # the CONST name and silently DROPPED the .filter, so the JSON mirror
+            # stamped the FULL const (whose element [0] is the "none" UI sentinel)
+            # for rules whose in-app expected set deliberately excludes it. Emit
+            # valuesConst + valuesExclude so the mirror carries the same set as the app.
             cf = _extract_const_filter(expected_body, 'values')
             if cf:
                 exp['valuesConst'] = cf[0]
@@ -648,8 +656,8 @@ def _split_top_args(body: str) -> list[str]:
 def _starts_regex(js: str, i: int) -> bool:
     """Heuristic: does the '/' at js[i] open a REGEX LITERAL (vs. division)?
     Looks back at the last non-whitespace char: after an operator/opener/keyword a
-    '/' can only start a regex. Pass 571 fix: the tokenizer walks below previously
-    treated regex literals as plain code, so the quote characters inside e.g.
+    '/' can only start a regex. Without this, the tokenizer walks treated regex
+    literals as plain code, so the quote characters inside e.g.
     `/(?:"([^"]+)"|'([^']+)')/` put the walker into a phantom-string state that only
     re-synced by APOSTROPHE PARITY LUCK — one added apostrophe in a later comment
     (e.g. "wrapper's") flipped the parity and silently truncated the extraction."""
@@ -781,7 +789,7 @@ def extract_push_rules(js: str, fn_name: str, open_re: 're.Pattern', source_laye
                 continue
             # regex literals inside push args (e.g. GML-STR-21's text.search(/.../))
             # carry quotes/parens that must not leak into the string/paren state —
-            # same pass-571 tokenizer fix as the function-bounds walk above.
+            # same tokenizer guard as the function-bounds walk above.
             if c == '/' and i + 1 < n and fn_body[i+1] not in ('*', '/') and _starts_regex(fn_body, i):
                 j = _regex_end(fn_body, i, n)
                 if j is not None:
@@ -1013,9 +1021,10 @@ def _selftest() -> None:
     byte-identity check (check 5), so a walker bug that garbles extraction is
     self-consistent and gate-invisible — the exact failure mode this guards.
     The fixture carries the shapes that historically broke extraction: a
-    quote-bearing regex literal (pre-tokenizer, collapsed 187 rules to 1), a
-    division that must NOT be read as a regex, comments containing quotes and
-    braces, a template literal with ${...}, and a nested sub-object."""
+    quote-bearing regex literal (which, before the tokenizer, collapsed the
+    whole corpus to a single rule), a division that must NOT be read as a
+    regex, comments containing quotes and braces, a template literal with
+    ${...}, and a nested sub-object."""
     fixture = (
         'const RULES=['
         '/* comment with "quotes" and {braces} and it\'s an apostrophe */'

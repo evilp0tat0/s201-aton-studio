@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **1.10.3**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **1.11.0**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 

@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
 # ---------------------------------------------------------------------------
-# Playwright headless smoke gate runner (Session 23 pass 118).
+# Playwright headless smoke gate runner.
 #
 # WHY THIS EXISTS
 # ---------------
-# The in-app smoke invariants in `s201_aton_studio.html` (`runSmokeTests`)
-# (current count: `_COUNT_GROUND_TRUTH["smoke"]` in precommit-check.py — single
-# source per Rule 23; was 66 when this runner was written in pass 118 — count
-# grew via subsequent passes adding round-trip, determinism, Builder, and
-# download-equality tests)
-# only fully run in a real browser — they exercise DOMParser, fetch(),
-# round-trip parser/generator on bundled exGML samples, validateGMLStructure,
-# downloadCatalogXML, etc. Pre-commit's V8 syntax check (pass 117) catches
-# structural JS errors but cannot run the smoke tests because they need DOM.
+# The in-app smoke invariants in `s201_aton_studio.html` (`runSmokeTests`;
+# current count: `_COUNT_GROUND_TRUTH["smoke"]` in precommit-check.py — single
+# source per Rule 23) only fully run in a real browser — they exercise
+# DOMParser, fetch(), round-trip parser/generator on bundled exGML samples,
+# validateGMLStructure, downloadCatalogXML, etc. Pre-commit's V8 syntax check
+# (check #6) catches structural JS errors but cannot run the smoke tests
+# because they need a DOM.
 #
-# Throughout passes 113-117, the Preview MCP iframe state was unreliable
-# (chrome-error://chromewebdata/ stickiness — see HANDOFF "Tooling caveats").
-# Pass 118 introduces this Playwright-based runner so the smoke gate becomes
-# automatable: any contributor can run `python dev/scripts/run-browser-smoke-
-# gate.py` and get a full-suite PASS verdict — same engine the user runs, no
-# iframe weirdness.
+# Driving the suite through an embedded preview browser proved unreliable, so
+# this runner makes the smoke gate automatable: any contributor can run
+# `python dev/scripts/run-browser-smoke-gate.py` and get a full-suite PASS
+# verdict — same engine the user runs, no iframe weirdness. It owns the HTTP
+# server it tests against and proves (SHA-256) that the served app is this
+# worktree's file before trusting a verdict.
 #
 # THREE-LAYER GATE STACK (Rule 11 + Rule 13)
 # ------------------------------------------
-#   1. precommit-check.py        — fast static (~1s, 17 checks, every commit)
-#   2. run-browser-smoke-gate.py — slow runtime (~10s, full smoke suite, before
+#   1. precommit-check.py        — fast static (a few seconds, 17 checks, every commit)
+#   2. run-browser-smoke-gate.py — slow runtime (~10-15s, full smoke suite, before
 #                                  push/release; can be wired into CI)
-#   3. Manual [Run tests]     — final visual confirmation in any real
+#   3. Manual [Run tests]        — final visual confirmation in any real
 #                                  browser tab the user trusts
 #
 # USAGE
@@ -35,6 +33,14 @@
 #   python dev/scripts/run-browser-smoke-gate.py --json     # machine-readable output
 #   python dev/scripts/run-browser-smoke-gate.py --port 8090   # pin a port (default: OS-assigned)
 #   python dev/scripts/run-browser-smoke-gate.py --verbose  # print every test
+#
+# EXIT CODES
+# ----------
+#   0 all tests passed   1 a test failed, or the suite size deviates from ground truth
+#   2 playwright not installed   3 Playwright error / suite did not settle within 180s
+#   4 could not own the port, or the served app is not this worktree's file
+#   5 source-comment probe polarity mismatch (wrong build for this harness)
+#   6 an uncaught page exception occurred during the run
 #
 # DEPENDENCIES (one-time setup)
 # -----------------------------
@@ -249,8 +255,8 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             # non-rAF await that never settles (e.g. a fetch against a wedged server
             # thread) used to hang the gate — and any CI wrapping it — indefinitely
             # instead of exiting non-zero (observed live 2026-08-12: a 70-minute hang).
-            # _rafT's 120ms fallback stall-proofs only rAF waits. 180s is ~15x the
-            # suite's normal ~10s runtime; a timeout surfaces as a distinct failure.
+            # _rafT's 120ms fallback stall-proofs only rAF waits. 180s is over 10x the
+            # suite's normal ~10-15s runtime; a timeout surfaces as a distinct failure.
             results = await asyncio.wait_for(
                 page.evaluate("(async () => await runSmokeTests())()"),
                 timeout=180,
@@ -297,17 +303,19 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
 def _report_page_messages(msgs: list[dict], stream=None) -> None:
     """Print EVERY distinct console/page message once, with an occurrence count.
 
-    The previous report printed `console_errors[:10]` verbatim. That defeats the half of
-    SG-BLD-1 this exists for: one noisy benign class (headless symbol preload emits
+    The previous report printed `console_errors[:10]` verbatim. That defeats the
+    observability half of finding SG-BLD-1 (dev/full-audit-findings-2026-08.md)
+    this exists for: one noisy benign class (headless symbol preload emits
     hundreds of `ERR_INSUFFICIENT_RESOURCES` lines) fills all ten slots and silently
     crowds out every other distinct message, so a genuinely interesting one appears on a
     quiet run and vanishes on a noisy one — which reads as an intermittent regression.
     Grouping makes the flood cost ONE line instead of ten, so there is no reason to cap:
     the output length is bounded by message VARIETY, not volume.
 
-    Note the blocking half of SG-BLD-1 was never broken — `pageerror` filtering has always
-    run over the full list, so an uncaught exception still fails the gate no matter how many
-    messages precede it. This is an observability fix; the pass/fail contract is unchanged.
+    Note the blocking half of that finding was never broken — `pageerror` filtering has
+    always run over the full list, so an uncaught exception still fails the gate no matter
+    how many messages precede it. This is an observability fix; the pass/fail contract is
+    unchanged.
 
     Writes to stderr by default so `--json` stdout stays parseable JSON.
     """

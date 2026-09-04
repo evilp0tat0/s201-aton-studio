@@ -2,40 +2,52 @@
 """
 csv_to_s201.py — Convert an AtoN-list CSV → S-201 GML 2.0.0 dataset.
 
-Input format (CSV columns):
+Input format (CSV columns, cp1252-encoded):
   National Number, Name, Type, IALA Cat, Shape and Topmark, Position, Character, Range
+(rows without a National Number are skipped; Position is 'dd mm.mmmN ddd mm.mmmE')
 
-Output: S-201 Dataset GML with parent feature + Light child + Topmark child.
+Output: S-201 Dataset GML with one parent feature per row + a Light child (when the
+Character column parses) + a Topmark child (when the shape column names one).
 
-Region A (Oman): port=red, starboard=green.
+Body colours follow the IALA Maritime Buoyage System Region A convention:
+port=red, starboard=green.
 
 Type column → S-201 feature type:
-  safe water        → SafeWaterBuoy + sphere topmark
-  port lateral      → LateralBuoy (red, can-shape topmark)
-  stbd lateral      → LateralBuoy (green, cone-shape topmark)
-  P to Stbd lateral → LateralBuoy (preferred channel to starboard, red/green/red, cone)
-  N/E/S/W Cardinal  → CardinalBuoy (cones topmark per direction, yellow/black bands)
-  Special / special → SpecialPurposeGeneralBuoy (yellow, X topmark)
-  Sector            → SpecialPurposeGeneralBeacon + LightSectored child
-  minor light       → SpecialPurposeGeneralBeacon (small pole/pile) + LightAllAround
-  Beacon            → SpecialPurposeGeneralBeacon + LightAllAround
-  harbour light     → SpecialPurposeGeneralBeacon (small pole) + LightAllAround
-  stbd lateral with 'pile' shape → LateralBeacon (a beacon serving as lateral mark)
+  safe water        → SafeWaterBuoy (+ sphere topmark when the shape column says so)
+  port lateral      → LateralBuoy (red; 'can' shape → cylinder topmark)
+  stbd lateral      → LateralBuoy (green; 'cone' shape → cone topmark)
+  P to Stbd lateral → LateralBuoy (preferred channel to starboard, red/green/red)
+  P to Port lateral → LateralBuoy (preferred channel to port, green/red/green)
+  any lateral with a 'pile' shape → LateralBeacon (a beacon serving as lateral mark)
+  N/E/S/W Cardinal  → CardinalBuoy (2-cone topmark per direction, yellow/black bands)
+  special           → SpecialPurposeGeneralBuoy for a spar/pillar shape (yellow,
+                      x-shaped topmark when named), otherwise SpecialPurposeGeneralBeacon
+  sector            → SpecialPurposeGeneralBeacon (beacon tower) + LightSectored child
+  minor light / harbour light / beacon
+                    → SpecialPurposeGeneralBeacon (pole/pile/tower per shape) + LightAllAround
+  anything else     → SpecialPurposeGeneralBeacon
 
-Light character ('Character' column) parsed to lightCharacteristic + signalGroup +
-colour + signalPeriod. Modifiers: 'Sync' → synchronised flag (info), 'Dir' →
-directional, '(vert)' → vertical multi-light, '2 Fl' → number of lights. A compound
-'Q(6)+LFl' / 'VQ(6)+LFl' (south-cardinal notation) maps to the single FC listedValue
-'… plus long-flash' with the group on the first token; a character with no colour
-letter is a WHITE light by IHO/IALA convention.
+Light character ('Character' column) is parsed to lightCharacteristic + signalGroup +
+colour + signalPeriod. The modifiers 'Sync', 'Dir', '(vert)' and a leading light count
+('2 Fl') are recognised and stripped into flags (isSynced / isDirectional / isVertical /
+multipleLights) but are NOT emitted — of the character, the GML carries only characteristic,
+group, colour and period (the Light child adds exhibitionConditionOfLight and, from the Range
+column, valueOfNominalRange). A compound 'Q(6)+LFl' / 'VQ(6)+LFl' (south-cardinal notation) maps to the
+single FC listedValue '… plus long-flash' with the group on the first token; a character
+with no colour letter is a WHITE light by IHO/IALA convention.
+
+When the Type column and the light colour disagree (a 'P to Stbd' mark with a green
+light, a 'P to Port' mark with a red light) the LIGHT colour wins and the mark is
+emitted as a plain starboard / port lateral (category, body colour, topmark) — see
+parent_colour / lateral_category_resolved / topmark_colour.
 
 Usage:  python csv_to_s201.py [<input.csv> [<output.gml>]]   (defaults: CSV_PATH/OUT_PATH)
 
 Conformance: the emitted GML validates with ZERO error/warning findings against the
 S-201 AtoN Studio validator (structural GML-STR + per-feature RULES) across all type
-branches — see dev/scripts/precommit-check.py's converter self-test. FC-mandatory
-attributes the source CSV may omit are defaulted to IALA-typical, FC-listed values
-(buoyShape port=can/starboard=conical/safe-water=spherical/else pillar; beaconShape
+branches — see dev/scripts/precommit-check.py's converter self-test (check #15).
+FC-mandatory attributes the source CSV may omit are defaulted to IALA-typical, FC-listed
+values (buoyShape port=can/starboard=conical/safe-water=spherical/else pillar; beaconShape
 'stake, pole, perch, post'; light colour white; categoryOfSpecialPurposeMark
 'mark with unknown purpose') rather than left absent. Child Light/Topmark features carry
 no <featureName> (DCEG §3.2 — the name lives on the parent only). Residual INFO-level
@@ -244,11 +256,12 @@ def classify(type_col, shape_col):
     return parent, light_ft, topmark, buoy_shape, beacon_shape, category
 
 # Buoy/beacon colour based on type AND light colour.
-# Region A (Oman): port=red, starboard=green. When the CSV Type column disagrees
-# with the actual light colour (e.g., "P to Stbd lateral" labelled but light is
-# green → contradicts IALA Region A which requires red light for that type),
-# the LIGHT colour wins because it's unambiguous (no plausible mis-encoding).
-# This auto-corrects that mislabelled-buoy class of local labelling quirks.
+# IALA Region A convention: port=red, starboard=green. When the CSV Type column
+# disagrees with the actual light colour (e.g., "P to Stbd lateral" labelled but
+# light is green → contradicts IALA Region A which requires a red light for that
+# type), the LIGHT colour wins because it's unambiguous (no plausible
+# mis-encoding). This auto-corrects that mislabelled-buoy class of local
+# labelling quirks.
 def parent_colour(type_col, light_colour=None):
     # SUBSTRING matching (not `==`) so lateral variants like "stbd lateral with pile" resolve;
     # colour is FC 1..* MANDATORY on every buoy/beacon body (S201-COL-01). The "p to …" preferred-

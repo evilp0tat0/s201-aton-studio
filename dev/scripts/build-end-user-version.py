@@ -8,31 +8,41 @@ whenever a new test round goes out. It always builds from the CURRENT version.
 
 What it produces in --out:
   s201_aton_studio.html   the app with ALL comments removed (HTML/CSS/JS), the
-                          developer "Run tests" button removed, and the ?test=1
-                          auto-run neutralised (testers never see QA internals)
-  Annex_D/{Symbols,Fonts,portrayal_catalogue.xml}   runtime-only portrayal assets
-  lib/leaflet             map library (+ its LICENSE file)
+                          developer "Run tests" button removed, the ?test=1
+                          auto-run neutralised (testers never see QA internals),
+                          and an IHO / IALA portrayal credit injected next to the
+                          version badge
+  Annex_D/Symbols/        the symbol library (*.svg + svgStyle.css)
+  Annex_D/Fonts/          the four *.ttf fonts + the tracked LICENSE (Apache-2.0
+                          notice header + full licence text)
+  Annex_D/portrayal_catalogue.xml
+  lib/leaflet/            leaflet.js, leaflet.css + LICENSE (optional map layer)
   dev/validator-rules.json   machine-readable rule catalogue — the app's self-test
                           suite (which runs on every "Run validation" click) fetches
                           it; without it every validation shows a red self-test
-  Annex_D/Fonts/LICENSE   Apache-2.0 text for the bundled fonts (if --apache-license given)
-  start-server.bat/.sh, README.txt
+  start-server.bat/.sh    copied from --assets-root when present
+  README.txt, NOTICE.txt  written from the templates in this script
 
-Everything else not needed at runtime is dropped: Annex_D/Rules/,
-Annex_D/ColorProfiles/, the rest of dev/, _local/old docs/ (verified never fetched —
-only cited in comments/self-tests).
+Everything else is dropped: Annex_D/Rules/ and Annex_D/ColorProfiles/ (the app
+never fetches them — the XSL dispatch is ported to JS and the colour profile to
+CSS; both are only cited in comments/self-tests), the rest of dev/, and all
+documentation.
 
 Comment stripping uses a JS/CSS/HTML-aware lexer (a real parser can't be used —
-the file uses ES2020 optional chaining). The 17 `<!--` that legitimately remain
-are functional (generated SVG/GML output + one comment-stripping regex), never
-source notes.
+the file uses ES2020 optional chaining). The `<!--` occurrences that remain
+(about two dozen) are functional — generated SVG / GML / catalogue output, the
+app's own comment-stripping regex and self-test fixtures — never source notes.
 
 Usage:
   python dev/scripts/build-end-user-version.py \
       --src  s201_aton_studio.html \
       --out  "_local/end user version" \
-      --assets-root . \
-      --apache-license path/to/apache-2.0.txt
+      --assets-root .
+
+--apache-license <path> overwrites Annex_D/Fonts/LICENSE with FONT_LICENSE_HEADER
++ the given licence text. Do NOT pass it for a rebuild: the tracked
+Annex_D/Fonts/LICENSE already carries exactly that header and text, so the flag
+only re-creates what the copy step already shipped.
 
 The build then VERIFIES itself by default: it serves --out and runs the app's
 full self-test suite in headless Chromium (the same Playwright harness as
@@ -594,7 +604,7 @@ def main():
     ad = os.path.join(root, "Annex_D")
     copytree_files(os.path.join(ad, "Symbols"), os.path.join(out, "Annex_D", "Symbols"))          # *.svg + svgStyle.css
     copytree_files(os.path.join(ad, "Fonts"), os.path.join(out, "Annex_D", "Fonts"), pattern=".ttf")
-    # tracked Apache-2.0 text ships with the fonts (Apache-2.0 §4); --apache-license may overwrite it below
+    # the tracked LICENSE (Apache-2.0 notice header + licence text, per Apache-2.0 §4) ships with the fonts; --apache-license would only overwrite it with the same header (see the module docstring)
     copytree_files(os.path.join(ad, "Fonts"), os.path.join(out, "Annex_D", "Fonts"), names={"LICENSE"})
     shutil.copy2(os.path.join(ad, "portrayal_catalogue.xml"), os.path.join(out, "Annex_D", "portrayal_catalogue.xml"))
     copytree_files(os.path.join(root, "lib", "leaflet"), os.path.join(out, "lib", "leaflet"),
@@ -635,7 +645,7 @@ def main():
     print(f"   total files   : {n_files}")
     print(f"   test button   : removed;  ?test=1 auto-run: neutralised")
     print(f"   IHO credit    : injected in topbar; NOTICE.txt + README credits written")
-    print(f"   font LICENSE  : {'added (Apache-2.0)' if a.apache_license else 'NOT added (--apache-license not given)'}")
+    print("   font LICENSE  : copied from the tracked Annex_D/Fonts/LICENSE (Apache-2.0 with the bundle header)" + (" — replaced by --apache-license" if a.apache_license else ""))
 
     if a.no_verify:
         print("   self-tests    : SKIPPED (--no-verify) — the bundle is UNVERIFIED")
