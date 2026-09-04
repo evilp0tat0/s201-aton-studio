@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **1.11.0**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **1.11.1**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
@@ -91,4 +91,6 @@ The publications, the Feature Catalogue XML, the schemas and the text extracts a
 
 ## License
 
-The application code, scripts and documentation are licensed under the **MIT License** ([LICENSE](LICENSE)). Bundled third-party material keeps its own terms, stated in [NOTICE.txt](NOTICE.txt): the Annex D portrayal library is © IHO / IALA (reproduced without IHO endorsement or verification, and the one third-party component shipped because the app cannot render without it), the fonts are Apache-2.0, and Leaflet is BSD-2-Clause.
+The code is free. It is licensed under the **MIT License** ([LICENSE](LICENSE)) — you can use it, change it and share it.
+
+The chart symbols and portrayal data in the `Annex_D/` folder come from the IHO/IALA S-201 specification and are **© IHO / IALA**. To reuse that material, check with the IHO and IALA. Full third-party terms are in [NOTICE.txt](NOTICE.txt).

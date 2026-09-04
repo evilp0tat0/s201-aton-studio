@@ -1,6 +1,6 @@
 # Developer notes — S-201 AtoN Studio
 
-For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `1.11.0`, cut from commit `2841316` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
+For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `1.11.1`, cut from commit `40dcdd6` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
 
 Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 the feature object · 5 validator rules · 6 verifying a change · 7 sources and citations · 8 the rules the code was written under · 9 reusing parts elsewhere · 10 known limitations · 11 provenance
 
