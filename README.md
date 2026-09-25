@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **1.11.2**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **1.26.2**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
@@ -54,7 +54,7 @@ lib/leaflet/                Leaflet 1.9.4, loaded only for the optional base map
 dev/validator-rules.json    machine-readable mirror of the validator corpus (fetched by a self-test)
 dev/foundational-rules.json the engineering rules the code was written under
 dev/spec-sources/           MANIFEST.md only — every IHO / IALA / OGC / ISO / W3C document, schema
-                            and text extract the code cites (835 files), with
+                            and text extract the code cites (836 files), with
                             size, SHA-256 and where to obtain it
 dev/sample-data/            datasets for regression checks
 dev/scripts/                the gates (pre-commit, browser smoke), the rule-mirror generator,

@@ -7,13 +7,14 @@ To follow a citation in the source (`FC 2.0.0 XML L11003-11023`, `r1001_ed2_full
 The development repository keeps all of these files; `Annex_D/` (the S-201 Annex D portrayal library, © IHO / IALA) is the one third-party component the snapshot does ship, because the app cannot render without it — see NOTICE.txt.
 
 
-## `dev/pdf-extracts/` (71 files)
+## `dev/pdf-extracts/` (72 files)
 
 Obtain from: Plain-text extractions of the publications above (PyMuPDF; the `.docx`-derived one by a zipfile + document.xml parse), regenerable from the originals; `MANIFEST.sha256` is the development repository's integrity manifest for them (pre-commit check #17).
 
 | File | Size (bytes) | SHA-256 |
 |---|---:|---|
-| MANIFEST.sha256 | 6,140 | `6270b6624faa879f334da9d93bf7ad7635ec2a12171c31cb1c2df70f86d6143e` |
+| INDEX.md | 18,523 | `c13d20ef6a894bb1af32f8adc65038e94abb649b7229b518635fc9a1405cf562` |
+| MANIFEST.sha256 | 6,215 | `9f8dc4f3b98ceac04dfa6e6176fb92e2fc8019380f9ffdb39376052a870252cf` |
 | annex_c1_full.txt | 600,008 | `c5a09e4725429b68c5a9cc35412e3dbbbea81a623cdb7d20d97635a0fcfe231c` |
 | annex_c1_pages_1_30.txt | 55,400 | `87e728ec78088284cbbc53baccb42562c035ec5a23048131193ac78c481fc137` |
 | dceg_annex_a.txt | 467,151 | `bc32949b2f74da556edc3bc43ba2f68ebfce3cd1ad4c286ed3ebdb54d6c7c30b` |
@@ -2125,4 +2126,4 @@ Obtain from: Courseware-derived verification scratch; not a source.
 
 ---
 
-**Total: 835 files, 126,041,876 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.
+**Total: 836 files, 126,060,474 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.

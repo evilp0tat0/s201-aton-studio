@@ -167,17 +167,17 @@
   },
   {
     "id": "S201-COL-02",
-    "ref": "S-201 FC 2.0.0 colourPattern definition ('a regular repeated design containing more than one colour')",
+    "ref": "S-201 FC 2.0.0 colourPattern definition ('a regular repeated design containing more than one colour', FC XML L7037) — EXCEPT its own listedValue code 7 'Single Colour' ('One solid colour of uniform coverage', FC XML L7096-7099), which is the catalogue's encoding FOR one colour",
     "severity": "error",
-    "message": "colourPattern is set but the feature carries fewer than 2 colours — per FC 2.0.0 a colourPattern is 'a regular repeated design containing more than one colour', so it requires ≥2 <colour> values. Add the missing colour(s) or remove the colourPattern. (The inverse — multi-colour without a pattern — is enforced as an error by S201-COL-04 per DCEG §2.4.7.)",
+    "message": "colourPattern names a multi-colour design but the feature carries fewer than 2 colours — per FC 2.0.0 a colourPattern is 'a regular repeated design containing more than one colour', so a stripe/band/chequer pattern requires ≥2 <colour> values. Add the missing colour(s) or remove the colourPattern. The FC's own 'Single Colour' value (code 7, 'One solid colour of uniform coverage') is exempt — it IS the encoding for one colour. (The inverse — multi-colour without a pattern — is enforced as an error by S201-COL-04 per DCEG §2.4.7.)",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "text",
-      "description": "a colourPattern requires ≥2 colour values (FC colourPattern = a design containing more than one colour)"
+      "description": "a multi-colour colourPattern requires ≥2 colour values (FC colourPattern = a design containing more than one colour); the FC's own 'Single Colour' value (code 7) is exempt — it encodes one solid colour"
     },
     "fix": {
       "field": "colourPattern",
-      "label": "Single-colour aid: remove the colourPattern (or add the second colour by hand)",
+      "label": "Pattern with fewer than 2 colours: remove the colourPattern (or add the missing colour by hand)",
       "kind": "removal"
     }
   },
@@ -374,10 +374,24 @@
     }
   },
   {
+    "id": "S201-LGT-14",
+    "ref": "lightSector.valueOfNominalRange (FC 2.0.0 XML L8964, real, 0..1) — the S201-LGT-04 heuristic out-of-typical-range check per sector (no FC/DCEG/R0202 numeric limit; 0-50 NM is engineering judgment based on commonly-observed AtoN ranges)",
+    "severity": "info",
+    "message": "a lightSector's valueOfNominalRange falls outside the typical 0-50 NM range commonly observed for AtoN lights — engineering judgment, not a spec limit (see S201-LGT-04). Verify the value against the observed nominal range.",
+    "sourceLayer": "per-feature",
+    "noFix": "Check the nominal range of the sector named against the published value, in the Builder's sector editor — the 0-50 NM band is engineering judgment, not a spec limit.",
+    "expected": {
+      "kind": "number",
+      "description": "each lightSector valueOfNominalRange (NM) — heuristic band; outside it is engineering-judgement suspect, not a spec violation",
+      "min": 0.0,
+      "max": 50.0
+    }
+  },
+  {
     "id": "S201-LGT-05",
-    "ref": "lightCharacteristic (FC 2.0.0 line 2439, enumeration; S-158:100 check 100_0005 class C — reported at error as a disclosed proxy-locus adaptation) — internal IHO chart abbreviation on Light* features, derived from the FC lightCharacteristic labels via LCHAR_MAP",
+    "ref": "lightCharacteristic (FC 2.0.0 line 2439, enumeration — Morse listedValue L2521 + rhythmOfLight signalGroup L9118-9124 for the Morse letter; S-158:100 check 100_0005 class C — reported at error as a disclosed proxy-locus adaptation) — internal IHO chart abbreviation on Light* features, derived from the FC lightCharacteristic labels via LCHAR_MAP",
     "severity": "error",
-    "message": "lightCharacteristic internal abbreviation should be a recognized IHO chart form (F, Fl, Fl(2), Q, Mo, etc.) — derived from FC 2.0.0 labels via LCHAR_MAP",
+    "message": "lightCharacteristic internal abbreviation should be a recognized IHO chart form (F, Fl, Fl(2), Q, Mo, Mo(<letter>), etc.) — derived from FC 2.0.0 labels via LCHAR_MAP; a Morse character takes any single letter as its signal group (FC L2521 + L9118-9124)",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "enum",
@@ -1908,38 +1922,38 @@
   },
   {
     "id": "S201-EQP-PARENT-01",
-    "ref": "S-201 FC 2.0.0 Equipment featureBinding role=parent multiplicity 1..1 (FC XML lines 10726-10733) for the 12 Equipment subtypes (8 direct + 4 GenericLight) + DCEG §3.2 (forbids multi-parent); Topmark is NOT an Equipment subtype (superType AidsToNavigation) — its 1..1 parent derives from the BuoyTopmark/buoyPart→GenericBuoy association (FC XML lines 15588-15596), also 1..1, so the same exactly-one-parent check applies",
+    "ref": "S-201 FC 2.0.0 Equipment featureBinding role=parent multiplicity 1..1 (FC XML lines 10726-10734) for the 12 Equipment subtypes (8 direct + 4 GenericLight) + DCEG §3.2 (forbids multi-parent, dev/pdf-extracts/dceg_annex_a.txt L442-443); Topmark is NOT an Equipment subtype (superType AidsToNavigation) — its 1..1 parent is the BuoyTopmark/buoyPart→GenericBuoy binding (FC XML lines 15588-15596), so the same exactly-one-parent check applies; a parent is counted from either end of the link (S-100 Part 5 §5-4.2.5.2, dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
     "severity": "critical",
-    "message": "Equipment subtypes (Light*, Topmark, Daymark, FogSignal, RadarTransponderBeacon, RadarReflector, Retroreflector, PowerSource, RadioStation, EnvironmentObservationEquipment) MUST have EXACTLY ONE <parent xlink:href> reference per FC 2.0.0 Equipment.featureBinding 1..1 + DCEG §3.2 (no multi-parent) — EXCEPT Daymark, which DCEG §3.2 allows to be the base/parent feature with no parent-ref (so 0 or 1 is valid for Daymark; only 2+ fails) — and EXCEPT a feature ACTING as the aid's parent (0 parent-refs + forward child refs or child back-links), which DCEG §3.2 permits when no structure feature exists ('may be chosen as the parent feature, giving priority to a Light feature'); that shape passes here and is surfaced per-child at warning by S201-EQP-PARENT-02. AIS subtypes are excluded (inherit from ElectronicAton, not Equipment). Quick-fix unavailable (cross-feature gml:id picker).",
+    "message": "Equipment subtypes (Light*, Daymark, FogSignal, RadarTransponderBeacon, RadarReflector, Retroreflector, PowerSource, RadioStation, EnvironmentObservationEquipment) and Topmark MUST have EXACTLY ONE parent feature per FC 2.0.0 (Equipment parent 1..1; Topmark buoyPart 1..1) + DCEG §3.2 (no multi-parent). A parent is counted from either end of the link: the feature's own <parent xlink:href> and every feature whose <child xlink:href> names it (S-100 Part 5 §5-4.2.5.2: either feature may carry the association). EXCEPT Daymark, which DCEG §3.2 allows to be the base/parent feature with no parent (0 or 1 is valid for Daymark; only 2+ fails), and EXCEPT a feature ACTING as the aid's parent (no parent, and the parent of another feature), which DCEG §3.2 permits when no structure feature exists ('may be chosen as the parent feature, giving priority to a Light feature'); that shape passes here, and S201-EQP-PARENT-02 (critical) reports each of its children, whose parent is not a structure. AIS subtypes are excluded (inherit from ElectronicAton, not Equipment). Quick-fix unavailable (cross-feature gml:id picker).",
     "sourceLayer": "per-feature",
     "noFix": "Pick WHICH feature is the parent in the Builder's parent picker - a cross-feature choice no rule can make.",
     "expected": {
       "kind": "text",
-      "description": "parentRefs.length === 1 — Equipment subtypes must reference EXACTLY ONE parent feature via <parent xlink:href> (FC 2.0.0 featureBinding 1..1 + DCEG §3.2 forbids multi-parent); 0 is tolerated for Daymark and for a feature acting as the aid's parent per DCEG §3.2"
+      "description": "exactly one parent feature, counted from either end of the link (the feature's own <parent xlink:href> links and the features whose <child xlink:href> names it) — Equipment subtypes and Topmark (FC 2.0.0 parent / buoyPart 1..1 + DCEG §3.2 forbids multi-parent); no parent is tolerated for Daymark and for a feature acting as the aid's parent per DCEG §3.2"
     }
   },
   {
     "id": "S201-EQP-PARENT-02",
     "ref": "S-201 FC 2.0.0 Equipment featureBinding role=parent featureType=StructureObject (FC XML line 10733) + DCEG §3.2 (dev/pdf-extracts/dceg_annex_a.txt L458-464 — equipment-as-parent allowed only when no structure feature exists); NOTE Topmark's FC parent is specifically GenericBuoy (BuoyTopmark, FC XML line 15595), a subset of StructureObject — the buoy/beacon/struct check is left permissive (not tightened to buoy-only) so a beacon-borne topmark is not false-flagged",
     "severity": "critical",
-    "message": "Equipment subtype's <parent xlink:href> SHOULD target a StructureObject (a buoy, beacon, or structure feature) per FC 2.0.0 Equipment.featureBinding featureType=StructureObject (FC line 10733). The referenced parent is itself an Equipment/Light/AIS feature, not a structure. DCEG §3.2 permits an equipment feature (priority to a Light) to act as the parent ONLY when no base structure feature exists — if a structure feature is available it must be the parent. Verify this back-link points to the intended structure feature. Quick-fix unavailable (cross-feature gml:id picker).",
+    "message": "Equipment subtype's parent SHOULD be a StructureObject (a buoy, beacon, or structure feature) per FC 2.0.0 Equipment.featureBinding featureType=StructureObject (FC line 10733). Its parent — the target of its <parent xlink:href>, or the feature whose <child xlink:href> names it — is itself an Equipment/Light/AIS feature, not a structure. DCEG §3.2 permits an equipment feature (priority to a Light) to act as the parent ONLY when no base structure feature exists — if a structure feature is available it must be the parent. Verify this link points to the intended structure feature. Quick-fix unavailable (cross-feature gml:id picker).",
     "sourceLayer": "per-feature",
     "noFix": "Re-point the parent link at the intended structure in the Builder's parent picker.",
     "expected": {
       "kind": "text",
-      "description": "the gml:id referenced by <parent xlink:href> resolves to a StructureObject subtype (buoy/beacon/structure feature) per FC line 10733; equipment-as-parent is a DCEG §3.2 fallback only when no structure exists"
+      "description": "the one parent feature (the target of its <parent xlink:href>, or the feature whose <child xlink:href> names it) is a StructureObject subtype (buoy/beacon/structure feature) per FC line 10733; equipment-as-parent is a DCEG §3.2 fallback only when no structure exists"
     }
   },
   {
     "id": "S201-REL-01",
-    "ref": "S-201 DCEG §3.2 — feature must not be both parent and child",
+    "ref": "S-201 DCEG §3.2 — feature must not be both parent and child (dev/pdf-extracts/dceg_annex_a.txt L443)",
     "severity": "error",
-    "message": "Feature MUST NOT be both a parent AND a child per S-201 DCEG §3.2 (no multi-level component nesting). A feature with both <child xlink:href> outgoing refs AND <parent xlink:href> incoming refs models a 3-level parent→middle→child hierarchy that DCEG forbids. Move the middle feature to be a sibling of either the child or the parent. Quick-fix unavailable (manual decision: pick which side of the relationship to break — remove <child> refs OR remove <parent> refs).",
+    "message": "Feature MUST NOT be both a parent AND a child per S-201 DCEG §3.2 (no multi-level component nesting). This feature is the parent of another feature and the child of another, each counted from either end of the link (its own <child> / <parent xlink:href> links, or the other feature's), which models a 3-level parent→middle→child hierarchy that DCEG forbids. Move the middle feature to be a sibling of either the child or the parent. Quick-fix unavailable (manual decision: pick which side of the relationship to break — remove the links to its children OR the links to its parents).",
     "sourceLayer": "per-feature",
     "noFix": "Decide which side of the parent/child chain to break (DCEG 3.2 allows 2 levels) - restructure in the Builder.",
     "expected": {
       "kind": "text",
-      "description": "NOT(componentRefs.length>0 AND parentRefs.length>0) — feature is either parent OR child, never both (DCEG §3.2)"
+      "description": "the feature is either a parent OR a child, never both, each counted from either end of the link (DCEG §3.2)"
     }
   },
   {
@@ -1974,7 +1988,7 @@
     "id": "S201-REL-04",
     "ref": "S-201 FC 2.0.0 StructureEquipment featureBinding pair — StructureObject role=child 0..* (FC XML 10698-10706) / Equipment role=parent 1..1 (FC XML 10726-10734); S-201 Ed 1.1.0 Annex B2 Equipment/parent annotation — alternative encoding whose existence should be checked with a constraint rule (dev/pdf-extracts/s201_ed1_1_0_annexB2_schemas.txt L2768-2775)",
     "severity": "warning",
-    "message": "One-sided aggregation link: this feature's <child xlink:href> points at a feature that carries no matching <parent xlink:href> back-link. S-201 emits the StructureEquipment association from BOTH ends; a forward-only ref is usually a stale link left behind after the child side was edited, and it can demote the target in parent/child tree views. Remove the dangling <child> element (quick fix), or — if the link is intended — author the <parent> back-link on the target feature in the Builder. (Child-side-only <parent> without a parent-side <child> is the tolerated S-100 unidirectional form and is not flagged. An Equipment-subtype target also trips S201-EQP-PARENT-01 separately until one side is fixed.)",
+    "message": "One-sided aggregation link: this feature's <child xlink:href> points at a feature that carries no matching <parent xlink:href> back-link. S-201 emits the StructureEquipment association from BOTH ends; a forward-only ref is usually a stale link left behind after the child side was edited, and it can demote the target in parent/child tree views. Remove the dangling <child> element (quick fix), or — if the link is intended — author the <parent> back-link on the target feature in the Builder. (Child-side-only <parent> without a parent-side <child> is the tolerated S-100 unidirectional form and is not flagged. For an Equipment-subtype or Topmark target the <child> link is its parent — removing it leaves the target with no parent unless the <parent> back-link is authored on it.)",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "text",
@@ -2066,7 +2080,7 @@
   },
   {
     "id": "S201-FEA-54",
-    "ref": "S-201 FC fixedDateRange Remarks (Annex C1 L11867-11869: 'Dates must be encoded in the format YYYYMMDD … the values are replaced with dashes'; periodicDateRange has NO FC remark — Annex C1 §6.8 'No remarks') + S-201 DCEG Annex A §2.4.5 Dates: ISO 8601:1988 truncated forms --MMDD / --MM / CCYYMM / CCYY, named for BOTH fixed date range and periodic date range",
+    "ref": "S-201 FC fixedDateRange Remarks (Annex C1 L11867-11869: 'Dates must be encoded in the format YYYYMMDD … the values are replaced with dashes'; periodicDateRange has NO FC remark — Annex C1 §6.8 'No remarks') + S-201 DCEG Annex A §2.4.5 Dates: ISO 8601:1988 truncated forms --MMDD / --MM / CCYYMM / CCYY, named for BOTH fixed date range and periodic date range; the fixedDateRange inside spatialAccuracy (FC XML L9373) is the same complex",
     "severity": "critical",
     "message": "Date sub-attributes must use the S100_TruncatedDate basic format: YYYYMMDD with '--' for an unknown month and/or day (20260401, 202604--, 2026---- per the FC fixedDateRange remark) or a DCEG §2.4.5 ISO 8601:1988 truncated form (--MMDD, --MM year-less; CCYYMM, CCYY). A dashed year with populated month/day (----0401) or a separator/extended form (2026-04-01) is non-conformant.",
     "sourceLayer": "per-feature",
@@ -2079,7 +2093,85 @@
       "inputType": "text",
       "label": "Date (S100_TruncatedDate basic form)",
       "placeholder": "YYYYMMDD e.g. 20260101",
-      "wrapper": "dateStart"
+      "wrapper": "dateStart",
+      "skipFts": [
+        "SpatialQuality"
+      ],
+      "skipNote": "A SpatialQuality's dates are inside its spatialAccuracy's fixedDateRange (FC XML L9373) — correct them there."
+    }
+  },
+  {
+    "id": "S201-FEA-55",
+    "ref": "S-201 FC 2.0.0 information complex — language (1..1) (FC XML L9770-9812; language lower 1 at L9800, ref L9803)",
+    "severity": "critical",
+    "message": "every <information> block requires <language> (1..1 per S-201 FC 2.0.0, FC XML L9800-9803)",
+    "sourceLayer": "per-feature",
+    "noFix": "The language of the information text is a fact only you know — add <language> (an ISO 639-2 code such as eng) inside the <information> block, or set the information language in the Builder.",
+    "expected": {
+      "kind": "text",
+      "description": "an ISO 639-2 language code (e.g. eng) inside every <information> block"
+    }
+  },
+  {
+    "id": "S201-FEA-56",
+    "ref": "S-201 FC 2.0.0 featureName complex — name (1..1) (FC XML L8846-8872; name lower 1 at L8867, ref L8870)",
+    "severity": "critical",
+    "message": "every <featureName> requires <name> (1..1 per S-201 FC 2.0.0, FC XML L8867-8870); a display name or a language alone does not name the feature",
+    "sourceLayer": "per-feature",
+    "noFix": "The feature's name is a fact only you know — add <name> inside the <featureName>, or remove the display name / language that stands alone.",
+    "expected": {
+      "kind": "text",
+      "description": "the feature's name inside every <featureName>"
+    }
+  },
+  {
+    "id": "S201-FEA-57",
+    "ref": "S-201 FC 2.0.0 shapeInformation complex — text (1..1) (FC XML L9311-9331; text lower 1 at L9326, ref L9329)",
+    "severity": "critical",
+    "message": "<shapeInformation> requires <text> (1..1 per S-201 FC 2.0.0, FC XML L9326-9329)",
+    "sourceLayer": "per-feature",
+    "noFix": "The shape description is text only you can write — add <text> inside the <shapeInformation>.",
+    "expected": {
+      "kind": "text",
+      "description": "a description of the shape inside <shapeInformation>"
+    }
+  },
+  {
+    "id": "S201-FEA-58",
+    "ref": "S-201 FC 2.0.0 sectorInformation complex — text (1..1) (FC XML L9217-9236; text lower 1 at L9231, ref L9234)",
+    "severity": "critical",
+    "message": "every <sectorInformation>, in a lightSector or an ObscuredSector, requires <text> (1..1 per S-201 FC 2.0.0, FC XML L9231-9234)",
+    "sourceLayer": "per-feature",
+    "noFix": "The sector description is text only you can write — add <text> inside the <sectorInformation>.",
+    "expected": {
+      "kind": "text",
+      "description": "a description inside every <sectorInformation>"
+    }
+  },
+  {
+    "id": "S201-FEA-59",
+    "ref": "S-201 FC 2.0.0 verticalUncertainty complex — uncertaintyFixed (1..1) (FC XML L9840-9862; uncertaintyFixed lower 1 at L9850, ref L9853)",
+    "severity": "critical",
+    "message": "<verticalUncertainty> requires <uncertaintyFixed> (1..1 per S-201 FC 2.0.0, FC XML L9850-9853); a variable factor alone is not a vertical uncertainty",
+    "sourceLayer": "per-feature",
+    "noFix": "The fixed vertical uncertainty is a measured value only you have — add <uncertaintyFixed> inside the <verticalUncertainty>.",
+    "expected": {
+      "kind": "number",
+      "description": "uncertaintyFixed (m) inside <verticalUncertainty>",
+      "min": 0.0
+    }
+  },
+  {
+    "id": "S201-FEA-60",
+    "ref": "S-201 FC 2.0.0 spatialAccuracy.horizontalPositionUncertainty (0..1, FC XML L9380) — uncertaintyFixed (1..1) (FC XML L9742-9766; lower 1 at L9754, ref L9757)",
+    "severity": "critical",
+    "message": "<horizontalPositionUncertainty> inside <spatialAccuracy> requires <uncertaintyFixed> (1..1 per S-201 FC 2.0.0, FC XML L9754-9757); a variable factor alone is not a horizontal position uncertainty",
+    "sourceLayer": "per-feature",
+    "noFix": "The fixed horizontal uncertainty is a measured value only you have — add <uncertaintyFixed> inside the <horizontalPositionUncertainty> of the <spatialAccuracy>.",
+    "expected": {
+      "kind": "number",
+      "description": "uncertaintyFixed (m) inside the <horizontalPositionUncertainty> of <spatialAccuracy>",
+      "min": 0.0
     }
   },
   {
@@ -2574,7 +2666,7 @@
     "noFix": "A feature/information association points at its own gml:id — re-target the xlink:href to the intended other feature; which target was meant cannot be inferred.",
     "expected": {
       "kind": "text",
-      "description": "no association (child/parent/AIS-broadcast/FC role xlink) may reference the owning feature's own gml:id (S-158:100 checks 100_0007 + 100_0011, classification C)"
+      "description": "no association (child/parent/AIS-broadcast/aggregation or association member/FC role xlink) may reference the owning feature's own gml:id (S-158:100 checks 100_0007 + 100_0011, classification C)"
     }
   },
   {
@@ -2587,6 +2679,30 @@
     "expected": {
       "kind": "text",
       "description": "the directed parent/child reference graph must be acyclic (S-158:100 check 100_0009, classification E). Complements S201-REL-01 (a feature must not be both parent and child), which cannot see unidirectional cycles"
+    }
+  },
+  {
+    "id": "S158-ASSOC-03",
+    "ref": "S-158:100 check 100_0008 (C) — dev/pdf-extracts/s158_100_checks_table.txt L23; S-100 Part 5 §5-4.2.5.2 feature bindings (dev/pdf-extracts/s100_ed5_2_0_full.txt L11902-11919) and Table 5-A-18 multiplicity, the number of target instances linked (L12866-12869)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0008] A feature association has more than one reference to one object: this feature links the same target feature more than once under the same association role. A feature binding relates the feature to target instances (S-100 Part 5 §5-4.2.5.2), so each target is linked once under a role.",
+    "sourceLayer": "per-feature",
+    "noFix": "Remove the repeated link, keeping one link to the feature under that role; which of the repeats carries the intended xlink attributes is the producer's to say.",
+    "expected": {
+      "kind": "text",
+      "description": "at most one link under each feature-association role to each target feature (S-158:100 check 100_0008, classification C); a legacy <component>, <topmark> or <equipment> link counts as a <child> link"
+    }
+  },
+  {
+    "id": "S158-ASSOC-04",
+    "ref": "S-158:100 check 100_0012 (C), the multiplicity half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-100 Part 5 Tables 5-A-18 and 5-A-17 multiplicity, the target instances linked (dev/pdf-extracts/s100_ed5_2_0_full.txt L12866-12869, L12815-12818) and §5-4.2.5.2, either feature may carry a binding (L11975-11976); the upper multiplicities of the S-201 FC 2.0.0 bindings (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml, e.g. Statuspart 0..1 L10600-10608, GenericBuoy shackleToBuoyconnected 1..1 L11173-11181)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] An association role exceeds the upper multiplicity of its binding in the S-201 Feature Catalogue: more features (or information objects) are linked to this feature under the role than the binding allows. A feature association is counted from both ends: the feature's own links and the links of the features of the target type under the association's other role, since either feature may carry the association (S-100 Part 5 §5-4.2.5.2).",
+    "sourceLayer": "per-feature",
+    "noFix": "Decide which of the linked features the binding admits and remove the other links, at whichever feature carries each; which one was meant is the producer's to say.",
+    "expected": {
+      "kind": "text",
+      "description": "under each association role the FC binds on the feature type with a finite upper multiplicity, no more features (or information objects) are linked, from either end, than that upper bound (S-158:100 check 100_0012, classification C); parent and buoyPart are counted by S201-EQP-PARENT-01, and a binding the FC does not have is not checked here"
     }
   },
   {
@@ -2848,6 +2964,18 @@
       "inputType": "select",
       "label": "Light visibility",
       "optionsConst": "LIGHT_VIS"
+    }
+  },
+  {
+    "id": "S201-ENUM-LVS",
+    "ref": "S-201 FC 2.0.0 lightSector.lightVisibility (0..*, FC XML L8934-8950) — the lightVisibility SimpleAttribute's 9 listedValues (FC XML block 4253-4346)",
+    "severity": "critical",
+    "message": "each lightSector lightVisibility value must be from the S-201 FC 2.0.0 enumeration (9 values)",
+    "sourceLayer": "per-feature",
+    "noFix": "Correct the light visibility of the sector named in the Builder's sector editor, or in its <lightSector> element — each value must be one of the 9 FC values.",
+    "expected": {
+      "kind": "enum",
+      "valuesConst": "LIGHT_VIS"
     }
   },
   {
@@ -3465,12 +3593,24 @@
     "id": "S201-DEP-01",
     "ref": "S-201 FC 2.0.0 — typeOfLight orphan SimpleAttribute at FC line 2421 (zero `<S100FC:attribute ref=\"typeOfLight\"/>` bindings); valueOfGeographicRange + valueOfLuminousRange + remotelyMonitored + typeOfBattery + dateOfIssue + dateOfLastUpdate + nominalRangeInKilometres + bitRate + radioBeaconHealth + transmittedMessageType + referenceStationID + transmittingStationID not in FC 2.0.0 at all (legacy S-201 Ed 1.1.0 Annex B XSD or fabricated; FC binds only `remoteMonitoringSystem` 10717-10723 in place of `remotelyMonitored`, RadioStation binds only categoryOfRadioStation + estimatedRangeOfTransmission + status at 12780-12872, and Light range uses valueOfNominalRange in NM). The first 13 are parsed-but-never-emitted on any FT; the 14th, signalOutput, is FC-bound ONLY inside FogSignal (FC line 12624, bounds 12562-12700) so it is dropped on any NON-FogSignal feature carrying it (scoped `featureType!=='FogSignal'`) — verified via grep on 201_Feature_Catalogue_2.0.0.xml (only typeOfLight + the FogSignal-bound signalOutput matched); textualDescription/text: FC 2.0.0 L9813-9836 binds fileReference 1..1 + language 0..1 and no `text` sub-attribute, so a text-only wrapper cannot be emitted",
     "severity": "critical",
-    "message": "Imported attribute(s) will be DROPPED on save — these are orphan/legacy attributes that the parser preserves for backward-compat (Rule 4) but the generator does NOT emit per Rule 8 (no fabrication): typeOfLight is an FC 2.0.0 orphan SimpleAttribute (defined at FC line 2421 but bound to zero feature types); valueOfGeographicRange + valueOfLuminousRange are not in FC 2.0.0 at all (legacy S-201 Ed 1.1.0 attributes — Ed 2.0.0 replaces them with FC `effectiveIntensity` / `peakIntensity` in candela, plus `valueOfNominalRange` for nautical-mile range); remotelyMonitored is not in FC 2.0.0 (FC defines `remoteMonitoringSystem` instead, bound on Equipment supertype at FC 10717-10723); typeOfBattery + dateOfIssue + dateOfLastUpdate are not in FC 2.0.0 at all (legacy pre-v1.4.1 AtoN-management attributes the parser preserves but the generator drops per the removed-emissions list); nominalRangeInKilometres + bitRate are not in FC 2.0.0 (use valueOfNominalRange in NM); radioBeaconHealth + transmittedMessageType + referenceStationID + transmittingStationID are not in FC 2.0.0 (RadioStation binds only categoryOfRadioStation + estimatedRangeOfTransmission + status per FC 12780-12872); signalOutput on a NON-FogSignal feature is dropped — FC 2.0.0 binds signalOutput ONLY inside FogSignal (FC line 12624), so a Light* (or any other FT) carrying it loses it on save (move it to the FogSignal feature). A textualDescription carrying only a legacy <text> child is dropped too — FC 2.0.0 defines textualDescription as fileReference (1..1) + language (0..1) (FC L9822-9835) with no `text`; put the external file name in fileReference. To prevent silent data loss, migrate the values to the FC-supported attributes or remove them.",
+    "message": "Imported attribute(s) will be DROPPED on save — these are orphan/legacy attributes that the parser preserves for backward-compat (Rule 4) but the generator does NOT emit per Rule 8 (no fabrication): typeOfLight is an FC 2.0.0 orphan SimpleAttribute (defined at FC line 2421 but bound to zero feature types); valueOfGeographicRange + valueOfLuminousRange are not in FC 2.0.0 at all (legacy S-201 Ed 1.1.0 attributes — Ed 2.0.0 replaces them with FC `effectiveIntensity` / `peakIntensity` in candela, plus `valueOfNominalRange` for nautical-mile range); remotelyMonitored is not in FC 2.0.0 (FC defines `remoteMonitoringSystem` instead, bound on Equipment supertype at FC 10717-10723); typeOfBattery + dateOfIssue + dateOfLastUpdate are not in FC 2.0.0 at all (legacy legacy AtoN-management attributes the parser preserves but the generator drops per the removed-emissions list); a legacy bare <nominalRange> is reported ONLY where its value cannot be recovered from the saved document — the FC-canonical element is <valueOfNominalRange>, and where the generator emits that from the same value nothing is lost and nothing is reported); nominalRangeInKilometres + bitRate are not in FC 2.0.0 (use valueOfNominalRange in NM); radioBeaconHealth + transmittedMessageType + referenceStationID + transmittingStationID are not in FC 2.0.0 (RadioStation binds only categoryOfRadioStation + estimatedRangeOfTransmission + status per FC 12780-12872); signalOutput on a NON-FogSignal feature is dropped — FC 2.0.0 binds signalOutput ONLY inside FogSignal (FC line 12624), so a Light* (or any other FT) carrying it loses it on save (move it to the FogSignal feature). A textualDescription carrying only a legacy <text> child is dropped too — FC 2.0.0 defines textualDescription as fileReference (1..1) + language (0..1) (FC L9822-9835) with no `text`; put the external file name in fileReference. To prevent silent data loss, migrate the values to the FC-supported attributes or remove them.",
     "sourceLayer": "per-feature",
     "noFix": "Remove or migrate the legacy attributes in the Builder - they are not in FC 2.0.0 and will be dropped on save (see the list in the finding).",
     "expected": {
       "kind": "text",
       "description": "None of these attributes — migrate to FC 2.0.0 equivalents (effectiveIntensity / peakIntensity for intensity; valueOfNominalRange in NM for range; remoteMonitoringSystem for remote-monitoring; categoryOfRadioStation / estimatedRangeOfTransmission for RadioStation) or remove."
+    }
+  },
+  {
+    "id": "S201-DEP-02",
+    "ref": "S-201 FC 2.0.0 — no attribute coded topmark, fogSignal, radarTransponderBeacon, light or radarReflector; each is a feature type (Topmark FC XML L15444, FogSignal L12565, RadarTransponderBeacon L13439, LightAllAround L12163, RadarReflector L12430); S-158:100 check 100_0001 (C) — dev/pdf-extracts/s158_100_checks_table.txt L16",
+    "severity": "critical",
+    "message": "The feature carries a legacy inline wrapper (<topmark>, <fogSignal>, <radarTransponderBeacon>, <light> or <radarReflector>) — an element the S-201 FC 2.0.0 does not define: it models each as a feature type. The Builder writes the wrapper's content as that feature, linked to this one (a wrapper of the feature's own kind as the feature's own attributes), and its values are checked there.",
+    "sourceLayer": "per-feature",
+    "noFix": "Load the file into the Builder: it writes each legacy inline wrapper as the feature it describes, linked to this one, where its values are checked — or write that feature yourself.",
+    "expected": {
+      "kind": "text",
+      "description": "no inline wrapper — each component written as its own feature type and linked by <child> / <parent>"
     }
   },
   {
@@ -3639,6 +3779,13 @@
     "ref": "S-201 Ed1.1.0 Annex B1 XSD feature-type xs:sequence — geometry is the final element of every geometry-bearing feature type (34/34 types; representative LighthouseType lines 6592-6790, geometry at 6779-6786; maxOccurs unbounded, so repeats are legal but consecutive-and-final) + s100gmlbase.xsd AbstractFeatureType lines 318-332 (contributes no elements, so nothing inherited may follow geometry)",
     "severity": "critical",
     "message": "Feature property element(s) placed AFTER <geometry>, violating the feature type's xs:sequence (geometry is the last element of every geometry-bearing S-201 feature type): <...>. An XSD-validating parser rejects this element order. The value itself is not lost: this app's parser reads the element wherever it sits, and the generator re-emits it in its schema position — use Apply fix to move the flagged element(s) back before <geometry>, or re-generate the dataset from the Builder.",
+    "sourceLayer": "structural"
+  },
+  {
+    "id": "GML-STR-25",
+    "ref": "S-201 FC 2.0.0 signalGroup multiplicity 0..10 per wrapper (FC XML lines 9118-9124 inside rhythmOfLight; lines 9192-9198 inside sectorCharacteristics)",
+    "severity": "critical",
+    "message": "wrapper(s) exceed the FC 2.0.0 signalGroup 0..10 bound: <...> — FC binds signalGroup to at most 10 ordered values per wrapper. Remove the surplus; every value read is preserved and re-emitted, so none of them is being dropped silently.",
     "sourceLayer": "structural"
   },
   {

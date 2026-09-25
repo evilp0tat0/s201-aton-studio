@@ -932,14 +932,14 @@ def check_source_file_tour_anchor_freshness():
 # file's own `check()` registration count below (so it auto-bumps when a new
 # check is added).
 _COUNT_GROUND_TRUTH = {
-    "smoke": 336,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here.
+    "smoke": 437,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here.
     "foundational": 25,  # FOUNDATIONAL_RULES const length + foundational-rules.json entries
     # Rule 23 (single-source-or-gate): counts that once appeared ungated across
     # .md surfaces. Each value is the current canonical count; bump in lockstep
     # with the underlying code.
-    "validator_total": 246,         # per-feature + structural + exchange-set (lockstep-asserted below)
-    "validator_per_feature": 195,   # RULES[] array length — also locked at runtime by the smoke assertion on RULES.length
-    "validator_structural": 24,     # GML-STR-* rule count (validateGMLStructure push calls) — also locked by the smoke assertion that a full-DII dataset yields every GML-STR id
+    "validator_total": 258,         # per-feature + structural + exchange-set (lockstep-asserted below)
+    "validator_per_feature": 206,   # RULES[] array length — also locked at runtime by the smoke assertion on RULES.length
+    "validator_structural": 25,     # GML-STR-* rule count (validateGMLStructure push calls) — also locked by the smoke assertion that a full-DII dataset yields every GML-STR id
     "validator_exchange_set": 27,   # exchange-set package rule count (validateExchangeSet push calls: S158-PKG-NN per S-158:100 Ed 1.0.0 Collection A Part 15/17 + S201-ES-NN per S-201 PS 2.0.0 §11 Data Product Delivery / §12.2.3 discovery metadata) — run when a full Exchange Set ZIP is ingested on the Validator tab
     "atypes": 76,                   # ATYPES catalogue length (59 S-201 + 17 nonS201:true)
     "xsl_templates": 65,            # Annex_D/Rules/*.xsl file count (Annex D portrayal source templates)
@@ -1050,7 +1050,7 @@ def check_count_phrase_freshness():
         # `=`; it counts CD_ENUMS labels, not validator rules). The bare
         # `\d+ total` form would false-positive there; the `= N total`
         # narrowing rescues it. Same `\d{2,}` rule as above.
-        (re.compile(r"=\s*(\d{2,})\s+total\b"), "validator_total", "= N total"),
+        (re.compile(r"=\s*(\d{2,})\s+(?:rules?\s+|checks?\s+)?total\b"), "validator_total", "= N total"),
         # Three more phrasings that drifted ungated in HTML <script> comments —
         # "N validator rules" (smoke-test comment headers), "N per-feature in
         # RULES" (the `in` form the `per-feature rules` pattern above misses),
@@ -1073,6 +1073,10 @@ def check_count_phrase_freshness():
         # gate — "N exchange-set rules/checks" — so the third count component can
         # never drift ungated the way the sibling counts once did (Rule 23).
         (re.compile(r"(?<![Pp]ass[\s-])\b(\d{2,})\s+exchange-set\s+(?:rules?|checks?)\b"), "validator_exchange_set", "N exchange-set rules/checks"),
+        # The structural range "GML-STR-01..N" (the RULES header comment, the HTML preface): N is the highest GML-STR
+        # id = the structural-rule count — it stood at 24 with the corpus at 25, the gate blind to it (DOC-16); a sub-range
+        # list ("GML-STR-01..10 + 13..19 + …") is not the count.
+        (re.compile(r"GML-STR-01\.\.(\d{2,})\b(?!\s*\+)"), "validator_structural", "GML-STR-01..N range"),
         # Foundational-count phrases in the FOUNDATIONAL_RULES smoke test: a length-only
         # bump once left the test's title/comment/loop/detail at the previous count
         # precisely because NO pattern matched "N entries with (consecutive )numbers 1..N".
@@ -1129,7 +1133,7 @@ def check_count_phrase_freshness():
     # "per-feature"/"structural"/leading "="), so it is not gated to the exact total.
     if sm:
         preface = html_text[:sm.start()]
-        _validator_keys = {"validator_per_feature", "validator_structural", "validator_total"}
+        _validator_keys = {"validator_per_feature", "validator_structural", "validator_total", "validator_exchange_set"}
         for pattern, key, friendly in PATTERNS:
             if key not in _validator_keys:
                 continue
@@ -1142,6 +1146,25 @@ def check_count_phrase_freshness():
                         f"s201_aton_studio.html line {abs_line}: '{friendly}' shows "
                         f"{claimed}, ground truth is {truth} ({key} count) [preface]"
                     )
+
+    # === Part A3: the validator sum ===
+    # A phrase naming the per-feature and structural counts and "= N total" must name the exchange-set count too and
+    # add up: each number can match the truth while the sum omits a term (the RULES banner once summed to 219 against
+    # a pinned 246 — DOC-4 — with every number it named still true).
+    _SUM = re.compile(r"(?<![Pp]ass[\s-])\b(\d{2,})\s+per-feature\b((?:(?!\*/|/\*|//|[\"'`])[^=]){0,400}?)=\s*(\d{2,})\s+(?:rules?\s+|checks?\s+)?total\b", re.S)
+    _pre_lines = html_text[:sm.start()].count("\n") if sm else 0
+    for _where, _txt in (("script", sm.group(1) if sm else ""), ("preface", html_text[:sm.start()] if sm else "")):
+        for m in _SUM.finditer(_txt):
+            mid = m.group(2)
+            st = re.search(r"\b(\d{2,})\s+(?:document-level\s+|GML\s+)?structural\b", mid)
+            ex = re.search(r"\b(\d{2,})\s+exchange-set\b", mid)
+            if not st:
+                continue
+            got = int(m.group(1)) + int(st.group(1)) + (int(ex.group(1)) if ex else 0)
+            if not ex or got != int(m.group(3)):
+                abs_line = _txt[:m.start()].count("\n") + 1 + (_pre_lines if _where == "script" else 0)
+                why = "names no exchange-set count" if not ex else "adds up to %d, not %s" % (got, m.group(3))
+                stale.append(f"s201_aton_studio.html line {abs_line}: the validator sum '{m.group(0)[:80]}…' {why} [{_where}]")
 
     # === Part B: dev/scripts/*.py file content ===
     # Excludes this script itself — its comments and docstrings legitimately quote
@@ -1238,6 +1261,12 @@ def check_doc_count_phrase_freshness():
         # foundational-rules.json) — N is the highest GML-STR id = the structural-rule
         # count (01..N contiguous). Drifted ungated when structural rules were added.
         (re.compile(r"GML-STR-02\.\.(\d+)\b"), "validator_structural", "GML-STR-02..N range"),
+        (re.compile(r"GML-STR-01\.\.(\d+)\b(?!\s*\+)"), "validator_structural", "GML-STR-01..N range"),
+        # the bare "N structural)" closing a count split in parentheses (dev/README's validator-rules.json line once said
+        # "(204 per-feature + 24 structural)" with the corpus at 25 — DOC-16)
+        (re.compile(r"(?<![Pp]ass[\s-])\b(\d{2,})\s+structural\)"), "validator_structural", "N structural)"),
+        # and "N structural +" inside such a split ("(204 per-feature + 25 structural + 27 exchange-set)")
+        (re.compile(r"(?<![Pp]ass[\s-])\b(\d{2,})\s+structural\s+\+"), "validator_structural", "N structural +"),
         # The suffixed structural patterns (further down) require a rules?/checks? suffix,
         # so the BARE `N GML structural` noun form drifted ungated — CLAUDE.md + the HANDOFF
         # intro carried a stale count with no suffix. Add the bare form. Historical
@@ -1857,6 +1886,436 @@ def check_pdf_extracts_manifest():
     )
 
 
+
+# ---------------------------------------------------------------------------
+# Check 18 — the known-issues register (Rule 23: one living status surface)
+# ---------------------------------------------------------------------------
+# `dev/known-issues.md` is the ONLY place the status of a known defect lives.
+# The audit ledgers are append-only history and cannot carry status without
+# either editing history or duplicating it ungated, so the register is the
+# single source and this check is what makes it trustworthy.
+#
+# Deliberate non-coverage, stated so a green result is not over-read:
+#   * It does NOT judge whether a status is CORRECT. Marking a live defect
+#     `not-a-defect:` is well-formed and passes. Whether something is a defect
+#     is a human call the gate has no standing to make.
+#   * It does NOT read the prose. Swapping two rows' one-line summaries passes.
+#   * It cannot detect a STALE-OPEN row (code fixed, register not updated) —
+#     it has no way to know the code changed. That is the one discipline the
+#     maintenance contract in the register itself has to carry.
+#
+# Design notes tied to findings this gate's own corpus recorded:
+#   * SG-6 (a check that bare-`return`s when its regex misses reports a PASS):
+#     every parse below carries a floor assertion. A regex that goes blind
+#     FAILS here; it never passes vacuously.
+#   * VR-2 (an extractor that is also the comparator hides its own drift):
+#     the ledger extractor is not trusted alone. Three independent witnesses
+#     must agree — the per-SHAPE frozen counts, the per-prefix contiguity
+#     property (which never consults the extractor), and the total.
+#   * The ledgers reuse id prefixes: 15 ids exist in BOTH the 2026-08 and
+#     2026-09 ledgers meaning different findings. Rows are therefore keyed on
+#     (src, id) and every lookup resolves against the ledger the row NAMES —
+#     never "whichever ledger matched first".
+#   * SG-1 (a source lock that self-matches its own literal) does not apply:
+#     this check reads separate FILES and must never read its own source. It
+#     would begin to apply if these id patterns were ever added to check #12's
+#     `dev/scripts/*.py` scan or the register to check #13's DOCS list.
+
+KI_REGISTER = "dev/known-issues.md"
+KI_CHANGELOG = os.path.join(PROJECT_ROOT, "dev", "CHANGELOG.md")
+KI_ID = r"([A-Z]{2,4}-\d+[a-z]?)"
+KI_QUAL = r"(?:\s*\([^)]*\))?"          # "(PLAUSIBLE)", "(LOW-MEDIUM)", ...
+KI_SEVERITIES = ("HIGH", "MEDIUM", "LOW")
+KI_CONFIDENCE = ("author-verified", "finder", "finder-plausible")
+# Closed vocabulary, so the column stays sortable and a typo cannot mint a
+# one-row "area". Extend it deliberately when a genuinely new subsystem lands.
+KI_AREAS = (
+    "a11y", "builder", "compare", "custody", "docs", "enums", "excel",
+    "gates", "help", "lock-gap", "perf", "portrayal", "quick-fix", "repo",
+    "round-trip", "security", "smoke", "validator",
+)
+
+# Frozen ledgers. `complete` means EVERY finding in that ledger must appear in
+# the register (both directions asserted). A carry-in ledger contributes only
+# the rows someone chose to register, so only the id-resolves direction holds.
+# The counts are equalities, not floors: an append-only file cannot change.
+KI_LEDGERS = {
+    "FA-09": {
+        "path": "dev/full-audit-findings-2026-09.md",
+        "complete": True,
+        "shapes": {"HIGH": 14, "MEDIUM": 55, "LOW": 50},
+        "total": 119,
+        "aliases": {"FC-2": "RT-1", "UI-6": "SC-1", "SEC-8": "PORT-1",
+                    "SG-4": "PORT-1", "DOC-14": "RH-4"},
+    },
+    # Issues found outside a formal audit (a code review, a user report, a
+    # deferral recorded only in a CHANGELOG entry). Without this the register
+    # would have exactly one write path — "ship a whole new audit ledger" —
+    # which is not a usable way to record the next defect someone notices.
+    # No ledger to reconcile against, so only the vocabulary rules apply; the
+    # `issue` text has to carry its own provenance.
+    "DIRECT": {
+        "path": None,
+        "complete": False,
+    },
+    "DS-06": {
+        "path": "dev/deep-scan-findings-2026-06.md",
+        "complete": False,
+        # A carry-in ledger contributes only the items still open when a later
+        # audit swept it, so there is no completeness direction to assert. What
+        # IS asserted is that each carried row points at real content: the id is
+        # this register's own coinage (that ledger numbers its findings plainly),
+        # so the row must declare the heading text it stands for, and that text
+        # must still be present. A loose id-substring match would resolve to
+        # nothing here and silently accept an invented row.
+        "carryin": {
+            "DS-68b": "68. GML-STR-10/11/12 DII xs:sequence semantics unchecked",
+        },
+    },
+}
+
+
+def _ki_ledger_ids(text):
+    """Extract finding ids from a frozen ledger, per severity band.
+
+    The 2026-09 ledger writes its three bands in three different markdown
+    shapes. Each is counted SEPARATELY and asserted separately: a single
+    total would pass if one shape gained what another lost, and one regex
+    going blind while its neighbours stay green is exactly the SG-6 shape.
+    """
+    shapes = {
+        "HIGH": re.compile(r"^###\s+" + KI_ID + KI_QUAL + r"\s+—", re.M),
+        "MEDIUM": re.compile(r"^\*\*" + KI_ID + KI_QUAL + r"\s+—", re.M),
+        "LOW": re.compile(r"(?<!\*)\*" + KI_ID + KI_QUAL + r"\*\s+—"),
+    }
+    found = {}
+    for band, rx in shapes.items():
+        hits = rx.findall(text)
+        found[band] = hits
+    return found
+
+
+def _ki_changelog_passes():
+    """Pass numbers with a CHANGELOG entry.
+
+    Handles BOTH heading forms actually present in the file: the usual
+    `### Pass N — ...` and the combined `### Passes 611–613 — ...` range
+    heading. A `### Pass N`-only extractor would reject a legitimate
+    `fixed:612`.
+    """
+    with open(KI_CHANGELOG, encoding="utf-8") as f:
+        text = f.read()
+    passes = set(int(n) for n in re.findall(r"^###\s+Pass\s+(\d+)\b", text, re.M))
+    for lo, hi in re.findall(r"^###\s+Passes\s+(\d+)\s*[–—-]\s*(\d+)\b", text, re.M):
+        passes.update(range(int(lo), int(hi) + 1))
+    return passes
+
+
+def check_fc_attr_owners_parity():
+    """Check 19 (Rule 5/8/23): the FC_ATTR_OWNERS table in s201_aton_studio.html equals the attribute bindings
+    of the bundled Feature Catalogue XML, supertypes resolved, the FC_ROLE_OWNERS table its association-role bindings
+    (the /*FC_ROLE_OWNERS:begin*/ ... /*FC_ROLE_OWNERS:end*/ literal, refreshed with `fc_bindings.py --roles`), the
+    FC_ROLE_BINDINGS table each role's bindings with their targets, upper multiplicities and inverse roles (the
+    /*FC_ROLE_BINDINGS:begin*/ ... /*FC_ROLE_BINDINGS:end*/ literal, refreshed with `fc_bindings.py --bindings`; the
+    association rules S158-ASSOC-03/-04 and S201-EQP-PARENT-01 read it), and the FC_TYPES list equals its concrete
+    feature and information types (dev/scripts/fc_bindings.py).
+
+    The generator emits a feature-level attribute only on a type FC_ATTR_OWNERS lists for it, so a table that
+    drifts from the FC either emits an attribute a type does not bind or drops one it binds. The literal sits
+    between the /*FC_ATTR_OWNERS:begin*/ and /*FC_ATTR_OWNERS:end*/ markers; refresh it with
+    `python dev/scripts/fc_bindings.py --json` after the FC XML changes. The Builder loads only a feature whose type
+    FC_TYPES lists, and the generator writes no other (the /*FC_TYPES:begin*/ ... /*FC_TYPES:end*/ literal, refreshed
+    with `python dev/scripts/fc_bindings.py --types`)."""
+    import json as _json
+    fc_xml = os.path.join(PROJECT_ROOT, "dev", "spec-sources", "201_Feature_Catalogue_2.0.0.xml")
+    if not os.path.exists(fc_xml):
+        if _snapshot_tree():
+            raise NotApplicable("snapshot tree cut without the FC XML — nothing to compare against")
+        raise AssertionError("dev/spec-sources/201_Feature_Catalogue_2.0.0.xml is missing")
+    sys.path.insert(0, _SCRIPT_DIR)
+    try:
+        import fc_bindings
+    finally:
+        sys.path.pop(0)
+    want = fc_bindings.owners_by_attr(fc_xml)
+    with open(HTML, encoding="utf-8") as f:
+        content = f.read()
+    m = re.search(r"/\*FC_ATTR_OWNERS:begin\*/(.*?)/\*FC_ATTR_OWNERS:end\*/", content, re.S)
+    assert m, "cannot find the FC_ATTR_OWNERS literal markers in s201_aton_studio.html"
+    got = _json.loads(m.group(1))
+    missing = sorted(set(want) - set(got))
+    extra = sorted(set(got) - set(want))
+    diff = sorted(a for a in set(want) & set(got) if sorted(want[a]) != sorted(got[a]))
+    assert not (missing or extra or diff), (
+        "FC_ATTR_OWNERS differs from the FC XML — attributes missing %s, not in the FC %s, owner sets differ %s. "
+        "Refresh the literal with `python dev/scripts/fc_bindings.py --json`." % (missing[:8], extra[:8], diff[:8])
+    )
+    mr = re.search(r"/\*FC_ROLE_OWNERS:begin\*/(.*?)/\*FC_ROLE_OWNERS:end\*/", content, re.S)
+    assert mr, "cannot find the FC_ROLE_OWNERS literal markers in s201_aton_studio.html"
+    got_r, want_r = _json.loads(mr.group(1)), fc_bindings.owners_by_role(fc_xml)
+    r_missing = sorted(set(want_r) - set(got_r))
+    r_extra = sorted(set(got_r) - set(want_r))
+    r_diff = sorted(a for a in set(want_r) & set(got_r) if sorted(want_r[a]) != sorted(got_r[a]))
+    assert not (r_missing or r_extra or r_diff), (
+        "FC_ROLE_OWNERS differs from the FC XML — roles missing %s, not in the FC %s, owner sets differ %s. "
+        "Refresh the literal with `python dev/scripts/fc_bindings.py --roles`." % (r_missing[:8], r_extra[:8], r_diff[:8])
+    )
+    mb = re.search(r"/\*FC_ROLE_BINDINGS:begin\*/(.*?)/\*FC_ROLE_BINDINGS:end\*/", content, re.S)
+    assert mb, "cannot find the FC_ROLE_BINDINGS literal markers in s201_aton_studio.html"
+    got_b, want_b = _json.loads(mb.group(1)), fc_bindings.role_bindings(fc_xml)
+    b_diff = sorted(r for r in set(want_b) | set(got_b) if want_b.get(r) != got_b.get(r))
+    assert not b_diff, (
+        "FC_ROLE_BINDINGS differs from the FC XML — roles whose bindings (kind, owners, targets, upper multiplicity, "
+        "inverse role) differ: %s. Refresh the literal with `python dev/scripts/fc_bindings.py --bindings`." % (b_diff[:8],)
+    )
+    mt = re.search(r"/\*FC_TYPES:begin\*/(.*?)/\*FC_TYPES:end\*/", content, re.S)
+    assert mt, "cannot find the FC_TYPES literal markers in s201_aton_studio.html"
+    got_t, want_t = sorted(_json.loads(mt.group(1))), fc_bindings.concrete_types(fc_xml)
+    assert got_t == want_t, (
+        "FC_TYPES differs from the FC XML concrete types — missing %s, not in the FC %s. Refresh the literal with "
+        "`python dev/scripts/fc_bindings.py --types`." % (sorted(set(want_t) - set(got_t))[:8], sorted(set(got_t) - set(want_t))[:8])
+    )
+
+
+def check_known_issues_register():
+    """Check 18: `dev/known-issues.md` is complete, well-formed and consistent
+    with the frozen audit ledgers it single-sources the status of."""
+    _needs_dev_docs(KI_REGISTER, *[m["path"] for m in KI_LEDGERS.values() if m["path"]])   # the DIRECT source has no ledger file
+
+    reg_path = os.path.join(PROJECT_ROOT, KI_REGISTER)
+    assert os.path.isfile(reg_path), (
+        KI_REGISTER + " is missing. It is the living status surface for every "
+        "known defect (Rule 23) — restore it from git rather than deleting it; "
+        "an absent register is not the same as an empty backlog."
+    )
+    with open(reg_path, encoding="utf-8") as f:
+        text = f.read()
+
+    # --- rows -------------------------------------------------------------
+    # `status` is [^|]+ rather than \S+ on purpose: the documented vocabulary
+    # includes `deferred:<reason>` and `not-a-defect:<reason>`, whose reasons
+    # are prose with spaces. A \S+ capture silently fails to match such a row,
+    # which drops it from `rows` entirely — the register's own documented
+    # statuses would have been unusable, and the failure would have surfaced as
+    # a confusing floor breach rather than a status error.
+    row_rx = re.compile(
+        r"^\|\s*" + KI_ID + r"\s*\|\s*(\w+)\s*\|\s*([a-z0-9\-]+)\s*\|\s*"
+        r"([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*(\S+)\s*\|\s*(\S+)\s*\|\s*$", re.M)
+    rows = row_rx.findall(text)
+
+    # Floor (SG-6 defence): a corrupted table header or a drifted column count
+    # makes `rows` empty, and every assertion below would then pass vacuously.
+    complete_total = sum(m["total"] for m in KI_LEDGERS.values() if m.get("complete"))
+    assert len(rows) >= complete_total, (
+        "known-issues register parsed only %d rows, expected at least %d "
+        "(every finding of the complete ledgers). Either rows were deleted, or "
+        "the table's column layout changed and the row pattern in check #18 no "
+        "longer matches it — fix whichever it is; do not lower this floor."
+        % (len(rows), complete_total)
+    )
+
+    seen, areas = {}, set()
+    for rid, sev, area, _issue, status, src, conf in rows:
+        key = (src, rid)
+        assert key not in seen, (
+            "duplicate register row %s in %s — one row per (src, id); a second "
+            "row can carry a contradicting status." % (rid, src))
+        seen[key] = (sev, status, conf)
+        areas.add(area)
+        assert sev in KI_SEVERITIES, (
+            "%s: severity %r is not one of %s in %s"
+            % (rid, sev, "/".join(KI_SEVERITIES), KI_REGISTER))
+        assert conf in KI_CONFIDENCE, (
+            "%s: conf %r is not one of %s in %s"
+            % (rid, conf, "/".join(KI_CONFIDENCE), KI_REGISTER))
+        assert src in KI_LEDGERS, (
+            "%s: src %r names no known ledger. Add it to KI_LEDGERS in "
+            "dev/scripts/precommit-check.py, or correct the row." % (rid, src))
+        assert re.match(
+            r"^(open|fixed:\d+|deferred:\S.*|not-a-defect:\S.*)$", status), (
+            "%s: status %r is not one of open / fixed:<pass> / deferred:<reason> "
+            "/ not-a-defect:<reason>. A bare `deferred:` with no reason is the "
+            "Rule-9 shape — state why." % (rid, status))
+
+    unknown_areas = sorted(areas - set(KI_AREAS))
+    assert not unknown_areas, (
+        "known-issues register uses area(s) %s that are not in the closed "
+        "vocabulary. Either fix the typo, or add the new subsystem to KI_AREAS "
+        "in dev/scripts/precommit-check.py deliberately." % unknown_areas)
+
+    # --- fixed:<pass> must name a real CHANGELOG pass ---------------------
+    known_passes = _ki_changelog_passes()
+    assert len(known_passes) >= 600, (
+        "check #18 read only %d pass headings from dev/CHANGELOG.md (expected "
+        ">= 600) — the heading pattern has drifted; fix the extractor."
+        % len(known_passes))
+    for (src, rid), (_sev, status, _conf) in sorted(seen.items()):
+        if status.startswith("fixed:"):
+            n = int(status.split(":", 1)[1])
+            assert n in known_passes, (
+                "%s is marked %s but dev/CHANGELOG.md has no Pass %d entry. "
+                "Record the closing pass first, then set the status."
+                % (rid, status, n))
+
+    # --- per-ledger reconciliation ---------------------------------------
+    for name, meta in sorted(KI_LEDGERS.items()):
+        if meta.get("path") is None:
+            # Direct-entry source: nothing to reconcile against. The vocabulary
+            # rules above already applied to these rows.
+            continue
+        lpath = os.path.join(PROJECT_ROOT, meta["path"])
+        assert os.path.isfile(lpath), (
+            "known-issues register names ledger %s (%s) but the file is missing."
+            % (name, meta["path"]))
+        with open(lpath, encoding="utf-8") as f:
+            ltext = f.read()
+        registered = set(rid for (s, rid) in seen if s == name)
+
+        if not meta.get("complete"):
+            # Carry-in ledger: no completeness direction, but every carried row
+            # must declare the ledger text it stands for, and that text must
+            # still be there.
+            anchors = meta.get("carryin", {})
+            # Both directions. Without this arm a declared carry-in row could be
+            # deleted and the gate would stay green: the row floor is satisfied
+            # by the complete ledgers alone, so nothing else would notice.
+            missing_rows = sorted(set(anchors) - registered)
+            assert not missing_rows, (
+                "%s declares carry-in item(s) %s in KI_LEDGERS but %s has no row "
+                "for them. Restore the row, or drop the carryin entry if the "
+                "item was closed." % (name, missing_rows, KI_REGISTER))
+            for rid in sorted(registered):
+                assert rid in anchors, (
+                    "%s is registered against carry-in ledger %s, but no anchor "
+                    "for it is declared in KI_LEDGERS['%s']['carryin'] in "
+                    "dev/scripts/precommit-check.py. Add the heading text the "
+                    "row stands for so the reference is verifiable."
+                    % (rid, name, name))
+                assert anchors[rid] in ltext, (
+                    "%s's declared anchor %r is no longer present in %s — the "
+                    "carried finding was renamed or removed; re-point the anchor "
+                    "or retire the row." % (rid, anchors[rid], meta["path"]))
+            continue
+
+        bands = _ki_ledger_ids(ltext)
+        # Witness 1 — each frozen per-shape count exactly.
+        for band, expected in meta["shapes"].items():
+            got = len(bands[band])
+            assert got == expected, (
+                "%s: extracted %d %s findings from %s, expected exactly %d. "
+                "That ledger is append-only, so the count cannot legitimately "
+                "change — the %s extraction pattern in check #18 has gone "
+                "blind. Fix the pattern, do not adjust the count."
+                % (name, got, band, meta["path"], expected, band))
+        ids = set()
+        for band in meta["shapes"]:
+            for rid in bands[band]:
+                assert rid not in ids, (
+                    "%s: finding %s extracted twice from %s." % (name, rid, meta["path"]))
+                ids.add(rid)
+        # Witness 2 — the total, in lockstep with the per-shape sum.
+        assert sum(meta["shapes"].values()) == meta["total"], (
+            "check #18 is internally inconsistent for %s: per-shape counts sum "
+            "to %d but total says %d." % (name, sum(meta["shapes"].values()), meta["total"]))
+        assert len(ids) == meta["total"], (
+            "%s: %d distinct findings extracted, expected %d." % (name, len(ids), meta["total"]))
+
+        # Severity must match the band the finding actually sits under. Without
+        # this the register could silently downgrade a HIGH to LOW and every
+        # other invariant would still pass — the id set, the counts and the
+        # contiguity are all severity-blind.
+        band_of = {}
+        for band in meta["shapes"]:
+            for rid in bands[band]:
+                band_of[rid] = band
+        wrong_sev = sorted(
+            "%s(register=%s, ledger=%s)" % (rid, seen[(name, rid)][0], band_of[rid])
+            for rid in registered & ids
+            if seen[(name, rid)][0] != band_of[rid])
+        assert not wrong_sev, (
+            "%s rows disagree with the severity band their finding sits under "
+            "in %s: %s. The ledger is frozen — correct the register."
+            % (KI_REGISTER, meta["path"], wrong_sev))
+
+        aliases = meta.get("aliases", {})
+        # An alias is a load-bearing input to the contiguity witness below: a
+        # fabricated one would fill a numbering hole and hide a lost finding.
+        # Require each to be named in the ledger's own merge record.
+        for alias in sorted(aliases):
+            assert alias in ltext, (
+                "%s: declared alias %s does not appear in %s. An invented alias "
+                "silently satisfies the contiguity check and can mask a finding "
+                "that is missing from both the register and the extractor."
+                % (name, alias, meta["path"]))
+        assert not (ids & set(aliases)), (
+            "%s: %s declared as merged aliases but extracted as findings."
+            % (name, sorted(ids & set(aliases))))
+        for alias, primary in sorted(aliases.items()):
+            assert primary in ids, (
+                "%s: alias %s folds into %s, which is not a finding in that ledger."
+                % (name, alias, primary))
+
+        # Witness 3 — per-prefix contiguity. This never consults the extractor's
+        # shape patterns: if a finding were invisible to BOTH the extractor and
+        # the register, the numbering would show a hole here.
+        by_prefix = {}
+        for rid in ids | set(aliases):
+            p, n = rid.split("-")
+            if not n.isdigit():
+                # A lettered id (the `DS-68b` shape) is this register's own
+                # coinage for a carry-in, never a numbered finding of a
+                # complete ledger. Skipping keeps `int()` total rather than
+                # crashing with a bare ValueError and no remedy text.
+                continue
+            by_prefix.setdefault(p, set()).add(int(n))
+        for p in sorted(by_prefix):
+            nums = by_prefix[p]
+            missing = sorted(set(range(1, max(nums) + 1)) - nums)
+            assert not missing, (
+                "%s: finding ids %s are missing from %s — numbering must close "
+                "once merged aliases are counted. A hole means a finding is "
+                "invisible to both the register and check #18's extractor."
+                % (name, ["%s-%d" % (p, n) for n in missing], meta["path"]))
+
+        # Completeness, both directions.
+        missing = sorted(ids - registered)
+        assert not missing, (
+            "%s findings are absent from %s: %s. Every finding gets a row in "
+            "the same pass its ledger ships." % (name, KI_REGISTER, missing))
+        extra = sorted(registered - ids)
+        assert not extra, (
+            "%s rows reference ids that are not findings in %s: %s. Check for a "
+            "typo, or an id borrowed from a different ledger — the audit ledgers "
+            "reuse id prefixes, so many ids exist in more than one meaning "
+            "different findings (the register's id-collision section lists them)."
+            % (KI_REGISTER, meta["path"], extra))
+
+    # --- the register's own stated totals ---------------------------------
+    stated = re.search(
+        r"\*\*(\d+)\s+rows\s+—\s+(\d+)\s+HIGH\s+·\s+(\d+)\s+MEDIUM\s+·\s+(\d+)\s+LOW\.\*\*",
+        text)
+    assert stated, (
+        "known-issues register no longer states its own totals in the expected "
+        "form `**N rows — N HIGH · N MEDIUM · N LOW.**` — restore the line so "
+        "the summary cannot drift from the table (Rule 23)."
+    )
+    tot, hi, med, low = (int(g) for g in stated.groups())
+    actual = {s: sum(1 for r in rows if r[1] == s) for s in KI_SEVERITIES}
+    assert (tot, hi, med, low) == (len(rows), actual["HIGH"], actual["MEDIUM"], actual["LOW"]), (
+        "known-issues register's stated totals (%d rows: %d/%d/%d) do not match "
+        "its table (%d rows: %d/%d/%d) — update the summary line."
+        % (tot, hi, med, low, len(rows), actual["HIGH"], actual["MEDIUM"], actual["LOW"]))
+
+    stated_open = re.search(r"Open:\s*(\d+)\.", text)
+    assert stated_open, (
+        "known-issues register no longer states its open count (`Open: N.`)."
+    )
+    real_open = sum(1 for r in rows if r[4] == "open")
+    assert int(stated_open.group(1)) == real_open, (
+        "known-issues register says Open: %s but %d rows have status `open`."
+        % (stated_open.group(1), real_open))
+
+
 # Run all checks
 check("APP_VERSION consistency (HTML JS vs preface)", check_app_version_consistency)
 check("foundational-rules.json shape", check_foundational_rules_json_shape)
@@ -1875,6 +2334,8 @@ check("Rule-21 narrative-residue purity in s201_aton_studio.html (pass 276)", ch
 check("csv_to_s201.py output conformance self-test (pass 550)", check_csv_to_s201_conformance)
 check("bundled-asset count/version phrases match disk (pass 570, Rule 23)", check_bundled_asset_count_phrases)
 check("pdf-extracts integrity manifest (Rule 5/8 citation trust anchor)", check_pdf_extracts_manifest)
+check("known-issues register complete + consistent (Rule 23 living status surface)", check_known_issues_register)
+check("FC_ATTR_OWNERS / FC_ROLE_OWNERS / FC_ROLE_BINDINGS / FC_TYPES equal the FC XML attribute and role bindings and concrete types (passes 719, 729; Rule 5/8/23)", check_fc_attr_owners_parity)
 
 # Report
 # `_total` is every check() invocation above — passed + failed + skipped. Reporting

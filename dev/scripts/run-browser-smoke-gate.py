@@ -21,9 +21,9 @@
 #
 # THREE-LAYER GATE STACK (Rule 11 + Rule 13)
 # ------------------------------------------
-#   1. precommit-check.py        — fast static (a few seconds, 17 checks, every commit)
-#   2. run-browser-smoke-gate.py — slow runtime (~10-15s, full smoke suite, before
-#                                  push/release; can be wired into CI)
+#   1. precommit-check.py        — fast static (a few seconds, 19 checks, every commit)
+#   2. run-browser-smoke-gate.py — slow runtime (full smoke suite, then the mount oracle,
+#                                  before push/release; can be wired into CI)
 #   3. Manual [Run tests]        — final visual confirmation in any real
 #                                  browser tab the user trusts
 #
@@ -41,6 +41,12 @@
 #   4 could not own the port, or the served app is not this worktree's file
 #   5 source-comment probe polarity mismatch (wrong build for this harness)
 #   6 an uncaught page exception occurred during the run
+#   7 console output deviates from the expected baseline (unlisted message, or more of a
+#     listed one than it allows — see _CONSOLE_BASELINE)
+#   8 the mount oracle failed: for some fixture, the GML the Builder writes after opening every
+#     feature differs from the GML of the import candidate the import report measured, opening
+#     a feature changed its own GML (the per-mount sentinel), or a fixture could not be run —
+#     see MOUNT_ORACLE_JS
 #
 # DEPENDENCIES (one-time setup)
 # -----------------------------
@@ -121,9 +127,22 @@ def _start_http_server(port: int, serve_root: str = REPO_ROOT):
 # "Suite containment (state)" lock can detect any test that mutates user state without a
 # full restore. Module-level so the end-user-bundle verify (build-end-user-version.py)
 # reuses the exact same seed instead of a drifting copy.
+#
+# The mounted sentinel beacon carries ONE CHILD OF EVERY COMPONENT FAMILY the generator's
+# shorthand synthesizer consults before reconstructing a referenced child (its has(type)
+# guard: Topmark, LightAllAround / LightSectored, FogSignal, RadarTransponderBeacon,
+# RadarReflector — grep `const has=` in _synthesizeShorthandComponents). generateGML reads
+# the global compStack as the emitted feature's own components, so a suite lock that emits a
+# parsed fixture WITHOUT isolating that stack reports the mounted children instead of the
+# fixture's — exactly what a user with a real dataset loaded sees ("4 of N FAILED" on the
+# round-trip reconstruct locks), and what a Topmark-only sentinel could never show. With
+# every family mounted, any such bare emit goes red here. SEED_FAMILIES below is asserted
+# on the live stack after seeding, so the seed cannot silently lose a family (e.g. if the
+# import fold stopped folding one of them).
+SEED_FAMILIES = ("Topmark", "LightAllAround", "FogSignal", "RadarTransponderBeacon", "RadarReflector")
 SENTINEL_SEED_JS = """(() => {
   const pt = '<geometry><S100:pointProperty><S100:Point gml:id="P.SEN.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.1000000 2.2000000</gml:pos></S100:Point></S100:pointProperty></geometry>';
-  const sentinel = '<?xml version="1.0" encoding="UTF-8"?>\\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.SEN">\\n<members>\\n<LateralBeacon gml:id="SEN.001"><featureName><name>Sentinel Alfa</name></featureName><AtoNNumber>0900</AtoNNumber><child xlink:href="#SEN.002"/><colour>Red</colour><beaconShape>Pile Beacon</beaconShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark>' + pt + '</LateralBeacon>\\n<Topmark gml:id="SEN.002"><parent xlink:href="#SEN.001"/><colour>Red</colour><topmarkDaymarkShape>Cylinder</topmarkDaymarkShape><verticalLength>0.6</verticalLength>' + pt.replace(/SEN\\.001/g, 'SEN.002') + '</Topmark>\\n</members></Dataset>';
+  const sentinel = '<?xml version="1.0" encoding="UTF-8"?>\\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.SEN">\\n<members>\\n<LateralBeacon gml:id="SEN.001"><featureName><name>Sentinel Alfa</name></featureName><AtoNNumber>0900</AtoNNumber><child xlink:href="#SEN.002"/><child xlink:href="#SEN.003"/><child xlink:href="#SEN.004"/><child xlink:href="#SEN.005"/><child xlink:href="#SEN.006"/><colour>Red</colour><beaconShape>Pile Beacon</beaconShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark>' + pt + '</LateralBeacon>\\n<Topmark gml:id="SEN.002"><parent xlink:href="#SEN.001"/><colour>Red</colour><topmarkDaymarkShape>Cylinder</topmarkDaymarkShape><verticalLength>0.6</verticalLength>' + pt.replace(/SEN\\.001/g, 'SEN.002') + '</Topmark>\\n<LightAllAround gml:id="SEN.003"><parent xlink:href="#SEN.001"/><colour>Green</colour><rhythmOfLight><lightCharacteristic>Morse</lightCharacteristic><signalGroup>A</signalGroup></rhythmOfLight><signalPeriod>8</signalPeriod>' + pt.replace(/SEN\\.001/g, 'SEN.003') + '</LightAllAround>\\n<FogSignal gml:id="SEN.004"><parent xlink:href="#SEN.001"/><categoryOfFogSignal>Horn</categoryOfFogSignal><signalPeriod>30</signalPeriod><status>Permanent</status>' + pt.replace(/SEN\\.001/g, 'SEN.004') + '</FogSignal>\\n<RadarTransponderBeacon gml:id="SEN.005"><parent xlink:href="#SEN.001"/><categoryOfRadarTransponderBeacon>Racon, Radar Transponder Beacon</categoryOfRadarTransponderBeacon><signalGroup>(B)</signalGroup>' + pt.replace(/SEN\\.001/g, 'SEN.005') + '</RadarTransponderBeacon>\\n<RadarReflector gml:id="SEN.006"><parent xlink:href="#SEN.001"/><height>3</height>' + pt.replace(/SEN\\.001/g, 'SEN.006') + '</RadarReflector>\\n</members></Dataset>';
   const gi = document.getElementById('gmlIn');
   gi.value = sentinel;
   const oc = window.confirm, oa = window.alert;
@@ -131,22 +150,188 @@ SENTINEL_SEED_JS = """(() => {
     window.confirm = () => true; window.alert = () => {};
     builderImportFromDrawing();
   } finally { window.confirm = oc; window.alert = oa; }
-  // Force the colour-surface MISMATCH: the import mounts a coloured feature and sets
-  // _colourUserSet=true (matched); a user sitting on an auto-prefilled coloured mark is instead at
+  // Force the colour-surface MISMATCH: the import mounts a feature and _swapBuilderToFeat sets
+  // _colourUserSet=true; a user sitting on an auto-prefilled coloured mark is instead at
   // _colourUserSet=false with a coloured feature. Seeding false makes the containment lock exercise the
-  // _swapBuilderToFeat colour re-derive, so a leaking teardown (or a broken _restoreColourSurface)
-  // goes red instead of hiding behind the matched start.
+  // swap's flag write, so a leaking teardown (or a broken _restoreColourSurface) goes red instead of
+  // hiding behind the matched start.
   _colourUserSet = false;
   document.getElementById('valIn').value = sentinel;
-  // Leave `_colourUserSet` at its LEAK-REVEALING value. The import above sets it true (the imported
-  // beacon carries <colour>Red</colour>), and the containment lock compares end-of-run against
-  // start-of-run — so a start of `true` can never observe a false->true leak. That is exactly what hid
-  // the leak this seed was written to catch: a pristine page starts false, the restorative
-  // `_swapBuilderToFeat` in each test's finally recomputes it to true from the mounted feat's colours,
+  // Leave `_colourUserSet` at its LEAK-REVEALING value. The import above sets it true (every mount
+  // does), and the containment lock compares end-of-run against start-of-run — so a start of `true`
+  // can never observe a false->true leak. That is exactly what hid the leak this seed was written to
+  // catch: a pristine page starts false, the restorative `_swapBuilderToFeat` in each test's finally
+  // sets it to true,
   // and the gate saw nothing while a real user clicking "Run tests" got a red containment banner.
   // The seeded FEATURE state (the reason this sentinel exists) is untouched by this reset.
   _colourUserSet = false;
 })()"""
+
+
+# The mount oracle, run after the suite. The import report (_importFidelityReport) compares a file with the GML of the
+# import candidate; the user then works in the Builder, whose output is what the Builder writes after it has opened
+# the features. The two must be the same document, or the report describes a file the user never gets: opening a
+# feature must change nothing in it (control custody, _bldKeep). The suite's locks hold that for chosen cases; the
+# oracle holds it for every feature of every fixture, through the real import path (_importGMLTextToBuilder, whose
+# report call is wrapped only to read the candidate it measured) and the real pill path (builderSelectFeat), opening
+# every feature in document order and then again in the other order (the output must not depend on it). It also
+# reads the per-mount sentinel's log (_bldSentinelLog), which names a feature whose own GML changed when it was opened.
+# The fixtures are fc_kitchen.fixtures() (every FC type with every bound attribute, in five lexical forms, plus the
+# edge, legacy-inline and colour-less-rhythm cases), the four bundled examples (exGML) and dev/sample-data/*.gml*.
+# A sample file that is not well-formed XML is refused by the import and reported as not run; a generated fixture or a
+# bundled example the import refuses, for any reason, fails.
+MOUNT_ORACLE_TIMEOUT_S = 240
+MOUNT_ORACLE_JS = r"""async (fixtures) => {
+  const GMLNS = "http://www.opengis.net/gml/3.2";
+  const out = { fixtures: [], warns: 0 };
+  const members = xml => {
+    const d = new DOMParser().parseFromString(xml, "application/xml");
+    if (d.getElementsByTagName("parsererror").length) return null;
+    const m = new Map(), hdr = [];
+    for (const c of Array.from(d.documentElement.children)) {
+      if (c.localName === "members" || c.localName === "imember") {
+        const list = c.localName === "members" ? Array.from(c.children) : [c.firstElementChild].filter(Boolean);
+        list.forEach((e, i) => m.set(e.getAttributeNS(GMLNS, "id") || ("(no id #" + i + ")"), e));
+      } else hdr.push(c);
+    }
+    return { m, hdr };
+  };
+  const leaves = el => { const L = []; const walk = (e, p) => { const kids = Array.from(e.children);
+      const at = Array.from(e.attributes).filter(a => !(a.localName === "id" && a.namespaceURI === GMLNS)).map(a => a.name + "=" + a.value).join(",");
+      if (!kids.length) { L.push(p + "=" + (e.textContent || "").trim() + (at ? " [" + at + "]" : "")); return; }
+      kids.forEach(c => walk(c, p + "/" + c.localName)); };
+    walk(el, el.localName); return L; };
+  const msDiff = (a, b) => { const n = new Map(); a.forEach(x => n.set(x, (n.get(x) || 0) + 1)); b.forEach(x => n.set(x, (n.get(x) || 0) - 1));
+    const lost = [], gained = []; for (const [x, k] of n) { for (let i = 0; i < k; i++) lost.push(x); for (let i = 0; i < -k; i++) gained.push(x); } return { lost, gained }; };
+  const diffDocs = (A, B) => {
+    const a = members(A), b = members(B);
+    if (!a || !b) return { fatal: (!a ? "the candidate's GML" : "the Builder's GML") + " is not well-formed" };
+    const r = { members: [], onlyCandidate: [], onlyBuilder: [], header: null };
+    for (const [id, e] of a.m) { const f = b.m.get(id); if (!f) { r.onlyCandidate.push(id + " (" + e.localName + ")"); continue; }
+      if (e.outerHTML !== f.outerHTML) { const d = msDiff(leaves(e), leaves(f)); r.members.push({ id, ft: e.localName, lost: d.lost.slice(0, 4), gained: d.gained.slice(0, 4), orderOnly: !d.lost.length && !d.gained.length }); } }
+    for (const [id, f] of b.m) if (!a.m.has(id)) r.onlyBuilder.push(id + " (" + f.localName + ")");
+    const hd = msDiff(a.hdr.map(leaves).flat(), b.hdr.map(leaves).flat());
+    if (hd.lost.length || hd.gained.length) r.header = { lost: hd.lost.slice(0, 4), gained: hd.gained.slice(0, 4) };
+    r.nMembers = r.members.length; r.members = r.members.slice(0, 5);
+    return r;
+  };
+  const all = fixtures.concat(exGML.map((t, i) => ({ name: "exGML[" + i + "]", text: t, must: true })));
+  const oc = window.confirm, oa = window.alert, ow = console.warn, oF = _importFidelityReport;
+  let alerts = [], cap = null;
+  window.confirm = () => true;
+  window.alert = m => { alerts.push(String(m)); };
+  console.warn = () => { out.warns++; };
+  _importFidelityReport = function (txt, loadable, cand) {
+    const rep = oF.apply(this, arguments);
+    try { cap = { text: String(generateAllGML(cand)) }; } catch (e) { cap = { error: String((e && e.message) || e) }; }
+    return rep;
+  };
+  try {
+    for (const fx of all) {
+      const r = { name: fx.name };
+      alerts = []; cap = null;
+      try {
+        const s0 = _bldSentinelLog.length, t0 = performance.now();
+        const ok = _importGMLTextToBuilder(fx.text, { fixWhere: "in the fixture", cancelHint: "", keepNote: "", receiptTail: "", heldWhere: "the fixture" });
+        if (!ok) {
+          const a = alerts[0] || "no message";
+          if (/not well-formed/.test(a) && !fx.must) r.notRun = "the import refuses it: not well-formed XML";
+          else r.error = "the import refused it: " + a.slice(0, 200);
+          out.fixtures.push(r); continue;
+        }
+        if (!cap || cap.error) { r.error = "the import candidate could not be read" + (cap ? ": " + cap.error : " (the report was not made)"); out.fixtures.push(r); continue; }
+        for (let i = 1; i < builderFeats.length; i++) builderSelectFeat(i);
+        builderUp();
+        const mounted = String(generateAllGML(builderFeats));
+        r.features = builderFeats.length;
+        r.ms = Math.round(performance.now() - t0);
+        r.same = mounted === cap.text;
+        if (!r.same) r.diff = diffDocs(cap.text, mounted);
+        /* and again in the other order: what the Builder writes does not depend on the order the features are opened in */
+        if (r.same && builderFeats.length > 1) {
+          for (let i = builderFeats.length - 2; i >= 0; i--) builderSelectFeat(i);
+          builderUp();
+          const again = String(generateAllGML(builderFeats));
+          if (again !== cap.text) { r.same = false; r.reversed = true; r.diff = diffDocs(cap.text, again); }
+        }
+        const sent = _bldSentinelLog.slice(s0);
+        if (sent.length) r.sentinel = { n: sent.length, first: sent.slice(0, 3) };
+      } catch (e) { r.error = String((e && e.stack) || e).slice(0, 600); }
+      out.fixtures.push(r);
+    }
+  } finally {
+    window.confirm = oc; window.alert = oa; console.warn = ow; _importFidelityReport = oF;
+  }
+  return out;
+}"""
+
+
+def _oracle_fixtures() -> tuple[list[dict], list[str]]:
+    """The mount oracle's fixtures (the page adds exGML) and the notes on what could not be included.
+
+    The FC kitchen needs the FC XML, which the public snapshot does not ship (dev/spec-sources holds only its
+    MANIFEST.md there): without it the kitchen is left out and a note says so; the other fixtures still run."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, here)
+    try:
+        import fc_kitchen
+    finally:
+        sys.path.pop(0)
+    notes: list[str] = []
+    fx: list[dict] = []
+    if os.path.exists(fc_kitchen.FC_XML):
+        fx += [{"name": n, "text": t, "must": True} for n, t in fc_kitchen.fixtures()]
+    else:
+        notes.append("the FC kitchen fixtures were not built: the FC XML is not in this tree (" + os.path.relpath(fc_kitchen.FC_XML, REPO_ROOT) + ")")
+        fx += [{"name": n, "text": f(), "must": True} for n, f in fc_kitchen.EDGE_FIXTURES]
+    sd = os.path.join(REPO_ROOT, "dev", "sample-data")
+    for fn in sorted(os.listdir(sd)) if os.path.isdir(sd) else []:
+        if fn.endswith(".gml") or fn.endswith(".gml.xml"):
+            with open(os.path.join(sd, fn), encoding="utf-8") as f:
+                fx.append({"name": "dev/sample-data/" + fn, "text": f.read(), "must": False})
+    return fx, notes
+
+
+def _report_oracle(oracle: dict, notes: list[str]) -> bool:
+    """Print the oracle's outcome (stderr, so --json stdout stays JSON); True when it passed."""
+    fx = oracle.get("fixtures") or []
+    bad = [r for r in fx if r.get("error") or r.get("same") is False or r.get("sentinel")]
+    run = [r for r in fx if "same" in r]
+    for n in notes:
+        print(f"[note] mount oracle: {n}", file=sys.stderr)
+    for r in fx:
+        if r.get("notRun"):
+            print(f"[note] mount oracle: {r['name']} not run — {r['notRun']}", file=sys.stderr)
+    for r in bad:
+        print(f"[X] mount oracle: {r['name']}" + (" (after opening the features again, in the other order)" if r.get("reversed") else ""), file=sys.stderr)
+        if r.get("error"):
+            print(f"    {r['error']}", file=sys.stderr)
+        d = r.get("diff") or {}
+        if d.get("fatal"):
+            print(f"    {d['fatal']}", file=sys.stderr)
+        for m in d.get("members", []):
+            what = "the order of its elements" if m.get("orderOnly") else (
+                ("lost " + " | ".join(m["lost"]) if m["lost"] else "") + ("; " if m["lost"] and m["gained"] else "")
+                + ("gained " + " | ".join(m["gained"]) if m["gained"] else ""))
+            print(f"    {m['id']} ({m['ft']}): {what}", file=sys.stderr)
+        if d.get("nMembers", 0) > len(d.get("members", [])):
+            print(f"    … and {d['nMembers'] - len(d['members'])} more feature(s) that differ", file=sys.stderr)
+        for k, label in (("onlyCandidate", "only in the candidate"), ("onlyBuilder", "only in the Builder's output")):
+            if d.get(k):
+                print(f"    {label}: {', '.join(d[k][:6])}", file=sys.stderr)
+        if d.get("header"):
+            print(f"    dataset header: lost {d['header']['lost']} gained {d['header']['gained']}", file=sys.stderr)
+        s = r.get("sentinel")
+        if s:
+            print(f"    opening a feature changed its own GML {s['n']} time(s); first: {json.dumps(s['first'])[:400]}", file=sys.stderr)
+    if bad:
+        print(f"[X] mount oracle: {len(bad)} of {len(fx)} fixture(s) failed — the Builder does not write what the import "
+              "report measured.", file=sys.stderr)
+        return False
+    feats = sum(r.get("features", 0) for r in run)
+    print(f"[OK] mount oracle: {len(run)} fixture(s), {feats} feature(s) opened — the Builder writes the import "
+          "candidate's GML, and no opening changed a feature.", file=sys.stderr)
+    return True
 
 
 async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) -> tuple[int, list[dict]]:
@@ -222,6 +407,8 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
         page.on("console", _on_console)
         page.on("pageerror", _on_pageerror)
 
+        stage = "suite"
+        results: list[dict] = []
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
             # Wait for the inline script to define runSmokeTests
@@ -234,6 +421,20 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             # LateralBeacon (NATO-phonetic name, synthetic coords) imported through the REAL
             # strict-gated import path, plus sentinel textarea texts.
             await page.evaluate(SENTINEL_SEED_JS)
+            # The seed's whole point (see SEED_FAMILIES) is the composition of the mounted
+            # stack: prove it before trusting a green suite.
+            mounted = await page.evaluate("(compStack || []).map(c => c && c.type)")
+            missing = [f for f in SEED_FAMILIES if f not in (mounted or [])]
+            if missing:
+                await browser.close()
+                print(
+                    "[FAIL] sentinel seed: the mounted stack lacks "
+                    + ", ".join(missing)
+                    + f" (got {mounted}) — the suite would run without the family a bare fixture "
+                    "emit leaks, and this gate would be blind to it again.",
+                    file=sys.stderr,
+                )
+                return 5, []
             # Pin the source-comment probe polarity BEFORE trusting the suite outcome: with the
             # wrong polarity the comment-anchored lints either false-fail (stripped build under
             # the dev expectation) or silently skip (dev build under the stripped expectation).
@@ -261,12 +462,24 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
                 page.evaluate("(async () => await runSmokeTests())()"),
                 timeout=180,
             )
+            # Then the mount oracle (see MOUNT_ORACLE_JS), on the same page: it replaces the Builder's
+            # dataset, so it runs after the suite has restored the seeded workspace, never before.
+            stage = "oracle"
+            oracle_fx, oracle_notes = _oracle_fixtures()
+            oracle = await asyncio.wait_for(
+                page.evaluate(MOUNT_ORACLE_JS, oracle_fx),
+                timeout=MOUNT_ORACLE_TIMEOUT_S,
+            )
         except Exception as e:
             await browser.close()
             # asyncio.TimeoutError IS TimeoutError on 3.11+, and str() of it is EMPTY — the
             # bounded-evaluate path would otherwise print "[FAIL] Playwright error: " with no
             # reason at all, on the one path where the operator has no results to fall back on.
-            if isinstance(e, asyncio.TimeoutError):
+            if isinstance(e, asyncio.TimeoutError) and stage == "oracle":
+                reason = (
+                    f"the mount oracle did not settle within {MOUNT_ORACLE_TIMEOUT_S}s (bounded page.evaluate)"
+                )
+            elif isinstance(e, asyncio.TimeoutError):
                 reason = (
                     "the smoke suite did not settle within 180s (bounded page.evaluate) — "
                     "an await inside runSmokeTests never resolved"
@@ -278,7 +491,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             # diagnostic (results is empty, so _format_results never runs), which is exactly
             # where truncation hurt most.
             _report_page_messages(console_errors)
-            return 3, []
+            return 3, results
         await browser.close()
 
     # Surface console/page messages on EVERY run (not just --verbose): a pageerror
@@ -297,7 +510,104 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
         )
         return 6, results
 
+    unexpected, over = _console_baseline_breaches(console_errors)
+    if unexpected or over:
+        print(
+            "[X] console output deviates from the expected baseline — a green suite cannot be "
+            "trusted alongside output nobody has accounted for.",
+            file=sys.stderr,
+        )
+        for label, seen, cap in over:
+            print(f"    over baseline: {label} — {seen} occurrence(s), baseline allows {cap}", file=sys.stderr)
+        for e in unexpected[:10]:
+            loc = f"  at {e['location']}" if e.get("location") else ""
+            print(f"    unlisted [{e['type']}] {e['text'][:150]}{loc}", file=sys.stderr)
+        if len(unexpected) > 10:
+            print(f"    … and {len(unexpected) - 10} more unlisted message(s)", file=sys.stderr)
+        print(
+            "    If the message is benign, add it to _CONSOLE_BASELINE in this file WITH the reason "
+            "it is expected. Do not widen a count to make a real regression fit.",
+            file=sys.stderr,
+        )
+        return 7, results
+
+    if not _report_oracle(oracle, oracle_notes):
+        return 8, results
     return 0, results
+
+
+# Expected console output, and nothing else. Before this existed the gate blocked only on
+# `pageerror`, and `_report_page_messages` groups by message TEXT — so the app's own Rule-25
+# alarm ("validation modified the validator textarea"), which one smoke invariant emits
+# DELIBERATELY to prove the sentinel works, made a REAL breach invisible: a second occurrence
+# only bumped the printed count from (x1) to (x2) and the gate still exited 0. Each entry
+# carries the reason it is expected; an unlisted message, or more of a listed one than the
+# baseline allows, now blocks with exit 7.
+#
+# `cap` is an upper bound, not a pin. Where a count is environment-sensitive the bound is wide
+# and says so; where it is exact (the deliberate emission) it is exact, because that exactness
+# is the whole point.
+_CONSOLE_BASELINE = [
+    (
+        "meta-CSP frame-ancestors note",
+        lambda e: "frame-ancestors" in e["text"],
+        2,
+        "Chromium reports that `frame-ancestors` cannot be enforced from a <meta> CSP. The app "
+        "ships its policy that way deliberately — it is a static file with no server to set a "
+        "header — so the directive is inert by design, not misconfigured.",
+    ),
+    (
+        "Annex D symbol fetch failures (known open defect PORT-1)",
+        lambda e: "Annex_D/Symbols/" in (e.get("location") or "")
+        or ("Failed to load resource" in e["text"] and "Annex_D" in (e.get("location") or "")),
+        0,
+        "PORT-1 has landed: loadSymbol now acquires one of SYMBOL_LANES before fetching, so the "
+        "app never holds more symbol requests open than a browser would issue per origin anyway "
+        "and this single-threaded server no longer sheds connections. The entry is KEPT at 0 "
+        "rather than deleted so the expectation is stated where the next operator will look: a "
+        "recurrence reports as 'over baseline: … 1 occurrence, baseline allows 0', which names "
+        "the defect, instead of an anonymous 'unlisted message'. Measured before the fix: 1701 "
+        "in a single run. Do not raise this to make a regression fit.",
+    ),
+    (
+        "deliberate Rule-25 invariant-breach emission",
+        lambda e: "invariant breach" in e["text"] and "validator textarea" in e["text"],
+        1,
+        "The data-custody invariant monkey-patches renderAllVal to corrupt valIn mid-run and "
+        "asserts the sentinel restores it verbatim and banners. EXACTLY ONE is expected. A second "
+        "occurrence is a REAL custody breach — that is precisely what this baseline exists to "
+        "surface, so this cap must not be raised.",
+    ),
+]
+
+
+def _console_baseline_breaches(msgs: list[dict]):
+    """Split console output into (unlisted messages, listed-but-over-cap entries).
+
+    `pageerror` entries are excluded: they have their own blocking arm above and would
+    otherwise be reported twice.
+    """
+    counts: dict[str, int] = {}
+    unexpected: list[dict] = []
+    for e in msgs:
+        if e.get("kind") == "pageerror":
+            continue
+        for label, matcher, _cap, _why in _CONSOLE_BASELINE:
+            try:
+                hit = matcher(e)
+            except Exception:
+                hit = False
+            if hit:
+                counts[label] = counts.get(label, 0) + 1
+                break
+        else:
+            unexpected.append(e)
+    over = [
+        (label, counts[label], cap)
+        for label, _m, cap, _w in _CONSOLE_BASELINE
+        if counts.get(label, 0) > cap
+    ]
+    return unexpected, over
 
 
 def _report_page_messages(msgs: list[dict], stream=None) -> None:
@@ -501,7 +811,8 @@ def main() -> int:
 
         exit_code, results = asyncio.run(_run_gate(port, args.verbose))
         if exit_code != 0:
-            # Exit 6 (uncaught page exception) still carries a fully populated results list.
+            # Exits 6, 7 and 8 (a page exception, the console baseline, the mount oracle) still carry a
+            # fully populated results list, and so does exit 3 when only the oracle timed out.
             # Returning here discarded it, so the operator was told "a page error invalidates
             # this run" with no way to see WHICH invariants had failed alongside it — often the
             # fastest route to the cause. Print what we have, then keep the blocking exit code.
@@ -513,7 +824,7 @@ def main() -> int:
                     print(txt)
                     print(
                         "[note] the suite outcome above is reported for diagnosis only — the "
-                        "gate still fails on the page-level error reported above.",
+                        "gate still fails on the failure reported above.",
                         file=sys.stderr,
                     )
             return exit_code
