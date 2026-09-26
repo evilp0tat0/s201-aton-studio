@@ -123,7 +123,7 @@ is dev/HANDOFF.md § 11 "Specification document index")
      ENC-* cross-checks; :102 / :130 / :98 are other products. No IHO
      validation-checks package specifically for S-201 exists yet (no
      S-158:201; the corpus will be cross-referenced when one is published).
-     Our 258-rule validator (206 per-feature + 25 GML structural + 27 exchange-set, current as of pass 731 / v1.26.2) is the first
+     Our 258-rule validator (206 per-feature + 25 GML structural + 27 exchange-set, current as of pass 732 / v1.26.3) is the first
      validation implementation specifically for S-201.
   OGC and W3C (the substrate)
   15. OGC GML 3.2 schemas — the authority for every gml: element we emit
@@ -308,7 +308,7 @@ KEY ARCHITECTURAL CONVENTIONS (per S-100 5.2.0 Part 10b + production data)
 
 VERSION
 ────────────────────────────────────────────────────────────────────────────────
-See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 1.26.2. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
+See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 1.26.3. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
 ================================================================================
 -->
 <html lang="en">
@@ -1665,7 +1665,7 @@ python3 -m http.server 8080
 </div>
 <script>
 /* ════════════════════════════════════════════════════════════════════════ APP VERSION — S-201 AtoN Studio semver ════════════════════════════════════════════════════════════════════════ Format: MAJOR.MINOR.PATCH (semantic versioning per https://semver.org). Bump rules: • MAJOR — Breaking change to GML output format that prior consumers could not parse (root element rename, namespace URI change, element removal). Reserved for substantial milestones. • MINOR — Added a new validator rule, a new feature type in ATYPES, a new UI feature, or a new attribute in the GML output (additive change that prior consumers can ignore). • PATCH — Bug fixes, comment improvements, doc refreshes, refactors that don't change observable behaviour. Track scheme: ONE track — plain semver continues from this constant, and a `-beta` pre-release suffix (semver.org §9) may mark work-in-progress between public release tags. ⚠️ Bump the version on every change. The user has explicitly required this. Even a comment-only change is at minimum a PATCH bump. The badge in the topbar, the generated GML `<!-- comment -->`, the CHANGELOG entry, and the HANDOFF Live State line all reference this constant. Bump checklist: 1. Update the const just below this comment. 2. Update the `Current:` line in the HTML preface (grep `Current:` — precommit check 1 and the self-test both compare it with this constant). 3. Add a per-pass entry at the top of dev/CHANGELOG.md in the development repository (not shipped in the public snapshot; Rule 21: facts only — that file IS the canonical log). 4. Update the Live State row in dev/HANDOFF.md. 5. The topbar version badge + generated-GML watermark auto-update from APP_VERSION (no manual sync needed). Per-pass history lives in dev/CHANGELOG.md. This file intentionally does NOT carry version history — the canonical log is one place. `No comment without spec citation` policy: This file is the entire app. There is no separate documentation generator, no test suite outside the inline smoke tests, no type system. The comments + the docs in dev/ are the only thing keeping this codebase maintainable. Every fix is justified by a spec reference — re-read the comments before changing anything. ════════════════════════════════════════════════════════════════════════ */
-const APP_VERSION = "1.26.2";
+const APP_VERSION = "1.26.3";
 
 /* ════════════════════════════════════════════════════════════════════════ FOUNDATIONAL_RULES — (Rule 19) machine-readable in-app projection of the foundational engineering rules. The CANONICAL machine-readable form lives at `dev/foundational-rules.json` . This in-app constant is the same data, embedded here for sync access (smoke tests can't await fetch). Both surfaces MUST agree on number / name / theme + entry count (the smoke gate verifies the count + entry shape every run); the in-app `summary` is an abbreviated SHORT-FORM of the JSON `summary` — the canonical full text lives in dev/foundational-rules.json + the HANDOFF prose, so the two summary texts intentionally differ in length and are NOT gate-compared (Rule 23: do not assert byte-identity that isn't enforced). Authoring direction: HANDOFF.md prose sections are the source of truth. When adding a new foundational rule: 1. Write the section in HANDOFF.md. 2. Append the entry to dev/foundational-rules.json. 3. Append the entry to FOUNDATIONAL_RULES below (same number/name/theme as the JSON; a short-form summary is fine). 4. Bump the smoke test's expected length from N to N+1 (grep `FOUNDATIONAL_RULES.length!==`) AND its 1..N title/detail phrases in the same edit — the prose phrases are pre-commit-gated, the length literal is enforced by the suite itself at runtime, and the per-entry loop derives its bound from the array. ════════════════════════════════════════════════════════════════════════ */
 const FOUNDATIONAL_RULES = [
@@ -21897,27 +21897,87 @@ function _docSetNs(t,prefix,uri,uriPresent){
   return nf===r.full?null:t.replace(r.full,function(){return nf;});
 }
 /* Prolog keeper for every whole-document DOMParser→XMLSerializer rewrite (quick fixes + the DOM-based doc fixes).
-   The XML declaration (W3C XML 1.0 §2.8 Prolog) is NOT a node in the parsed DOM tree, so serializeToString(doc)
-   emits the document WITHOUT it — a fix write-back that replaced the textarea wholesale would strip the
-   user's declaration and re-raise GML-STR-02 on text that was conformant before the fix. Every
-   serializer write-back routes through here: re-carries the input's own declaration verbatim (its encoding/version
-   attrs are the user's data — not rewritten; GML-STR-03 owns encoding conformance). Returns the serialized text
-   unchanged when the input had no declaration (nothing to preserve — GML-STR-02 was already open) or when a
-   serializer ever emits one itself (never double-prepend). */
+   The XML declaration (W3C XML 1.0 §2.8 Prolog) is NOT a node in the parsed DOM tree. What serializeToString(doc)
+   writes in its place is the engine's: Blink and Gecko both re-emit a declaration when the parsed document had one,
+   with the quotes normalised to double, Gecko with the encoding name upper-cased, and neither with the user's BOM;
+   a document that had none gets none. A fix write-back that replaced the textarea wholesale would therefore either
+   strip the user's declaration and re-raise GML-STR-02 on text that was conformant before the fix, or hand back
+   the engine's spelling of it. Every serializer write-back routes through here: the input's own declaration is
+   re-carried verbatim (its encoding/version attrs are the user's data — not rewritten; GML-STR-03 owns encoding
+   conformance), in place of the serializer's when it wrote one, in front of the text when it did not. Returns the
+   serialized text unchanged when the input had no declaration (nothing to preserve — GML-STR-02 was already open). */
 /* The quick fixes re-serialise the parsed text. XMLSerializer writes a carriage return in text as it is, and the next
    parse reads it back as a line feed (W3C XML 1.0 §2.11, end-of-line handling); a carriage return a parsed document
-   holds can only have come from a character reference, so it is written as one again. */
-function _serializeXml(doc){return new XMLSerializer().serializeToString(doc).replace(/\r/g,"&#13;");}
+   holds can only have come from a character reference, so it is written as one again — inside the document element
+   only. Gecko writes a platform line break (CRLF on Windows) after every document-level node it serialises: the
+   declaration, each prolog comment, PI or DOCTYPE, and the root element before each epilog comment or PI. A character
+   reference is admitted only in element content and attribute values (W3C XML 1.0 5th ed. productions [43] content
+   and [10] AttValue; the grammar is not bundled, productions are cited by number); the prolog and the epilog take only
+   Misc — comments, PIs and whitespace ([1] document, [22] prolog, [27] Misc) — so an &#13; written there makes the
+   document ill-formed, which is what every quick fix and doc fix did in Firefox. A carriage return outside the root
+   is serializer whitespace (a parsed comment or PI holds none — §2.11 normalises them on input — and the document node
+   has no text children), so it is left as written: the textarea it goes to reads it back as a line feed, and so would
+   the next parse. A carriage return in an attribute value is already a reference in both engines (Blink &#13;, Gecko
+   &#xD;). */
+function _serializeXml(doc){
+  const s=new XMLSerializer().serializeToString(doc);
+  if(s.indexOf("\r")<0)return s;
+  const span=_xmlRootSpan(s);
+  return s.slice(0,span[0])+s.slice(span[0],span[1]).replace(/\r/g,"&#13;")+s.slice(span[1]);
+}
+/* _xmlRootSpan(s): [start, end) of the document element's markup in a serialized XML document. The prolog is walked
+   forward over whitespace, the declaration or a PI (`<?…?>`), a comment (`<!--…-->`) and a DOCTYPE — whose internal
+   subset may hold quoted literals, comments and PIs with `>` or `]` inside, each stepped over as a unit — and the
+   epilog backward over whitespace, comments and PIs: a comment's data holds no `--` and a PI's no `?>` ([15] Comment,
+   [16] PI), so a trailing `-->` whose nearest opener encloses a `--` is not a comment but the close of the root's own
+   end tag (a Name may end in `--`, [4] NameChar), and likewise for `?>`. A string in which no root element is found
+   is returned whole, which is the span the caller escaped before this helper existed. */
+function _xmlRootSpan(s){
+  const n=s.length;let i=0;
+  for(;;){
+    while(i<n&&/\s/.test(s[i]))i++;
+    if(s.startsWith("<?",i)){const j=s.indexOf("?>",i+2);if(j<0)return[0,n];i=j+2;continue;}
+    if(s.startsWith("<!--",i)){const j=s.indexOf("-->",i+4);if(j<0)return[0,n];i=j+3;continue;}
+    if(s.startsWith("<!DOCTYPE",i)){
+      let j=i+9,depth=0,done=false;
+      while(j<n){
+        const c=s[j];
+        if(c==='"'||c==="'"){const k=s.indexOf(c,j+1);if(k<0)return[0,n];j=k+1;continue;}
+        if(s.startsWith("<!--",j)){const k=s.indexOf("-->",j+4);if(k<0)return[0,n];j=k+3;continue;}
+        if(s.startsWith("<?",j)){const k=s.indexOf("?>",j+2);if(k<0)return[0,n];j=k+2;continue;}
+        if(c==="[")depth++;
+        else if(c==="]")depth--;
+        else if(c===">"&&depth===0){i=j+1;done=true;break;}
+        j++;
+      }
+      if(!done)return[0,n];
+      continue;
+    }
+    break;
+  }
+  if(i>=n||s[i]!=="<")return[0,n];
+  const start=i;let e=n;
+  for(;;){
+    while(e>start&&/\s/.test(s[e-1]))e--;
+    if(s.endsWith("-->",e)){const o=s.lastIndexOf("<!--",e-3);if(o>=start&&s.slice(o+4,e-3).indexOf("--")<0){e=o;continue;}}
+    if(s.endsWith("?>",e)){const o=s.lastIndexOf("<?",e-2);if(o>=start&&s.slice(o+2,e-2).indexOf("?>")<0){e=o;continue;}}
+    break;
+  }
+  return[start,e];
+}
 function _keepXmlProlog(orig,serialized){
   /* `<?xml` must be followed by whitespace to be THE declaration (XMLDecl ::= '<?xml' VersionInfo…, and
      VersionInfo starts with S per W3C XML 1.0 §2.8) — a bare /<\?xml/ would also match processing instructions
      whose target merely starts with "xml" (e.g. <?xml-stylesheet…?>, which XMLSerializer DOES emit as a real DOM
      node), wrongly concluding the serialized text still has a declaration. m[0] is re-carried VERBATIM (no trim):
-     any leading BOM/whitespace the user's file had is their data too. */
+     any leading BOM/whitespace the user's file had is their data too. A declaration the serializer wrote (the
+     engine's spelling of the parsed one — see the note above) is replaced by m[0] and what follows it is kept as
+     written; when the serializer wrote none, m[0] goes in front. */
   const m=String(orig||"").match(/^\s*<\?xml\s[^?]*\?>/);
   if(!m)return serialized;
-  if(/^\s*<\?xml\s/.test(serialized))return serialized;
-  return m[0]+"\n"+serialized;
+  const ss=String(serialized),sm=ss.match(/^\s*<\?xml\s[^?]*\?>/);
+  if(sm)return m[0]+ss.slice(sm[0].length);
+  return m[0]+"\n"+ss;
 }
 const _DOC_FIXES={
   "GML-STR-02":{label:"Insert the XML declaration",apply:function(t){
@@ -23815,6 +23875,22 @@ async function runSmokeTests(){
     _restoreColourSurface();   /* colour-surface harness containment (see the helper) */
     tests.push({name,category,passed,detail});
   };
+  /* _throwKey(e): a thrown error's class and, for a property read on null or undefined, the property and the kind of
+     value — the part of the message every engine states. The two index-vs-scan locks compare what one code path throws
+     with what another throws for the same corrupt input; Gecko names the expression it evaluated ("can't access
+     property \"gmlId\", x is null"), so two sites reading the same property of the same null word it differently, where
+     Blink ("Cannot read properties of null (reading 'gmlId')") and WebKit ("null is not an object (evaluating
+     'x.gmlId')") do not name x. Gecko's bare form ("x is null") keys on the kind alone. Any other message is kept whole:
+     it is the app's own, or engine-neutral. */
+  const _throwKey=e=>{
+    const name=e&&e.name?String(e.name):"Error",m=String(e&&e.message!==undefined?e.message:e);
+    let p=m.match(/^Cannot read properties of (null|undefined) \(reading '([^']*)'\)$/);if(p)return name+":"+p[1]+"."+p[2];
+    p=m.match(/^can't access property "([^"]*)", .* is (null|undefined)$/);if(p)return name+":"+p[2]+"."+p[1];
+    p=m.match(/^can't access property "([^"]*)" of (null|undefined)$/);if(p)return name+":"+p[2]+"."+p[1];   /* Gecko's form when it does not print the base expression (an element of a computed index inside a read scope) */
+    p=m.match(/^(null|undefined) is not an object \(evaluating '.*\.([^.']*)'\)$/);if(p)return name+":"+p[1]+"."+p[2];
+    p=m.match(/^.+ is (null|undefined)$/);if(p)return name+":"+p[1]+".?";
+    return name+":"+m;
+  };
 
   /* ── Standalone emit for a parsed FIXTURE ── generateGML reads the GLOBAL compStack as the emitted feature's own
      components (Rule 15: in the Builder the global mirrors the mounted feature), and _synthesizeShorthandComponents
@@ -24585,7 +24661,9 @@ async function runSmokeTests(){
     if(g24(noGeo)[0].pass!==true)return{pass:false,detail:"a member with no geometry child must pass trivially"};
     for(let i=0;i<exGML.length;i++)if(g24(exGML[i])[0].pass!==true)return{pass:false,detail:"bundled sample "+i+" must stay green under STR-24"};
     const fixed=_DOC_FIXES["GML-STR-24"].apply(bad);
-    if(!fixed||g24(fixed)[0].pass!==true)return{pass:false,detail:"quick-fix did not restore the schema order"};
+    const f24=fixed?g24(fixed):[];   /* no STR-24 verdict at all means the structural layer stopped at well-formedness — the output itself is broken, which is a different failure from a wrong order */
+    if(!fixed||!f24.length)return{pass:false,detail:"quick-fix output is not well-formed (no STR-24 verdict): "+JSON.stringify(String(fixed).slice(0,80))};
+    if(f24[0].pass!==true)return{pass:false,detail:"quick-fix did not restore the schema order"};
     if(fixed.indexOf("<visualProminence>Prominent</visualProminence>")===-1)return{pass:false,detail:"quick-fix lost the moved element's value"};
     if(_DOC_FIXES["GML-STR-24"].apply(good)!==null)return{pass:false,detail:"quick-fix must no-op (null) on an in-order document"};
     return{pass:true,detail:"verdicts both ways naming feature + element; repeated geometry + no-geometry members neutral; 4 bundled samples green; quick-fix moves the element back with its value intact and no-ops on clean input"};
@@ -30337,7 +30415,9 @@ async function runSmokeTests(){
        if(cat.indexOf("Alfa&#13;Bravo")<0)return{pass:false,detail:"a carriage return in the Exchange Set catalogue was not written as &#13;"};
        const two='<?xml version="1.0" encoding="UTF-8"?>\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" gml:id="DS.QF"><members><Pile gml:id="QF.1"><featureName><name>Alfa&#13;Bravo</name></featureName></Pile></members><members><Pile gml:id="QF.2"/></members></Dataset>';
        const fixed=_DOC_FIXES["GML-STR-13"].apply(two);
-       if(!fixed||fixed.indexOf("<name>Alfa&#13;Bravo</name>")<0)return{pass:false,detail:"a quick fix's re-serialisation wrote the carriage return raw: "+String(fixed).slice(0,300)};}
+       if(!fixed||fixed.indexOf("<name>Alfa&#13;Bravo</name>")<0)return{pass:false,detail:"a quick fix's re-serialisation wrote the carriage return raw: "+String(fixed).slice(0,300)};
+       /* the whole output, not the one substring: a reference the serializer path writes outside the root (Gecko's line break after the declaration, escaped) made the document ill-formed while this line stayed green */
+       if(new DOMParser().parseFromString(fixed,"application/xml").getElementsByTagName("parsererror").length||fixed.indexOf('<?xml version="1.0" encoding="UTF-8"?>')!==0)return{pass:false,detail:"a quick fix's re-serialisation is not well-formed or lost the user's declaration: "+JSON.stringify(fixed.slice(0,80))};}
       let threw=false;try{generateAllGML([]);}catch(e){threw=/no feature to write/.test(String(e&&e.message));}
       if(!threw)return{pass:false,detail:"generateAllGML([]) did not refuse the empty list"};
       return{pass:true,detail:"\".5\" → \"0.5\" in the candidate, the output and the receipt (1); &#13; kept both ways; an empty list refused"};
@@ -33702,9 +33782,59 @@ async function runSmokeTests(){
     if(n<2)return{pass:false,detail:"applyQuickFix serializer write-backs no longer route through _keepXmlProlog ("+n+"/2)"};
     const t13='<?xml version="1.0" encoding="UTF-8"?><Dataset xmlns="http://www.iho.int/S-201/gml/cs0/2.0" xmlns:gml="http://www.opengis.net/gml/3.2"><members><Topmark gml:id="a"/></members><members><Topmark gml:id="b"/></members></Dataset>';
     const out=_DOC_FIXES["GML-STR-13"].apply(t13);
-    if(!out||out.indexOf("<?xml")!==0)return{pass:false,detail:"GML-STR-13 merge fix dropped the XML declaration"};
+    if(!out||out.indexOf('<?xml version="1.0" encoding="UTF-8"?>')!==0)return{pass:false,detail:"GML-STR-13 merge fix dropped or rewrote the XML declaration: "+JSON.stringify(String(out).slice(0,60))};
+    if(new DOMParser().parseFromString(out,"application/xml").getElementsByTagName("parsererror").length)return{pass:false,detail:"GML-STR-13 merge fix output is not well-formed: "+JSON.stringify(out.slice(0,80))};   /* a reference escaped outside the root (Gecko's line break after the declaration) kept the substring checks green while the document was unusable */
     if((out.match(/<members>/g)||[]).length!==1)return{pass:false,detail:"merge fix did not merge the wrappers"};
     return{pass:true,detail:"prolog preserved: unit + both quick-fix write-backs + DOM doc fix"};
+  });
+  _t("_serializeXml escapes a carriage return only inside the document element: under a serializer that writes a line break after every document-level node (Gecko) the prolog and epilog keep their raw line breaks, the text's carriage return is written as &#13;, the document stays well-formed, and _keepXmlProlog puts the user's own declaration in place of the serializer's","data-custody",()=>{
+    const proto=XMLSerializer.prototype,real=proto.serializeToString;
+    /* the scanner's span is the root element's own serialization on every bundled sample (both engines serialize the root alike whole-document and standalone) */
+    for(let i=0;i<exGML.length;i++){
+      const d=new DOMParser().parseFromString(exGML[i],"application/xml");if(d.getElementsByTagName("parsererror").length)return{pass:false,detail:"exGML["+i+"] did not parse"};
+      const whole=real.call(new XMLSerializer(),d),sp=_xmlRootSpan(whole);
+      if(whole.slice(sp[0],sp[1])!==real.call(new XMLSerializer(),d.documentElement))return{pass:false,detail:"exGML["+i+"]: the root span "+sp.join("..")+" of "+whole.length+" is not the root element's serialization"};
+    }
+    /* span arithmetic on hand-built strings: a root whose name ends in --, an empty root, a DOCTYPE internal subset holding > and ] in a literal and a comment, a PI whose data holds -->, no root at all */
+    const t3='<?xml version="1.0"?>\r\n<!DOCTYPE A [<!ENTITY e "x>]"><!-- c > d ] -->]>\r\n<A>\r</A>\r\n<?p -->?>\r\n';
+    const spans=[['<!--p--><x--></x-->',[8,19]],['<A/>\r\n<!--e-->',[0,4]],[t3,[t3.indexOf("<A>"),t3.indexOf("</A>")+4]],['<!-- only -->',[0,13]],['',[0,0]]];
+    for(const[str,want]of spans){const got=_xmlRootSpan(str);if(got[0]!==want[0]||got[1]!==want[1])return{pass:false,detail:"span of "+JSON.stringify(str)+": "+got.join("..")+", expected "+want.join("..")};}
+    const gecko='<?xml version="1.0" encoding="UTF-8"?>\r\n<!--pro-->\r\n<?pi x?>\r\n<A a="x&#xD;y"><B>x\ry</B></A>\r\n<!-- epi -->\r\n<?pi2 y-->?>\r\n';
+    const want='<?xml version="1.0" encoding="UTF-8"?>\r\n<!--pro-->\r\n<?pi x?>\r\n<A a="x&#xD;y"><B>x&#13;y</B></A>\r\n<!-- epi -->\r\n<?pi2 y-->?>\r\n';
+    const decl="﻿<?xml version='1.0' encoding='utf-8'?>";
+    try{
+      proto.serializeToString=function(node){return node&&node.nodeType===9?gecko:real.call(this,node);};
+      const out=_serializeXml(new DOMParser().parseFromString("<A/>","application/xml"));
+      if(out!==want)return{pass:false,detail:"Gecko-shaped serialization escaped outside the root or missed the text: "+JSON.stringify(out)};
+      const kept=_keepXmlProlog(decl+"\n<A/>",out);
+      if(kept.indexOf(decl+"\r\n<!--pro-->")!==0)return{pass:false,detail:"the user's declaration (BOM, single quotes, lower-case encoding) did not replace the serializer's: "+JSON.stringify(kept.slice(0,60))};
+      if(kept.slice(decl.length)!==want.slice(want.indexOf("?>")+2))return{pass:false,detail:"the text after the declaration was not kept as written"};
+      const back=new DOMParser().parseFromString(kept,"application/xml");
+      if(back.getElementsByTagName("parsererror").length)return{pass:false,detail:"the re-carried document is not well-formed: "+back.documentElement.textContent.slice(0,120)};
+      const b=back.getElementsByTagName("B")[0];
+      if(!b||b.textContent!=="x\ry")return{pass:false,detail:"the text carriage return did not survive the round trip: "+JSON.stringify(b&&b.textContent)};
+      if(back.documentElement.getAttribute("a")!=="x\ry")return{pass:false,detail:"the attribute carriage return did not survive"};
+    }finally{proto.serializeToString=real;}
+    /* the real engine: a text carriage return is written as a reference and nothing else changes */
+    const d=new DOMParser().parseFromString('<?xml version="1.0"?><!--c--><A>x&#13;y</A><!--e-->',"application/xml");
+    const s=_serializeXml(d),raw=real.call(new XMLSerializer(),d);
+    if(s.replace(/&#13;/g,"\r")!==raw||s.indexOf("<A>x&#13;y</A>")<0)return{pass:false,detail:"real serializer: "+JSON.stringify(s)};
+    return{pass:true,detail:"root span equals the root's own serialization on every bundled sample; Gecko-shaped output re-carried well-formed with &#13; in text and raw line breaks outside the root; the user's declaration replaces the serializer's"};
+  });
+  _t("_throwKey names a thrown error by its class and, for a property read on null or undefined, by the property and the value's kind — one key for the three engines' sentences and for two sites reading the same property, a different key for a different property or kind, any other message kept whole","harness",()=>{
+    const blink=new TypeError("Cannot read properties of null (reading 'gmlId')"),gecko=new TypeError("can't access property \"gmlId\", x is null"),gecko2=new TypeError("can't access property \"gmlId\", lastValAll[idx] is null"),gecko3=new TypeError("can't access property \"gmlId\" of null"),webkit=new TypeError("null is not an object (evaluating 'x.gmlId')");
+    const k=_throwKey(blink);
+    if(k!=="TypeError:null.gmlId")return{pass:false,detail:"Blink sentence: "+k};
+    if(_throwKey(gecko)!==k||_throwKey(gecko2)!==k||_throwKey(gecko3)!==k||_throwKey(webkit)!==k)return{pass:false,detail:"the engines' sentences for one read do not share a key: "+[_throwKey(gecko),_throwKey(gecko2),_throwKey(gecko3),_throwKey(webkit)].join(" | ")};
+    if(_throwKey(new TypeError("Cannot read properties of null (reading 'light')"))===k)return{pass:false,detail:"a different property shares the key"};
+    if(_throwKey(new TypeError("Cannot read properties of undefined (reading 'gmlId')"))===k)return{pass:false,detail:"undefined and null share the key"};
+    if(_throwKey(new TypeError("can't access property \"gmlId\", x is undefined"))!==_throwKey(new TypeError("Cannot read properties of undefined (reading 'gmlId')")))return{pass:false,detail:"the undefined kind is not shared across engines"};
+    if(_throwKey(new RangeError("Maximum call stack size exceeded"))!=="RangeError:Maximum call stack size exceeded")return{pass:false,detail:"another message was not kept whole"};
+    if(_throwKey(new Error("x is null"))!=="Error:null.?"||_throwKey(new TypeError("y is null"))!=="TypeError:null.?")return{pass:false,detail:"Gecko's bare form is not keyed by kind: "+_throwKey(new Error("x is null"))};
+    /* the two index-vs-scan locks compare through it (needle as a regex literal: its source holds backslashes, so it cannot match itself) */
+    const src=runSmokeTests.toString(),n=(src.match(/return\{t:_throwKey\(e\)\}/g)||[]).length;
+    if(n<2)return{pass:false,detail:"the index-vs-scan comparators no longer key thrown errors through _throwKey ("+n+"/2)"};
+    return{pass:true,detail:"one key per class, kind and property across Blink, Gecko and WebKit wording; "+n+" comparators route through it"};
   });
   _t("suite containment: harness finally invokes the user-data restore; frame waits are stall-proof; the suite's one fetch test is file://-guarded","data-custody",()=>{
     const src=runSmokeTests.toString();
@@ -35436,7 +35566,7 @@ async function runSmokeTests(){
       for(let i=0;i<exGML.length;i++){const pz=parseAllGML(exGML[i]);if(Array.isArray(pz))sets.push(["exGML["+i+"]",pz]);}
       let compared=0;
       const helpers=[["_compLight",(f,a)=>_compLight(f,a)],["_compTopmark",(f,a)=>_compTopmark(f,a)],["_portrayalTopmarkOf",(f,a)=>_portrayalTopmarkOf(f,a)],["_portrayalTopmarkSrcIsDaymark",(f,a)=>_portrayalTopmarkSrcIsDaymark(f,a)],["_compParent",(f,a)=>_compParent(f,a)],["_danglingChildRefs",(f,a)=>_danglingChildRefs(f,a)],["_aggResolvedMembers",(f,a)=>_aggResolvedMembers(f,a)],["_navLineBacklinks",(f,a)=>_navLineBacklinks(f,a)],["_featParentsOf",(f,a)=>_featParentsOf(f,a)],["_featHasChildren",(f,a)=>_featHasChildren(f,a)],["_roleUpperBreaches",(f,a)=>_roleUpperBreaches(f,a)]];
-      const _call=fn=>{try{return{v:fn()};}catch(e){return{t:String(e&&e.message)};}};
+      const _call=fn=>{try{return{v:fn()};}catch(e){return{t:_throwKey(e)};}};   /* engine-neutral key: Gecko words the same read at two sites differently (see _throwKey) */
       for(const[name,arr]of sets){
         const Z=_deepFreeze(JSON.parse(JSON.stringify(arr)));
         _featRefIndex._off=false;
@@ -35571,7 +35701,7 @@ async function runSmokeTests(){
   });
   await _tAsync("Drawing read scopes: inside a scope over parsedFeats the tree helpers, the light / topmark lookups and the co-located-light rotation return what they return outside it (same objects, same numbers, same thrown messages) on fixtures with duplicate gml:ids, a self-link, a cycle, a multi-parent child, an id-less feature, a non-member twin, a repeated object, a hole and a null element; the first-index map equals indexOf; two identical divIcons compare equal and a selection change does not; and a selection click builds the feature tree once instead of once per table row","drawing-map",async()=>{
     const _sv=v=>{try{return JSON.stringify(v,(k,x)=>x===undefined?"\u0000u":x);}catch(e){return"\u0000unserialisable";}};
-    const _call=fn=>{try{return{v:fn()};}catch(e){return{t:String(e&&e.message)};}};
+    const _call=fn=>{try{return{v:fn()};}catch(e){return{t:_throwKey(e)};}};   /* engine-neutral key: Gecko words the same read at two sites differently (see _throwKey) */
     const sParsed=parsedFeats,sSel=selFeatIdx,sOff=_drawScopeOff;
     const ta=document.getElementById("gmlIn"),sTa=ta?ta.value:"";
     const oB=_buildFeatTree;

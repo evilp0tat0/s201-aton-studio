@@ -33,11 +33,24 @@
 #   python dev/scripts/run-browser-smoke-gate.py --json     # machine-readable output
 #   python dev/scripts/run-browser-smoke-gate.py --port 8090   # pin a port (default: OS-assigned)
 #   python dev/scripts/run-browser-smoke-gate.py --verbose  # print every test
+#   python dev/scripts/run-browser-smoke-gate.py --browser firefox   # second engine: the Firefox already
+#                                    # installed, driven over Playwright's moz-firefox (WebDriver BiDi) channel
+#   python dev/scripts/run-browser-smoke-gate.py --browser firefox --firefox-exe "C:\path\to\firefox.exe"
+#
+# The default engine is Chromium and its verdict is the definition of done (HANDOFF "What ships
+# together"). The Firefox leg exists because a fault can be engine-specific and invisible here:
+# Gecko's XML serializer writes a line break after every document-level node, and the quick fixes
+# escaped it into the prolog, so every quick fix in Firefox produced an ill-formed document from
+# 1.22.1 to 1.26.2 while this gate stayed green. Run the second engine before a release, and
+# whenever a change touches the DOM/XML serializer, DOMParser output, or anything the browser
+# words (error messages, computed styles).
 #
 # EXIT CODES
 # ----------
 #   0 all tests passed   1 a test failed, or the suite size deviates from ground truth
-#   2 playwright not installed   3 Playwright error / suite did not settle within 180s
+#   2 playwright not installed, or the requested engine cannot launch (--browser firefox: no
+#     Firefox found at --firefox-exe / $FIREFOX_BIN / the standard install paths, or a Playwright
+#     without the moz-firefox channel)   3 Playwright error / suite did not settle within 180s
 #   4 could not own the port, or the served app is not this worktree's file
 #   5 source-comment probe polarity mismatch (wrong build for this harness)
 #   6 an uncaught page exception occurred during the run
@@ -52,6 +65,9 @@
 # -----------------------------
 #   pip install playwright
 #   playwright install chromium
+#   --browser firefox downloads nothing: it drives the Firefox already installed on the machine
+#   (--firefox-exe, then $FIREFOX_BIN, then the standard install paths) through Playwright's
+#   moz-firefox channel (WebDriver BiDi; Playwright 1.62 verified). No Playwright Firefox build needed.
 #
 # Per Rule 17 (Layered validation hierarchy) the gate stack mirrors the
 # validator's own layered design — each tier catches what the others can't.
@@ -63,6 +79,7 @@ import hashlib
 import http.server
 import json
 import os
+import re
 import socket
 import socketserver
 import sys
@@ -71,6 +88,31 @@ import time
 import urllib.request
 
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+# --browser firefox: where an installed Firefox is looked for when --firefox-exe and $FIREFOX_BIN
+# are not given. Playwright's own moz-firefox discovery covers the Windows Program Files and macOS
+# app-bundle paths but not a Linux distro package at /usr/bin/firefox, so the list is consulted
+# first and the driver's discovery is the fallback (None → launch with no executable_path).
+FIREFOX_CANDIDATES = (
+    r"C:\Program Files\Mozilla Firefox\firefox.exe",
+    r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
+    "/usr/bin/firefox",
+    "/Applications/Firefox.app/Contents/MacOS/firefox",
+)
+
+
+def _find_firefox(explicit: str | None) -> str | None:
+    """The Firefox executable to drive: the flag, then $FIREFOX_BIN, then the standard paths; None
+    when none exists on disk (the driver then tries its own discovery, and a miss is exit 2)."""
+    for c in (explicit, os.environ.get("FIREFOX_BIN"), *FIREFOX_CANDIDATES):
+        if c and os.path.isfile(c):
+            return c
+    return None
+
+
+# The engine that produced the verdict, named in the report header so a log reader can tell a
+# Chromium run from a Firefox run. Set once per run right after the browser launches.
+_ENGINE_LABEL = "chromium"
 
 
 def _start_http_server(port: int, serve_root: str = REPO_ROOT):
@@ -334,29 +376,55 @@ def _report_oracle(oracle: dict, notes: list[str]) -> bool:
     return True
 
 
-async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) -> tuple[int, list[dict]]:
-    """Launch headless Chromium, navigate to the app, await runSmokeTests,
-    return (exit_code, test_results).
+async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True,
+                    browser: str = "chromium", firefox_exe: str | None = None) -> tuple[int, list[dict]]:
+    """Launch the requested engine headless (Chromium, the default and the definition of done; or
+    an installed Firefox over Playwright's moz-firefox BiDi channel), navigate to the app, await
+    runSmokeTests, return (exit_code, test_results).
 
     expect_src_comments pins the _SRC_COMMENTS_KEPT probe's polarity: the dev file keeps its
     comments (True); the comment-stripped end-user bundle must report False, proving every
     comment-anchored source lint ran in its explicit-skip mode rather than false-failing.
     A mismatch means this harness is pointed at the wrong kind of build."""
+    global _ENGINE_LABEL
     try:
         from playwright.async_api import async_playwright
     except ImportError:
         print(
             "[FAIL] playwright not installed. Run:\n"
             "  pip install playwright\n"
-            "  playwright install chromium",
+            + ("  playwright install chromium" if browser == "chromium"
+               else "  (--browser firefox needs no browser download: install Firefox, or pass --firefox-exe)"),
             file=sys.stderr,
         )
         return 2, []
 
     url = f"http://127.0.0.1:{port}/s201_aton_studio.html"
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context()
+        # The launch is inside its own guard: an engine that cannot start is an operator matter
+        # (exit 2, like a missing Playwright), not a traceback.
+        try:
+            if browser == "firefox":
+                exe = _find_firefox(firefox_exe)
+                launched = await p.firefox.launch(
+                    headless=True, channel="moz-firefox", **({"executable_path": exe} if exe else {})
+                )
+                _ENGINE_LABEL = f"firefox {launched.version} via moz-firefox ({exe or 'driver discovery'})"
+            else:
+                launched = await p.chromium.launch(headless=True)
+                _ENGINE_LABEL = f"chromium {launched.version}"
+        except Exception as e:
+            first = (str(e).splitlines() or [type(e).__name__])[0]
+            print(
+                f"[FAIL] browser engine '{browser}' could not launch: {first}\n"
+                "  --browser firefox: pass --firefox-exe, set FIREFOX_BIN, or install Firefox at a "
+                "standard path; the moz-firefox channel needs Playwright 1.5x or later.",
+                file=sys.stderr,
+            )
+            return 2, []
+        print(f"[note] engine: {_ENGINE_LABEL}", file=sys.stderr)
+        browser_obj = launched
+        context = await browser_obj.new_context()
         page = await context.new_page()
 
         # Capture console errors so JS issues bubble up to the gate output.
@@ -394,13 +462,29 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             # attribute presence.
             name = (getattr(exc, "name", "") or "").strip() or "Error"
             message = getattr(exc, "message", None) or str(exc)
+            stack = (getattr(exc, "stack", "") or "").strip()
+            # Gecko hands the BiDi bridge its error-console CATEGORIES as page errors too: the XML
+            # parsing error an app DOMParser call produced (the suite parses malformed text on
+            # purpose, and re-validates the set-aside comment text), a downloadable-font sanitizer
+            # note — reports, not exceptions. They carry no script frame (a thrown error's stack
+            # has "    at " lines under Playwright, in both engines), and their `name` is the
+            # category in the browser's UI locale, so the shape tells them apart, not the words.
+            # They go to the console baseline, where each expected category is listed with its
+            # cap; an unlisted one still blocks (exit 7). Chromium reports none of this class, so
+            # the classification is Firefox-only and a bare thrown string there stays blocking.
+            if browser == "firefox" and not re.search(r"^\s+at ", stack, re.M):
+                console_errors.append(
+                    {"kind": "console", "type": "error", "text": f"{name}: {message}",
+                     "location": "", "stack": "", "gecko_report": True}
+                )
+                return
             console_errors.append(
                 {
                     "kind": "pageerror",
                     "type": "pageerror",
                     "text": f"{name}: {message}",
                     "location": "",
-                    "stack": (getattr(exc, "stack", "") or "").strip(),
+                    "stack": stack,
                 }
             )
 
@@ -426,7 +510,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             mounted = await page.evaluate("(compStack || []).map(c => c && c.type)")
             missing = [f for f in SEED_FAMILIES if f not in (mounted or [])]
             if missing:
-                await browser.close()
+                await browser_obj.close()
                 print(
                     "[FAIL] sentinel seed: the mounted stack lacks "
                     + ", ".join(missing)
@@ -442,7 +526,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
                 "typeof _SRC_COMMENTS_KEPT === 'boolean' ? _SRC_COMMENTS_KEPT : null"
             )
             if probe is not expect_src_comments:
-                await browser.close()
+                await browser_obj.close()
                 got = "kept" if probe is True else ("stripped" if probe is False else "undetectable (_SRC_COMMENTS_KEPT missing)")
                 want = "kept" if expect_src_comments else "stripped"
                 print(
@@ -471,7 +555,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
                 timeout=MOUNT_ORACLE_TIMEOUT_S,
             )
         except Exception as e:
-            await browser.close()
+            await browser_obj.close()
             # asyncio.TimeoutError IS TimeoutError on 3.11+, and str() of it is EMPTY — the
             # bounded-evaluate path would otherwise print "[FAIL] Playwright error: " with no
             # reason at all, on the one path where the operator has no results to fall back on.
@@ -492,7 +576,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
             # where truncation hurt most.
             _report_page_messages(console_errors)
             return 3, results
-        await browser.close()
+        await browser_obj.close()
 
     # Surface console/page messages on EVERY run (not just --verbose): a pageerror
     # or resource failure that does not abort page.evaluate would otherwise ship a
@@ -510,7 +594,7 @@ async def _run_gate(port: int, verbose: bool, expect_src_comments: bool = True) 
         )
         return 6, results
 
-    unexpected, over = _console_baseline_breaches(console_errors)
+    unexpected, over = _console_baseline_breaches(console_errors, browser)
     if unexpected or over:
         print(
             "[X] console output deviates from the expected baseline — a green suite cannot be "
@@ -578,21 +662,62 @@ _CONSOLE_BASELINE = [
         "occurrence is a REAL custody breach — that is precisely what this baseline exists to "
         "surface, so this cap must not be raised.",
     ),
+    # ── Firefox only (the fifth field): Gecko error-console categories that _on_pageerror
+    # reclassifies as console entries (see there). Chromium reports neither, so neither can
+    # match on a Chromium run; the entries are skipped outright for it.
+    (
+        "Gecko XML parsing reports for the suite's own malformed or set-aside text",
+        lambda e: bool(e.get("gecko_report")) and "/s201_aton_studio.html" in e["text"],
+        12,
+        "Gecko reports every DOMParser failure to its error console, naming the page URL; the "
+        "suite parses ill-formed fixtures on purpose and re-validates the set-aside comment text "
+        "in per-test teardowns (no root element), and the validator answers each with GML-STR-01. "
+        "Measured on Firefox 156 after the pass-732 serializer fix: exactly 12 per run (10 of the "
+        "set-aside text, 1 prefix not bound, 1 declaration not at the start). Before the fix the "
+        "figure was 25: the 13 extra were the ill-formed quick-fix documents themselves, so this "
+        "count is a detector — an increase means some path writes XML the parser rejects. Do not "
+        "raise it to make a regression fit.",
+        ("firefox",),
+    ),
+    (
+        "Gecko downloadable-font sanitizer notes for the bundled OpenSans faces",
+        lambda e: bool(e.get("gecko_report")) and "font-family:" in e["text"] and "Annex_D/Fonts/" in e["text"],
+        4,
+        "Gecko's OpenType sanitizer discards the kern table of Annex_D/Fonts/OpenSans-Regular.ttf and "
+        "OpenSans-Bold.ttf ('Too large subtable' then 'Table discarded': two notes per face, four "
+        "in all). The faces still load and render; the note is about a table the app does not "
+        "rely on. Exact: a fifth note means another face or table went wrong.",
+        ("firefox",),
+    ),
 ]
 
 
-def _console_baseline_breaches(msgs: list[dict]):
+def _baseline_entries(engine: str):
+    """The baseline entries that apply to `engine`: a four-field entry applies to every engine,
+    a fifth field names the engines it is for (the Gecko report categories are Firefox-only)."""
+    out = []
+    for entry in _CONSOLE_BASELINE:
+        label, matcher, cap, why = entry[:4]
+        engines = entry[4] if len(entry) > 4 else None
+        if engines is None or engine in engines:
+            out.append((label, matcher, cap, why))
+    return out
+
+
+def _console_baseline_breaches(msgs: list[dict], engine: str = "chromium"):
     """Split console output into (unlisted messages, listed-but-over-cap entries).
 
     `pageerror` entries are excluded: they have their own blocking arm above and would
-    otherwise be reported twice.
+    otherwise be reported twice. The Gecko reports _on_pageerror reclassifies arrive here as
+    console entries (kind "console", gecko_report True) and are judged like any other.
     """
+    entries = _baseline_entries(engine)
     counts: dict[str, int] = {}
     unexpected: list[dict] = []
     for e in msgs:
         if e.get("kind") == "pageerror":
             continue
-        for label, matcher, _cap, _why in _CONSOLE_BASELINE:
+        for label, matcher, _cap, _why in entries:
             try:
                 hit = matcher(e)
             except Exception:
@@ -604,7 +729,7 @@ def _console_baseline_breaches(msgs: list[dict]):
             unexpected.append(e)
     over = [
         (label, counts[label], cap)
-        for label, _m, cap, _w in _CONSOLE_BASELINE
+        for label, _m, cap, _w in entries
         if counts.get(label, 0) > cap
     ]
     return unexpected, over
@@ -711,7 +836,7 @@ def _format_results(results: list[dict], verbose: bool) -> tuple[int, str]:
         by_category.setdefault(t.get("category", "?"), []).append(t)
 
     lines = []
-    lines.append("\n=== S-201 AtoN Studio browser smoke gate (pass 118 runner) ===\n")
+    lines.append(f"\n=== S-201 AtoN Studio browser smoke gate — {_ENGINE_LABEL} ===\n")
 
     if verbose:
         for cat, tests in by_category.items():
@@ -785,6 +910,11 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=0, help="HTTP server port (default 0 = OS-assigned free port)")
     parser.add_argument("--json", action="store_true", help="Emit JSON results to stdout")
     parser.add_argument("--verbose", "-v", action="store_true", help="Print every test (default: only failures)")
+    parser.add_argument("--browser", choices=("chromium", "firefox"), default="chromium",
+                        help="engine (default chromium, the definition of done); firefox drives the installed "
+                             "Firefox over Playwright's moz-firefox BiDi channel — no download")
+    parser.add_argument("--firefox-exe", default=None,
+                        help="Firefox executable for --browser firefox (default: $FIREFOX_BIN, then the standard install paths)")
     args = parser.parse_args()
 
     server = None
@@ -809,7 +939,9 @@ def main() -> int:
             print(f"[X] {ident_err}", file=sys.stderr)
             return 4
 
-        exit_code, results = asyncio.run(_run_gate(port, args.verbose))
+        exit_code, results = asyncio.run(
+            _run_gate(port, args.verbose, browser=args.browser, firefox_exe=args.firefox_exe)
+        )
         if exit_code != 0:
             # Exits 6, 7 and 8 (a page exception, the console baseline, the mount oracle) still carry a
             # fully populated results list, and so does exit 3 when only the oracle timed out.

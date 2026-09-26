@@ -932,7 +932,7 @@ def check_source_file_tour_anchor_freshness():
 # file's own `check()` registration count below (so it auto-bumps when a new
 # check is added).
 _COUNT_GROUND_TRUTH = {
-    "smoke": 437,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here.
+    "smoke": 439,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here.
     "foundational": 25,  # FOUNDATIONAL_RULES const length + foundational-rules.json entries
     # Rule 23 (single-source-or-gate): counts that once appeared ungated across
     # .md surfaces. Each value is the current canonical count; bump in lockstep
