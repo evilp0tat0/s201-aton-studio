@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **2.4.11**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **2.4.12**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
@@ -51,33 +51,20 @@ s201_aton_studio.html       the application (markup + CSS + one script)
 Annex_D/                    S-201 Annex D portrayal library: symbols, fonts, XSL templates,
                             colour profiles, portrayal catalogue (© IHO / IALA, see NOTICE.txt)
 lib/leaflet/                Leaflet 1.9.4, loaded only for the optional base map
-dev/validator-rules.json    machine-readable mirror of the validator corpus (fetched by a self-test)
-dev/foundational-rules.json the engineering rules the code was written under
-dev/spec-sources/           MANIFEST.md only — every IHO / IALA / OGC / ISO / W3C document, schema
-                            and text extract the code cites (846 files), with
-                            size, SHA-256 and where to obtain it
-dev/sample-data/            datasets for regression checks
-dev/scripts/                the gates (pre-commit, browser smoke), the rule-mirror generator,
-                            a CSV → S-201 converter, the tester-bundle builder
-dev/SNAPSHOT.json           where this tree came from and what was left out
+dev/validator-rules.json    machine-readable mirror of the validator corpus (read by a built-in self-check)
+dev/spec-sources/MANIFEST.md every IHO / IALA / OGC / ISO / W3C document, schema and text extract the
+                            code cites (846 files), with size, SHA-256 and where to obtain it
 start-server.bat / .sh      launchers
 LICENSE, NOTICE.txt         MIT for the code; third-party terms for the bundled material
 ```
 
-The runtime footprint is the HTML file plus `Annex_D/` (and `lib/` for the map). Everything under `dev/` is for verification and reference.
+This tree holds what the app needs to run: the HTML file, `Annex_D/`, `lib/` for the map, and `dev/validator-rules.json`, which a built-in self-check reads. The one other file under `dev/` is the citation manifest. The development tools (the command-line gates, sample data, the rule notes) are not part of it; they run on every cut of this tree before it is published.
 
 ---
 
 ## Check that it works
 
 Open the Validator tab and click **Use example** — a bundled three-feature dataset loads and validates cleanly. The first validation after the page is opened runs the built-in self-test suite first, behind a cover, and shows its result in a banner above the findings. Click **Run tests** at the top of that tab (or open the app with `?test=1`) to run the built-in self-test suite; it should report every invariant passed.
-
-From a terminal, the same suite runs headless and the static gate checks the tree:
-
-```bash
-python dev/scripts/precommit-check.py
-python dev/scripts/run-browser-smoke-gate.py     # once: pip install playwright && playwright install chromium
-```
 
 ---
 

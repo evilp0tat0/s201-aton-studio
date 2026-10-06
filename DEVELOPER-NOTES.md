@@ -1,6 +1,6 @@
 # Developer notes — S-201 AtoN Studio
 
-For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.4.11`, cut from commit `9e08b56` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
+For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.4.12`, cut from commit `facb543` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
 
 Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 the feature object · 5 validator rules · 6 verifying a change · 7 sources and citations · 8 the rules the code was written under · 9 reusing parts elsewhere · 10 known limitations · 11 provenance
 
@@ -8,7 +8,7 @@ Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 t
 
 ## 1. The shape of the tree
 
-The whole application is one file, `s201_aton_studio.html`: markup, CSS and a single `<script>` block. There is no build step, no package manager and no runtime dependency beyond a browser and a static file server. Everything else is either an asset the page fetches, a machine-readable mirror of something inside the file, a script that checks the file, or the manifest of the specification sources the file cites.
+The whole application is one file, `s201_aton_studio.html`: markup, CSS and a single `<script>` block. There is no build step, no package manager and no runtime dependency beyond a browser and a static file server. Everything else is either an asset the page fetches, the machine-readable rule mirror a built-in self-check reads, or the manifest of the specification sources the file cites. The development tools — the command-line gates, sample data, the rule notes — are not in this tree; they run on every cut of it before it is published (section 11).
 
 | Path | What it is | Needed at runtime? |
 |---|---|---|
@@ -19,13 +19,8 @@ The whole application is one file, `s201_aton_studio.html`: markup, CSS and a si
 | `Annex_D/Rules/*.xsl` | The 65 Annex D XSL portrayal templates — the source the JavaScript symbol dispatch was ported from; not fetched | reference |
 | `Annex_D/ColorProfiles/` | The Annex D colour profile and SVG style; the palette constants were taken from `colorProfile.xml`; not fetched | reference |
 | `lib/leaflet/` | Leaflet 1.9.4, injected only when a user switches a base map on | for the optional map |
-| `dev/validator-rules.json` | Machine-readable mirror of the validator corpus, generated from the source; one built-in self-test fetches it from exactly this path | the app runs without it; the self-test suite reports a failure if it is missing |
-| `dev/foundational-rules.json` | The 26 engineering rules the code was written under, mirrored by the in-app `FOUNDATIONAL_RULES` constant | no |
+| `dev/validator-rules.json` | Machine-readable mirror of the validator corpus, generated from the source; one built-in self-test fetches it from exactly this path | yes — the self-tests run before a session's first validation, and that one reports a failure if the file is missing |
 | `dev/spec-sources/MANIFEST.md` | The only file shipped from the reference corpus: the 846 IHO / IALA / OGC / ISO / W3C documents, schemas and text extracts the code cites, each with size, SHA-256 and where to obtain it (section 7) | no — verification aid |
-| `dev/sample-data/` | Real-world and fictional datasets for regression checks (see the notes in section 10 on the two that do not parse by design) | no |
-| `dev/s158-100-coverage-map.md` | Check-by-check disposition of the IHO S-158:100 Collection A checks against the validator | no |
-| `dev/scripts/` | The gates and helpers (section 6) | no |
-| `dev/SNAPSHOT.json` | Provenance of this tree: source repository, commit, version, what was left out | no |
 | `start-server.bat`, `start-server.sh` | Launchers: probe for a runtime, serve the folder on port 8080, open the browser | convenience |
 | `LICENSE`, `NOTICE.txt` | MIT for the code; third-party terms for Annex D, the fonts and Leaflet | keep with the tree |
 
@@ -108,24 +103,19 @@ A per-feature rule is one object in `RULES`:
 | `t(feat, allFeats)` | The predicate: `true` passes, `false` fails. It asserts **presence before validity** — a missing value must fail a rule that requires one; the shape `!f.x || f.x === "valid"` is forbidden because an empty field would pass silently |
 | `fix`, `actualOf`, `expected` | Optional: the quick-fix declaration (field, input type, options, wrapper, target) and the structured actual / expected values the finding is rendered from |
 
-The corpus totals 268 rules: 216 per-feature entries in `RULES`, 25 structural rules in `validateGMLStructure`, 27 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); `dev/scripts/generate-validator-rules-json.py` regenerates it from the source and `--check` reports drift, which the pre-commit gate treats as a failure. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
+The corpus totals 268 rules: 216 per-feature entries in `RULES`, 25 structural rules in `validateGMLStructure`, 27 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); it is generated from the source in the development repository, and a built-in self-check compares it with the in-app rules. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
 
-To add a rule: find the constraint in the source document and note the line range; choose the prefix; write the object with its citation in the inline comment; regenerate the JSON mirror; bump the length assertion in `runSmokeTests` and `validator_total` / `validator_per_feature` (or the structural / exchange-set keys) in `_COUNT_GROUND_TRUTH` inside `dev/scripts/precommit-check.py`; run both gates.
+To add a rule: find the constraint in the source document and note the line range; choose the prefix; write the object with its citation in the inline comment; bring `dev/validator-rules.json` in step (the self-check that reads it reports any drift); bump the length assertion in `runSmokeTests`; run the self-test suite.
 
 ---
 
 ## 6. Verifying a change
 
-| Command | What it proves |
-|---|---|
-| `python dev/scripts/precommit-check.py` | Static checks in about a second: the version string agrees with the preface, the two JSON corpora are well-formed and in sync with the source, the script parses as JavaScript (needs `pip install py-mini-racer`; without it the check is reported as skipped and the gate blocks, by design), count phrases in the source match their ground truth, no per-change narrative has leaked into source comments, the CSV converter's self-test passes, bundled-asset phrases match the disk, and the code points the app leaves out of XML are exactly those libxml2 refuses (needs `pip install lxml` as well). In this tree the checks anchored to the development documents that are not shipped report as `[n/a ]` and do not block; `dev/SNAPSHOT.json` is what tells the gate it is looking at a snapshot. |
-| `python dev/scripts/generate-validator-rules-json.py --check` | The rule mirror matches the source. |
-| `python dev/scripts/run-browser-smoke-gate.py` | Serves the tree on a free port, opens it headless in Chromium (Playwright — `pip install playwright && playwright install chromium` once) and runs its legs in turn — the self-test suite, the mount oracle, the XSD leg and the first-validation leg. It runs the whole self-test suite and asserts the suite size against `_COUNT_GROUND_TRUTH["smoke"]` (558 invariants). Then, on the same page, the mount oracle (`MOUNT_ORACLE_JS`) imports each fixture through the real import path, opens every feature in the Builder in document order and again in the other order, and requires the Builder to write the GML of the import candidate the import report measured, that GML to be well-formed XML and the import report to have been made; its lines are printed as `mount oracle:` notes. In this tree the fixtures generated from the Feature Catalogue are left out, because the FC XML is not shipped, and a note says so; the hand-written fixtures, the bundled examples and `dev/sample-data/` still run, and a sample file that is not well-formed is reported as not run. Then the XSD leg validates the GML the app writes for each fixture against the S-201 2.0.0 schema — in the development repository; this tree does not ship the schema, so the leg is not run and a note says so. Then the first-validation leg, on a fresh page, clicks Run validation and checks that the self-tests ran before the data was validated. It refuses to report on a server that is not serving this tree's file. |
-| **Run tests** in the Validator tab | The same suite in a browser you trust. |
+Run the built-in self-test suite: **Run tests** at the top of the Validator tab, or open the app with `?test=1`. It holds 558 invariants and should report every one passed.
 
-The suite covers the round trip of every bundled sample, determinism of the output, the rule corpus size and shape, the structural rules against known-good and known-bad documents, Builder form ↔ feat fidelity, quick fixes, the ZIP encoder and decoder, the SHA-256 implementation against the FIPS vectors, the spreadsheet importer end to end, and XSS inertness of every surface that renders user-file text. When you add an invariant, register it with the suite's `_t` helper next to the region it protects and bump `_COUNT_GROUND_TRUTH["smoke"]`.
+The suite covers the round trip of every bundled sample, determinism of the output, the rule corpus size and shape, the structural rules against known-good and known-bad documents, Builder form ↔ feat fidelity, quick fixes, the ZIP encoder and decoder, the SHA-256 implementation against the FIPS vectors, the spreadsheet importer end to end, and XSS inertness of every surface that renders user-file text. When you add an invariant, register it with the suite's `_t` helper next to the region it protects.
 
-`dev/scripts/build-end-user-version.py` produces the comment-stripped tester bundle (it also serves the bundle and re-runs the suite against it); the lexer that tells the app's comments from its code is `dev/scripts/source_scan.py`. `dev/scripts/csv_to_s201.py` is a standalone CSV → S-201 converter with its own fixture, kept as the pre-commit gate's conformance self-test.
+The command-line gates (a static pre-commit check, a headless browser run of the same suite with its import and schema legs, the rule-mirror generator) live in the development repository and are not part of this tree; every cut of it passes them before it is published.
 
 ---
 
@@ -156,7 +146,7 @@ A rule's `ref` and a comment's citation are hypotheses to check, not facts to tr
 
 ## 8. The rules the code was written under
 
-`dev/foundational-rules.json` holds all 26 engineering rules with their rationale; the in-app `FOUNDATIONAL_RULES` constant mirrors them and a self-test keeps the two in step. The ones that will bite you first:
+The in-app `FOUNDATIONAL_RULES` constant holds all 26 engineering rules with their rationale; the development repository keeps their machine-readable form, and a self-test checks the constant is complete. The ones that will bite you first:
 
 - **Verify before you code.** A change that touches a specification construct is checked against the primary source first, and the inline comment cites the exact lines.
 - **Zero fabrications.** No enum value, attribute, element, formula or section number that is not in a cited, manifest-listed source.
@@ -194,11 +184,11 @@ Keep the S-201 namespace (`NS_S201`, the S-201 2.0.0 schema's), the element orde
 - The producer-code rule accepts any four-character `[A-Z0-9]` code; strict membership in the S-62 list is future work.
 - Over `file://` the symbol library cannot be fetched (fallback renderer). The optional base map fetches public tiles when switched on; off means no network.
 - `Annex_D/portrayal_catalogue.xml` registers fewer symbols than `Annex_D/Symbols/` holds; the loader fetches by file name, so rendering does not depend on the registry.
-- Two sample files do not parse by design: `dev/sample-data/Exercise-03-S201-dataset.gml.xml` is a course placeholder template, and `External-Producer-S201-Sample.gml` is missing its namespace declarations (it exercises the undeclared-prefix rule). `user-line843-report.gml` is deliberately malformed. Use the in-app `exGML` samples for clean fixtures.
+- For clean fixtures, use the in-app `exGML` samples.
 - A set of optional FC sub-attributes round-trips through parser, generator and validator but has no Builder authoring field yet.
 
 ---
 
 ## 11. Provenance
 
-`dev/SNAPSHOT.json` records the source repository, the commit this tree was cut from, the `APP_VERSION` at that commit, and the list of what was deliberately left out — the development documents and every piece of third-party reference material (manifest-listed instead). The tree is produced by the development repository's `build-public-snapshot.py`, which verifies the cut tree with the gates in section 6 before it is committed; `README.md` and these notes are rendered from templates at that moment, with every number filled from the tree itself.
+The header of these notes names the source repository, the commit this tree was cut from and the `APP_VERSION` at that commit. Left out on purpose: the development documents and tools, and every piece of third-party reference material (listed in the manifest instead). The tree is produced by the development repository's `build-public-snapshot.py`. It first cuts the full development set and verifies it with the command-line gates, then keeps under `dev/` only the paths the app's code names plus the citation manifest. `README.md` and these notes are rendered from templates at that moment, with every number filled from the tree itself.
