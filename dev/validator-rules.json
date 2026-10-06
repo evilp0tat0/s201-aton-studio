@@ -1633,13 +1633,13 @@
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "text",
-      "description": "free-form text (FC 2.0.0 valueType=text) — single value or '/'-separated for multi-value (e.g. 'anemometer' or 'anemometer/wind vane')"
+      "description": "free-form text (FC 2.0.0 valueType=text), at least one value - each value whole, one element each (e.g. 'anemometer', or 'Wind speed/direction sensor' as ONE value)"
     },
     "fix": {
       "field": "typeOfEnvironmentalObservationEquipment",
       "inputType": "text",
       "label": "Type of environmental observation equipment",
-      "placeholder": "e.g. anemometer (or anemometer/wind vane for multi-value)"
+      "placeholder": "e.g. anemometer (one value; add more types in the Builder)"
     }
   },
   {
@@ -2706,6 +2706,126 @@
     }
   },
   {
+    "id": "S158-ASSOC-05",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 SinkerAnchor featureBinding ShackleToAnchorConnection role=shackleToAnchorconnected → MooringShackle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15030-15038); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A SinkerAnchor is not linked to its MooringShackle: the S-201 Feature Catalogue binds its role shackleToAnchorconnected to MooringShackle 1..1 (the ShackleToAnchorConnection association), so the binding needs one partner, counted from either end — this feature's own <shackleToAnchorconnected> link, or a MooringShackle naming it under <shackleToAnchorconnectedTo>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this SinkerAnchor to its MooringShackle in the Builder's association editor (the role shackleToAnchorconnected); which MooringShackle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one MooringShackle linked under shackleToAnchorconnected (FC 2.0.0 ShackleToAnchorConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-06",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 CableSubmarine featureBinding BridleCableConnection role=cableholds → Bridle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15225-15233); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A CableSubmarine is not linked to its Bridle: the S-201 Feature Catalogue binds its role cableholds to Bridle 1..1 (the BridleCableConnection association), so the binding needs one partner, counted from either end — this feature's own <cableholds> link, or a Bridle naming it under <bridleattached>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this CableSubmarine to its Bridle in the Builder's association editor (the role cableholds); which Bridle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one Bridle linked under cableholds (FC 2.0.0 BridleCableConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-07",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 CableSubmarine featureBinding SwivelCableConnection role=cableholds → Swivel 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15234-15242); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A CableSubmarine is not linked to its Swivel: the S-201 Feature Catalogue binds its role cableholds to Swivel 1..1 (the SwivelCableConnection association), so the binding needs one partner, counted from either end — this feature's own <cableholds> link, or a Swivel naming it under <swivelattached>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this CableSubmarine to its Swivel in the Builder's association editor (the role cableholds); which Swivel it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one Swivel linked under cableholds (FC 2.0.0 SwivelCableConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-08",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 CableSubmarine featureBinding ShackleConnectionFromCable role=shackleToCableconnected → MooringShackle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15243-15251); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A CableSubmarine is not linked to its MooringShackle: the S-201 Feature Catalogue binds its role shackleToCableconnected to MooringShackle 1..1 (the ShackleConnectionFromCable association), so the binding needs one partner, counted from either end — this feature's own <shackleToCableconnected> link.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this CableSubmarine to its MooringShackle in the Builder's association editor (the role shackleToCableconnected); which MooringShackle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one MooringShackle linked under shackleToCableconnected (FC 2.0.0 ShackleConnectionFromCable 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-09",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 Swivel featureBinding SwivelConnection role=swivelholds → Bridle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15298-15306); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A Swivel is not linked to its Bridle: the S-201 Feature Catalogue binds its role swivelholds to Bridle 1..1 (the SwivelConnection association), so the binding needs one partner, counted from either end — this feature's own <swivelholds> link, or a Bridle naming it under <bridlehangs>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this Swivel to its Bridle in the Builder's association editor (the role swivelholds); which Bridle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one Bridle linked under swivelholds (FC 2.0.0 SwivelConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-10",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 Swivel featureBinding ShackleToSwivelConnection role=shackleToSwivelconnected → MooringShackle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15316-15324); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A Swivel is not linked to its MooringShackle: the S-201 Feature Catalogue binds its role shackleToSwivelconnected to MooringShackle 1..1 (the ShackleToSwivelConnection association), so the binding needs one partner, counted from either end — this feature's own <shackleToSwivelconnected> link, or a MooringShackle naming it under <shackleToSwivelconnectedTo>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this Swivel to its MooringShackle in the Builder's association editor (the role shackleToSwivelconnected); which MooringShackle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one MooringShackle linked under shackleToSwivelconnected (FC 2.0.0 ShackleToSwivelConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-11",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 Bridle featureBinding BridleConnection role=bridleholds → GenericBuoy 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15348-15356); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A Bridle is not linked to its buoy: the S-201 Feature Catalogue binds its role bridleholds to GenericBuoy 1..1 (the BridleConnection association), so the binding needs one partner, counted from either end — this feature's own <bridleholds> link, or a GenericBuoy naming it under <buoyhangs>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this Bridle to its buoy in the Builder's association editor (the role bridleholds); which GenericBuoy it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one GenericBuoy linked under bridleholds (FC 2.0.0 BridleConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-12",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 Bridle featureBinding ShackleToBridleConnection role=shackleToBridleconnected → MooringShackle 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15366-15374); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A Bridle is not linked to its MooringShackle: the S-201 Feature Catalogue binds its role shackleToBridleconnected to MooringShackle 1..1 (the ShackleToBridleConnection association), so the binding needs one partner, counted from either end — this feature's own <shackleToBridleconnected> link, or a MooringShackle naming it under <shackleToBridleconnectedTo>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this Bridle to its MooringShackle in the Builder's association editor (the role shackleToBridleconnected); which MooringShackle it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one MooringShackle linked under shackleToBridleconnected (FC 2.0.0 ShackleToBridleConnection 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-13",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 CounterWeight featureBinding BuoyCounterWeight role=counterWeightholds → GenericBuoy 1..1 (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15430-15438); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A CounterWeight is not linked to its buoy: the S-201 Feature Catalogue binds its role counterWeightholds to GenericBuoy 1..1 (the BuoyCounterWeight association), so the binding needs one partner, counted from either end — this feature's own <counterWeightholds> link, or a GenericBuoy naming it under <buoyattached>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this CounterWeight to its buoy in the Builder's association editor (the role counterWeightholds); which GenericBuoy it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "one GenericBuoy linked under counterWeightholds (FC 2.0.0 BuoyCounterWeight 1..1, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
+    "id": "S158-ASSOC-14",
+    "ref": "S-158:100 check 100_0012 (C), the presence half — dev/pdf-extracts/s158_100_checks_table.txt L27; S-201 FC 2.0.0 DangerousFeature featureBinding DangerousFeatureAssociation role=markingAton → AtonAssociation 1..* (dev/spec-sources/201_Feature_Catalogue_2.0.0.xml L15798-15806); S-100 Part 5 §5-4.2.5.2, either feature may carry the association (dev/pdf-extracts/s100_ed5_2_0_full.txt L11975-11976)",
+    "severity": "critical",
+    "message": "[S-158:100 check 100_0012] A DangerousFeature is not linked to an AtonAssociation marking it: the S-201 Feature Catalogue binds its role markingAton to AtonAssociation 1..* (the DangerousFeatureAssociation association), so the binding needs at least one partner, counted from either end — this feature's own <markingAton> link, or a AtonAssociation naming it under <danger>.",
+    "sourceLayer": "per-feature",
+    "noFix": "Link this DangerousFeature to an AtonAssociation marking it in the Builder's association editor (the role markingAton); which AtonAssociation it is, is a real-world fact only the producer knows.",
+    "expected": {
+      "kind": "text",
+      "description": "at least one AtonAssociation linked under markingAton (FC 2.0.0 DangerousFeatureAssociation 1..*, S-158:100 check 100_0012, classification C), counted from either end"
+    }
+  },
+  {
     "id": "S158-CRS-01",
     "ref": "S-158:100 check 100_0020 (C) Collection A (PS §6.2) — dev/pdf-extracts/s158_100_checks_table.txt L35",
     "severity": "critical",
@@ -3617,7 +3737,7 @@
     "id": "GML-STR-01",
     "ref": "W3C XML 1.0 §2.1 Well-Formed XML Documents",
     "severity": "critical",
-    "message": "XML is not well-formed (per W3C XML 1.0 §2.1). <...>",
+    "message": "<...>",
     "sourceLayer": "structural"
   },
   {
@@ -3643,30 +3763,30 @@
   },
   {
     "id": "GML-STR-05",
-    "ref": "S-201 GML application schema namespace binding — Ed 1.1.0 Annex B1 XSD targetNamespace http://www.iho.int/S201/gml/cs0/1.0 (bundled, s-201-xsd/…Annex_B1…xsd L2); Ed 2.0 URI per production S-201 2.0.0 datasets (Ed 2.0.0 Annex B XSD TBD from the IHO GI Registry)",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD: targetNamespace http://www.iho.int/S-201/gml/cs0/1.0, elementFormDefault qualified (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L2); members L8112-8122, member elements L8035-8107, properties declared in the namespace (e.g. LateralBuoyType L5924); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-100 Ed 5.2.0 Pt 10b (s100_ed5_2_0_full.txt L32839-32843); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "No S-201 namespace URI found (expected http://www.iho.int/S-201/gml/cs0/2.0 for S-201 2.0, per the S-201 GML application schema)",
+    "message": "Not every S-201 element is in the S-201 2.0.0 namespace http://www.iho.int/S-201/gml/cs0/1.0: <...>; the first is <<...>>, <...>. The S-201 2.0.0 schema declares the members wrapper, every feature and every feature property in that namespace.",
     "sourceLayer": "structural"
   },
   {
     "id": "GML-STR-06",
-    "ref": "S-100 Ed.5.2.0 Pt.10b §14 Schema locations and namespaces",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD imports GML 3.2, http://www.opengis.net/gml/3.2 (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L12), in the S-100 5.0 profile of it (s-100-xsd/gml-profile/S100_gmlProfile.xsd: targetNamespace L142, gml:id L183-185, gml:boundedBy L357-374); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-100 Ed 5.2.0 Pt 10b (s100_ed5_2_0_full.txt L32839-32843); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "OGC GML 3.2 namespace (http://www.opengis.net/gml/3.2) not declared — required by S-201 for gml:id, gml:boundedBy, gml:Point, gml:posList, etc.",
+    "message": "Not every GML element and gml:id is in the GML 3.2 namespace http://www.opengis.net/gml/3.2: <...>; the first is <<...>>, <...>. The S-201 2.0.0 schema imports GML 3.2, as the S-100 5.0 profile gives it, for gml:id, the dataset envelope and the coordinates inside every geometry.",
     "sourceLayer": "structural"
   },
   {
     "id": "GML-STR-07",
-    "ref": "S-100 Ed.5.2.0 Pt.10b §14 (namespace management; concrete value per the bundled s100gmlbase.xsd targetNamespace, s-100-xsd/gml-profile/s100gmlbase.xsd L5)",
-    "severity": "warning",
-    "message": "S-100 namespace (http://www.iho.int/s100gml/5.0 — or legacy /1.0 from S-100 Ed 4.0.0-era) not declared — S-201 2.0 uses S100: prefix for DatasetIdentificationInformation, pointProperty, Point, Curve, Surface",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD imports the S-100 5.0 GML base, http://www.iho.int/s100gml/5.0 (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L13; each geometry element a choice among S100:pointProperty, curveProperty and surfaceProperty, e.g. LandmarkType L5879-5887); s100gmlbase.xsd targetNamespace and elementFormDefault qualified (s-100-xsd/gml-profile/s100gmlbase.xsd L5-6): DataSetIdentificationType L208-280, DatasetType L771-791, the geometry properties and primitives L334-493, the Geometry group L742-753; S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
+    "severity": "critical",
+    "message": "Not every S-100 element is in the S-100 5.0 GML base namespace http://www.iho.int/s100gml/5.0: <...>; the first is <<...>>, <...>. The S-201 2.0.0 schema imports the S-100 5.0 GML base for the dataset identification block, the root-level geometry and every geometry property and primitive inside <geometry>.",
     "sourceLayer": "structural"
   },
   {
     "id": "GML-STR-08",
-    "ref": "S-201 PS 2.0.0 §10 Encoding",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD: global element Dataset (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L8127); S-100 Ed 5.2.0 Pt 10b §10b-11.8 (s100_ed5_2_0_full.txt L33152-33156); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "Root element is <<...>> — S-201 requires <Dataset> per §10. (Legacy S-201 1.0 used <S201:Dataset>; current 2.0 uses unprefixed <Dataset> in default NS.)",
+    "message": "Root element is <<...>> — the S-201 2.0.0 schema's dataset root is <Dataset> (S-100 Part 10b §10b-11.8 has every application schema call it so), and XML names are case-sensitive. Any prefix bound to the S-201 namespace will do; GML-STR-18 checks the namespace.",
     "sourceLayer": "structural"
   },
   {
@@ -3699,14 +3819,14 @@
   },
   {
     "id": "GML-STR-13",
-    "ref": "S-201 Ed1.1.0 Annex B1 XSD ThisDatasetType (members 1..1 by xs:element default) / S-100 Ed.5.2.0 Pt.10b §11.4 Associations / S-201 PS 2.0.0 §10",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD ThisDatasetType (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L8108-8126): exactly one members element (L8112-8122), and no imember or member (the containers the S-201 Ed 1.1.0 Annex B2 document describes, s201_ed1_1_0_annexB2_schemas.txt L1828-1837, L1865-1885); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "S-201 dataset must contain exactly one <members> wrapper (S-201 2.0) or one-or-more <imember> wrappers (S-201 1.0); <member> singular is NOT valid per S-201.<...>",
+    "message": "The dataset must hold its members in exactly one <members> (S-201 2.0.0 schema, ThisDatasetType): <...>.",
     "sourceLayer": "structural"
   },
   {
     "id": "GML-STR-14",
-    "ref": "S-201 Ed1.1.0 Annex B1 XSD ThisDatasetType (MemberObjects minOccurs=0 — an empty <members> is schema-VALID; flagged as an authoring-tool advisory, not a spec violation)",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD ThisDatasetType: the members content is group MemberObjects, minOccurs 0 (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L8117) — an empty <members> is schema-VALID; flagged as an authoring-tool advisory, not a spec violation",
     "severity": "info",
     "message": "No feature elements found inside <members> — schema-valid (XSD MemberObjects minOccurs=0) but an empty dataset carries no AtoN content: nothing to validate, draw, or exchange. Add aids in the Builder or paste a dataset that contains features.",
     "sourceLayer": "structural"
@@ -3734,9 +3854,9 @@
   },
   {
     "id": "GML-STR-18",
-    "ref": "S-201 PS 2.0.0 §10 + S-201 Annex B1 GML application schema (Dataset global element in S-201 targetNamespace, elementFormDefault=\"qualified\")",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD: global element Dataset (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L8127) in targetNamespace http://www.iho.int/S-201/gml/cs0/1.0, elementFormDefault qualified (L2); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "Root <Dataset> is bound to namespace \"<...>\" which is not an accepted S-201 namespace — the Dataset root element must itself be in an S-201 namespace (e.g. http://www.iho.int/S-201/gml/cs0/2.0), per the S-201 GML application schema. An S-201 xmlns declared elsewhere on the element does not satisfy this; the root's own namespace binding is what counts.",
+    "message": "Root <Dataset> is not in the S-201 2.0.0 namespace http://www.iho.int/S-201/gml/cs0/1.0; it is <...>. The schema declares Dataset in that namespace, and the root's own binding is what counts: an xmlns declared elsewhere on the element does not satisfy it.",
     "sourceLayer": "structural"
   },
   {
@@ -3762,9 +3882,9 @@
   },
   {
     "id": "GML-STR-22",
-    "ref": "S-100 s100gmlbase.xsd DatasetType xs:sequence (lines 771-791: DII then Geometry group, extending gml:AbstractFeatureType whose head content incl. boundedBy comes first) + S-201 Ed1.1.0 Annex B1 XSD ThisDatasetType xs:sequence (lines 8785-8804: members last)",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD ThisDatasetType (s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L8108-8126: members L8112-8122, last) extending s100gmlbase.xsd DatasetType (L771-791: DatasetIdentificationInformation, then the Geometry group L742-753) extending the S-100 5.0 profile's gml:AbstractFeatureType (S100_gmlProfile.xsd L357-374: gml:boundedBy); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "Dataset root children violate the XSD xs:sequence order: <...>. Required order: gml:boundedBy (optional) → S100:DatasetIdentificationInformation → <members>. An XSD-validating parser rejects the out-of-order document.",
+    "message": "Dataset root children do not follow the content model: <...>. Required: gml:boundedBy (optional) → S100:DatasetIdentificationInformation → S100 geometry (optional, any number) → <members>, and nothing else. An XSD-validating parser rejects the document.",
     "sourceLayer": "structural"
   },
   {
@@ -3776,9 +3896,9 @@
   },
   {
     "id": "GML-STR-24",
-    "ref": "S-201 Ed1.1.0 Annex B1 XSD feature-type xs:sequence — geometry is the final element of every geometry-bearing feature type (34/34 types; representative LighthouseType lines 6592-6790, geometry at 6779-6786; maxOccurs unbounded, so repeats are legal but consecutive-and-final) + s100gmlbase.xsd AbstractFeatureType lines 318-332 (contributes no elements, so nothing inherited may follow geometry)",
+    "ref": "S-201 Ed 2.0.0 Annex B XSD feature-type xs:sequence — geometry is the final element of every geometry-bearing feature type (52/52 types; representative LateralBuoyType, s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L5917-5939, geometry at L5929-5935; maxOccurs unbounded, so repeats are legal but consecutive-and-final) + s100gmlbase.xsd AbstractFeatureType lines 318-332 (contributes no elements, so nothing inherited may follow geometry); S-201 PS 2.0.0 §11 (s201_ps_2_0_0_main_full.txt L1040-1046); S-158:100 check 100_0164 (C)",
     "severity": "critical",
-    "message": "Feature property element(s) placed AFTER <geometry>, violating the feature type's xs:sequence (geometry is the last element of every geometry-bearing S-201 feature type): <...>. An XSD-validating parser rejects this element order. The value itself is not lost: this app's parser reads the element wherever it sits, and the generator re-emits it in its schema position — use Apply fix to move the flagged element(s) back before <geometry>, or re-generate the dataset from the Builder.",
+    "message": "Feature property element(s) placed AFTER <geometry>, violating the feature type's xs:sequence (geometry is the last element of every geometry-bearing S-201 feature type): <...>. S-201 PS §11 requires feature instances to validate against the S-201 2.0.0 schema, whose feature types all end with geometry. The value itself is not lost: this app's parser reads the element wherever it sits, and the generator re-emits it in its schema position — use Apply fix to move the flagged element(s) back before <geometry>, or re-generate the dataset from the Builder.",
     "sourceLayer": "structural"
   },
   {

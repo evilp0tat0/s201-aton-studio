@@ -1,6 +1,6 @@
 # Developer notes — S-201 AtoN Studio
 
-For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `1.26.3`, cut from commit `08a071c` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
+For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.4.11`, cut from commit `9e08b56` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
 
 Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 the feature object · 5 validator rules · 6 verifying a change · 7 sources and citations · 8 the rules the code was written under · 9 reusing parts elsewhere · 10 known limitations · 11 provenance
 
@@ -20,8 +20,8 @@ The whole application is one file, `s201_aton_studio.html`: markup, CSS and a si
 | `Annex_D/ColorProfiles/` | The Annex D colour profile and SVG style; the palette constants were taken from `colorProfile.xml`; not fetched | reference |
 | `lib/leaflet/` | Leaflet 1.9.4, injected only when a user switches a base map on | for the optional map |
 | `dev/validator-rules.json` | Machine-readable mirror of the validator corpus, generated from the source; one built-in self-test fetches it from exactly this path | the app runs without it; the self-test suite reports a failure if it is missing |
-| `dev/foundational-rules.json` | The 25 engineering rules the code was written under, mirrored by the in-app `FOUNDATIONAL_RULES` constant | no |
-| `dev/spec-sources/MANIFEST.md` | The only file shipped from the reference corpus: the 836 IHO / IALA / OGC / ISO / W3C documents, schemas and text extracts the code cites, each with size, SHA-256 and where to obtain it (section 7) | no — verification aid |
+| `dev/foundational-rules.json` | The 26 engineering rules the code was written under, mirrored by the in-app `FOUNDATIONAL_RULES` constant | no |
+| `dev/spec-sources/MANIFEST.md` | The only file shipped from the reference corpus: the 846 IHO / IALA / OGC / ISO / W3C documents, schemas and text extracts the code cites, each with size, SHA-256 and where to obtain it (section 7) | no — verification aid |
 | `dev/sample-data/` | Real-world and fictional datasets for regression checks (see the notes in section 10 on the two that do not parse by design) | no |
 | `dev/s158-100-coverage-map.md` | Check-by-check disposition of the IHO S-158:100 Collection A checks against the validator | no |
 | `dev/scripts/` | The gates and helpers (section 6) | no |
@@ -37,7 +37,7 @@ If you move things around, keep the fetched paths as they are: `Annex_D/Symbols/
 
 Serve the folder and open `s201_aton_studio.html` over `http://` (the launchers do exactly that; `python3 -m http.server 8080` is enough). Over `file://` the browser refuses `fetch()`, the symbol preview falls back to a hand-drawn renderer, a banner explains why, and the one self-test that fetches the rule mirror is skipped with a notice. Parsing, validation and generation do not depend on the server.
 
-Two ways to run the built-in self-test suite: the **Run tests** button at the top of the Validator tab, or the query string `?test=1`. The suite also runs once by itself on the first "Run validation" click of a session, behind an opaque cover: it drives the real screens (switches tabs, walks Builder types, calls the real validator many times) and restores the user's state afterwards. While it runs, the Validator result pane shows fixture findings, not the user's.
+Two ways to run the built-in self-test suite: the **Run tests** button at the top of the Validator tab, or the query string `?test=1`. The suite also runs once by itself before the first validation of a session, behind an opaque cover: it drives the real screens (switches tabs, walks Builder types, calls the real validator many times) and restores the user's state afterwards. While it runs, the Validator result pane shows fixture findings, not the user's. The data is validated when the run has finished, behind a second cover that stays up for a short hold (`_SCF_DWELL_MS`) after the validation has returned, so that a click made on it cannot reach the app, so the first findings appear once, under the self-test banner; every later validation is immediate. What waits for the self-tests is what the Validator pane shows and the building of a validation report. Rule predicates are evaluated by callers that do not wait, too: the Excel tab's conversion readback (`_impReadback`) and the Builder's import question (`_importGMLTextToBuilder`) show findings on a surface of their own, and the Builder's step gate (`_bwizGateOk`) and nil-reason field list (`_nilFieldOptionsForCurrentFt`) use a predicate's answer to drive a control.
 
 ---
 
@@ -95,7 +95,7 @@ The Builder UI is a view of the feat, never a second store: the module-scope arr
 
 ## 5. Validator rules
 
-`runVal` orchestrates: `validateGMLStructure(text)` runs the structural rules on the raw text first (well-formedness, namespaces, root element, the identification block, `gml:id` uniqueness, link resolution, element order …) and halts if the document is not well-formed; then `parseAllGML` builds the feats and every `RULES` predicate runs on every feat; then the findings render, grouped and sorted by severity, with an inline input and **Apply fix** button under each failing rule that declares a fix. When an Exchange Set ZIP is loaded, `validateExchangeSet` adds the package rules (archive layout, CATALOG.XML content, file naming, declared-versus-shipped cross-references) before the dataset rules.
+`runVal` orchestrates (on a session's first validation, after the self-test suite has finished — `_selfChecksFirst`): `validateGMLStructure(text)` runs the structural rules on the raw text first (well-formedness, namespaces, root element, the identification block, `gml:id` uniqueness, link resolution, element order …) and halts if the document is not well-formed; then `parseAllGML` builds the feats and every `RULES` predicate runs on every feat; then the findings render, grouped and sorted by severity, with an inline input and **Apply fix** button under each failing rule that declares a fix. When an Exchange Set ZIP is loaded, `validateExchangeSet` adds the package rules (archive layout, CATALOG.XML content, file naming, declared-versus-shipped cross-references) before the dataset rules.
 
 A per-feature rule is one object in `RULES`:
 
@@ -108,7 +108,7 @@ A per-feature rule is one object in `RULES`:
 | `t(feat, allFeats)` | The predicate: `true` passes, `false` fails. It asserts **presence before validity** — a missing value must fail a rule that requires one; the shape `!f.x || f.x === "valid"` is forbidden because an empty field would pass silently |
 | `fix`, `actualOf`, `expected` | Optional: the quick-fix declaration (field, input type, options, wrapper, target) and the structured actual / expected values the finding is rendered from |
 
-The corpus totals 258 rules: 206 per-feature entries in `RULES`, 25 structural rules in `validateGMLStructure`, 27 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); `dev/scripts/generate-validator-rules-json.py` regenerates it from the source and `--check` reports drift, which the pre-commit gate treats as a failure. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
+The corpus totals 268 rules: 216 per-feature entries in `RULES`, 25 structural rules in `validateGMLStructure`, 27 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); `dev/scripts/generate-validator-rules-json.py` regenerates it from the source and `--check` reports drift, which the pre-commit gate treats as a failure. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
 
 To add a rule: find the constraint in the source document and note the line range; choose the prefix; write the object with its citation in the inline comment; regenerate the JSON mirror; bump the length assertion in `runSmokeTests` and `validator_total` / `validator_per_feature` (or the structural / exchange-set keys) in `_COUNT_GROUND_TRUTH` inside `dev/scripts/precommit-check.py`; run both gates.
 
@@ -118,14 +118,14 @@ To add a rule: find the constraint in the source document and note the line rang
 
 | Command | What it proves |
 |---|---|
-| `python dev/scripts/precommit-check.py` | Static checks in about a second: the version string agrees with the preface, the two JSON corpora are well-formed and in sync with the source, the script parses as JavaScript (needs `pip install py-mini-racer`; without it the check is reported as skipped and the gate blocks, by design), count phrases in the source match their ground truth, no per-change narrative has leaked into source comments, the CSV converter's self-test passes, bundled-asset phrases match the disk. In this tree the checks anchored to the development documents that are not shipped report as `[n/a ]` and do not block; `dev/SNAPSHOT.json` is what tells the gate it is looking at a snapshot. |
+| `python dev/scripts/precommit-check.py` | Static checks in about a second: the version string agrees with the preface, the two JSON corpora are well-formed and in sync with the source, the script parses as JavaScript (needs `pip install py-mini-racer`; without it the check is reported as skipped and the gate blocks, by design), count phrases in the source match their ground truth, no per-change narrative has leaked into source comments, the CSV converter's self-test passes, bundled-asset phrases match the disk, and the code points the app leaves out of XML are exactly those libxml2 refuses (needs `pip install lxml` as well). In this tree the checks anchored to the development documents that are not shipped report as `[n/a ]` and do not block; `dev/SNAPSHOT.json` is what tells the gate it is looking at a snapshot. |
 | `python dev/scripts/generate-validator-rules-json.py --check` | The rule mirror matches the source. |
-| `python dev/scripts/run-browser-smoke-gate.py` | Serves the tree on a free port, opens it headless in Chromium (Playwright — `pip install playwright && playwright install chromium` once), runs the whole self-test suite and asserts the suite size against `_COUNT_GROUND_TRUTH["smoke"]` (439 invariants). It refuses to report on a server that is not serving this tree's file. |
+| `python dev/scripts/run-browser-smoke-gate.py` | Serves the tree on a free port, opens it headless in Chromium (Playwright — `pip install playwright && playwright install chromium` once) and runs its legs in turn — the self-test suite, the mount oracle, the XSD leg and the first-validation leg. It runs the whole self-test suite and asserts the suite size against `_COUNT_GROUND_TRUTH["smoke"]` (558 invariants). Then, on the same page, the mount oracle (`MOUNT_ORACLE_JS`) imports each fixture through the real import path, opens every feature in the Builder in document order and again in the other order, and requires the Builder to write the GML of the import candidate the import report measured, that GML to be well-formed XML and the import report to have been made; its lines are printed as `mount oracle:` notes. In this tree the fixtures generated from the Feature Catalogue are left out, because the FC XML is not shipped, and a note says so; the hand-written fixtures, the bundled examples and `dev/sample-data/` still run, and a sample file that is not well-formed is reported as not run. Then the XSD leg validates the GML the app writes for each fixture against the S-201 2.0.0 schema — in the development repository; this tree does not ship the schema, so the leg is not run and a note says so. Then the first-validation leg, on a fresh page, clicks Run validation and checks that the self-tests ran before the data was validated. It refuses to report on a server that is not serving this tree's file. |
 | **Run tests** in the Validator tab | The same suite in a browser you trust. |
 
 The suite covers the round trip of every bundled sample, determinism of the output, the rule corpus size and shape, the structural rules against known-good and known-bad documents, Builder form ↔ feat fidelity, quick fixes, the ZIP encoder and decoder, the SHA-256 implementation against the FIPS vectors, the spreadsheet importer end to end, and XSS inertness of every surface that renders user-file text. When you add an invariant, register it with the suite's `_t` helper next to the region it protects and bump `_COUNT_GROUND_TRUTH["smoke"]`.
 
-`dev/scripts/build-end-user-version.py` produces the comment-stripped tester bundle (it also serves the bundle and re-runs the suite against it). `dev/scripts/csv_to_s201.py` is a standalone CSV → S-201 converter with its own fixture, kept as the pre-commit gate's conformance self-test.
+`dev/scripts/build-end-user-version.py` produces the comment-stripped tester bundle (it also serves the bundle and re-runs the suite against it); the lexer that tells the app's comments from its code is `dev/scripts/source_scan.py`. `dev/scripts/csv_to_s201.py` is a standalone CSV → S-201 converter with its own fixture, kept as the pre-commit gate's conformance self-test.
 
 ---
 
@@ -145,7 +145,7 @@ Where the citation forms point:
 | `r1001_ed2_full.txt L384-393`, `s201_ps_2_0_0_main_full.txt L1091-1093`, `s158_100_checks_table.txt L271` (a file name plus a line range) | The named plain-text extract of the IHO or IALA publication, at `dev/pdf-extracts/<name>` once regenerated; the manifest names the publication behind each extract |
 | `S-100 Pt 10b §10b-11.7`, `S-201 PS §10.14`, `DCEG §2.4.7`, `R1001 Table 3` | The named section of the IHO or IALA publication (edition and SHA-256 in the manifest) |
 | OGC GML 3.2 schema, S-100 XSDs, ISO 19115/19139 XSDs, `xlink.xsd` / `xml.xsd` | The schema files at the manifest paths `dev/spec-sources/ogc-gml/`, `s-100-xsd/`, `iso-xsd/`, `w3c-xsd/` |
-| S-201 Annex B1 XSD | `dev/spec-sources/s-201-xsd/` (edition 1.1.0 — the structural patterns the structural rules cite are unchanged in 2.0.0) |
+| S-201 Annex B XSD | `dev/spec-sources/s-201-xsd/` — the edition 2.0.0 schema (its targetNamespace is the dataset namespace `NS_S201`, its imports the S-100 and GML namespaces `NS_S100` / `NS_GML`; the structural rules cite it for the namespaces, the root, the member container and the order) and the edition 1.1.0 Annex B1 XSD (a legacy namespace; the `<imember>` / `<member>` containers its Annex B2 document describes, which the parser still reads) |
 | S-62 producer codes | `dev/spec-sources/iho-additional/S-62_ProducerCodes.csv` + `.json`, extracted from the IHO S-62 register |
 | Annex D symbol dispatch | `Annex_D/Rules/*.xsl` (the templates `SYMBOL_RULES` was ported from) and `Annex_D/portrayal_catalogue.xml` — these ARE in the tree |
 | PKZIP APPNOTE, FIPS 180-4 | General-knowledge specifications for the ZIP layout and SHA-256; the SHA-256 is locked to the published test vectors by the self-tests |
@@ -156,7 +156,7 @@ A rule's `ref` and a comment's citation are hypotheses to check, not facts to tr
 
 ## 8. The rules the code was written under
 
-`dev/foundational-rules.json` holds all 25 engineering rules with their rationale; the in-app `FOUNDATIONAL_RULES` constant mirrors them and a self-test keeps the two in step. The ones that will bite you first:
+`dev/foundational-rules.json` holds all 26 engineering rules with their rationale; the in-app `FOUNDATIONAL_RULES` constant mirrors them and a self-test keeps the two in step. The ones that will bite you first:
 
 - **Verify before you code.** A change that touches a specification construct is checked against the primary source first, and the inline comment cites the exact lines.
 - **Zero fabrications.** No enum value, attribute, element, formula or section number that is not in a cited, manifest-listed source.
@@ -182,13 +182,13 @@ The script defines everything at module scope, so any function can be lifted; wh
 - **ZIP and hashing:** `_zipEncode` is pure JavaScript; `_zipDecode` uses `DecompressionStream` for DEFLATE members; `_sha256Hex` is pure JavaScript by design (WebCrypto is a secure-context API, unavailable over plain `http://` on a LAN).
 - **The spreadsheet reader** (`_impParseXlsx`, `_impParseDelimited`) is pure JavaScript over `_zipDecode` and `DOMParser` — no library.
 
-Keep the S-201 namespace, the element order and the component link form as the generator writes them; other validators check them. The code is MIT; the Annex D material is © IHO / IALA and travels with `NOTICE.txt`.
+Keep the S-201 namespace (`NS_S201`, the S-201 2.0.0 schema's), the element order and the component link form as the generator writes them; other validators check them. The code is MIT; the Annex D material is © IHO / IALA and travels with `NOTICE.txt`.
 
 ---
 
 ## 10. Known limitations
 
-- Validation is rule-based, not XSD or Schematron; the schema families are reference material (manifest-listed, not shipped). A pure-JS XSD validator would be needed to add schema validation.
+- Validation is rule-based, not XSD or Schematron; the schema families are reference material (manifest-listed, not shipped). A pure-JS XSD validator would be needed to add schema validation. In the development repository, pre-commit check #20 validates the bundled samples against the S-201 2.0.0 schema and checks that shapes the structural rules report fail it, and the browser gate's XSD leg validates the GML the app writes against it; in this tree neither runs (the schema is not shipped).
 - No S-158:201 (S-201-specific validation checks) has been published by the IHO yet; the corpus will be cross-referenced against it when one appears. The subgroup's development repository is <https://github.com/iho-ohi/S-100-Validation-Checks>.
 - Package validation covers structure, catalogue content and cross-references; Part 15 digital signatures are checked for presence and algorithm only (verification needs the IHO Data Protection Scheme certificate chain).
 - The producer-code rule accepts any four-character `[A-Z0-9]` code; strict membership in the S-62 list is future work.

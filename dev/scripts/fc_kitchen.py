@@ -19,6 +19,13 @@ line's own srsName, a nilReason that is not a valid one, repeated values, the le
 a racon, a fog signal, a rhythm on a beacon, a legacy <component> link), and colour-less lights whose rhythm holds only
 signal groups or signal-sequence rows; and the edge cases again with a producer's prefixes (S-201 as ns4:, GML as ns1:,
 S-100 as ns2:). Names are fictional; positions are synthetic.
+
+fixtures(dii=True) gives the same documents with a complete dataset identification block (_dii: every mandatory
+field DataSetIdentificationType declares, s100gmlbase.xsd L208-280, with fictional values — the optional
+datasetAbstract only where a fixture passes one) for the browser gate's XSD leg:
+the generator writes only the fields a file has beyond the three fixed ones, so a fixture without the block yields GML
+the S-201 2.0.0 schema rejects at the identification block alone. The mount oracle keeps fixtures(), whose documents
+carry no block, so the path that leaves the missing fields missing stays covered.
 """
 import os
 import sys
@@ -63,7 +70,7 @@ def _load(fc_path=FC_XML):
     return simple, complex_, types
 
 
-def kitchen(mode="plain", fc_path=FC_XML):
+def kitchen(mode="plain", fc_path=FC_XML, dii=False):
     assert mode in MODES, mode
     simple, complex_, types = _load(fc_path)
 
@@ -145,11 +152,25 @@ def kitchen(mode="plain", fc_path=FC_XML):
         gid = "FK.%03d" % (k + 1)
         body = "".join(emit(r, u, p, "  ") for (r, u, p) in chain(code))
         members.append('<%s gml:id="%s">\n%s%s</%s>\n' % (code, gid, body, geom(code, gid, k), code))
-    return _doc("DS.FK", "".join(members))
+    return _doc("DS.FK", "".join(members), _dii() if dii else "")
+
+
+def _dii(abstract=None):
+    """A complete dataset identification block in the order DataSetIdentificationType declares it (s100gmlbase.xsd
+    L208-280): the two fixed encoding values, the product S-201 2.0.0, and fictional values for the rest; `abstract`
+    (already escaped) is written as datasetAbstract, the one optional field."""
+    f = [("encodingSpecification", "S-100 Part 10b"), ("encodingSpecificationEdition", "1.0"), ("productIdentifier", "S-201"),
+         ("productEdition", "2.0.0"), ("applicationProfile", "1"), ("datasetFileIdentifier", "XX00FIXTURE.gml"),
+         ("datasetTitle", "Fixture dataset Alfa"), ("datasetReferenceDate", "2020-01-02"), ("datasetLanguage", "eng")]
+    if abstract is not None:
+        f.append(("datasetAbstract", abstract))
+    f += [("datasetTopicCategory", "oceans"), ("datasetPurpose", "base"), ("updateNumber", "0")]
+    return ("<S100:DatasetIdentificationInformation>" + "".join("<S100:%s>%s</S100:%s>" % (k, v, k) for k, v in f)
+            + "</S100:DatasetIdentificationInformation>\n")
 
 
 def _doc(dsid, members, head=""):
-    return ('<?xml version="1.0" encoding="UTF-8"?>\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/2.0" xmlns:gml="http://www.opengis.net/gml/3.2" '
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" '
             'xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="%s">\n%s<members>\n%s</members>\n</Dataset>\n') % (dsid, head, members)
 
 
@@ -158,7 +179,7 @@ def _pt(gid, lat, lon=2.0):
             '<gml:pos>%.7f %.7f</gml:pos></S100:Point></S100:pointProperty></geometry>') % (gid, lat, lon)
 
 
-def _edge():
+def _edge(dii=False):
     m = []
     m.append('<LateralBuoy gml:id="ED.1"><colour>Red</colour><buoyShape>Can</buoyShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark><height>1,5</height><verticalLength>.6</verticalLength>%s</LateralBuoy>\n' % _pt("ED.1", 1.01))
     m.append('<LateralBuoy gml:id="ED.2"><colour>Green</colour><buoyShape>Conical</buoyShape><categoryOfLateralMark>Starboard-Hand Lateral Mark</categoryOfLateralMark><height>+2.5</height><installationDate>2020-13-01</installationDate><sourceDate>2020-02-30</sourceDate>%s</LateralBuoy>\n' % _pt("ED.2", 1.02))
@@ -202,11 +223,12 @@ def _edge():
              '<topmark><colour>Green</colour><topmarkDaymarkShape>Cone, point up</topmarkDaymarkShape><Statuspart xlink:href="#ED.3"/></topmark>%s</LateralBuoy>\n' % _pt("ED.22", 1.22))
     head = ('<gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.000000000 2.000000000</gml:lowerCorner>'
             '<gml:upperCorner>1.123456789 2.987654321</gml:upperCorner></gml:Envelope></gml:boundedBy>\n'
-            '<S100:DatasetIdentificationInformation><S100:datasetAbstract>abs one&#13;abs two</S100:datasetAbstract></S100:DatasetIdentificationInformation>\n')
+            + (_dii("abs one&#13;abs two") if dii else
+               '<S100:DatasetIdentificationInformation><S100:datasetAbstract>abs one&#13;abs two</S100:datasetAbstract></S100:DatasetIdentificationInformation>\n'))
     return _doc("DS.ED", "".join(m), head)
 
 
-def _legacy():
+def _legacy(dii=False):
     m = []
     m.append('<LateralBuoy gml:id="LG.1"><colour>Red</colour><buoyShape>Can</buoyShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark><light><lightCharacter>Fl</lightCharacter><colour>Red</colour><signalPeriod>4</signalPeriod></light>%s</LateralBuoy>\n' % _pt("LG.1", 1.01))
     m.append('<LateralBuoy gml:id="LG.2"><colour>Green</colour><buoyShape>Conical</buoyShape><categoryOfLateralMark>Starboard-Hand Lateral Mark</categoryOfLateralMark><topmark><topmarkShape>Cone (Point Up)</topmarkShape><colour>Green</colour><colourPattern>Horizontal Stripes</colourPattern><status>Occasional</status><status>Temporary</status><verticalLength>0.8</verticalLength><iDCode>XX-TM-2</iDCode><fixedDateRange><dateStart>20250101</dateStart></fixedDateRange></topmark>%s</LateralBuoy>\n' % _pt("LG.2", 1.02))
@@ -225,10 +247,10 @@ def _legacy():
     m.append('<SinkerAnchor gml:id="LG.9"><sinkerDimensions><heightLengthUnits>Metres</heightLengthUnits><verticalLength>3.25</verticalLength></sinkerDimensions>%s</SinkerAnchor>\n' % _pt("LG.9", 1.09))
     m.append('<RadarTransponderBeacon gml:id="LG.10"><categoryOfRadarTransponderBeacon>Racon, Radar Transponder Beacon</categoryOfRadarTransponderBeacon><sectorLimitOne><sectorBearing>30</sectorBearing><sectorLineLength>2</sectorLineLength></sectorLimitOne><sectorLimitTwo><sectorBearing>60</sectorBearing></sectorLimitTwo>%s</RadarTransponderBeacon>\n' % _pt("LG.10", 1.10))
     m.append('<Topmark gml:id="LG.11"><buoyPart xlink:href="#LG.1"/><colour>Red</colour><topmarkDaymarkShape>Cylinder</topmarkDaymarkShape>%s</Topmark>\n' % _pt("LG.11", 1.01))
-    return _doc("DS.LG", "".join(m))
+    return _doc("DS.LG", "".join(m), _dii() if dii else "")
 
 
-def _rhythm():
+def _rhythm(dii=False):
     """Colour-less lights whose rhythm holds only signal groups, only complete signal-sequence rows, both, or a half row."""
     seq = "<signalSequence><signalDuration>0.5</signalDuration><signalStatus>Lit</signalStatus></signalSequence><signalSequence><signalDuration>1.5</signalDuration><signalStatus>Eclipsed</signalStatus></signalSequence>"
     bodies = {"G": "<signalGroup>(2)</signalGroup><signalGroup>(3)</signalGroup>", "S": seq, "GS": "<signalGroup>(2)</signalGroup>" + seq,
@@ -239,25 +261,26 @@ def _rhythm():
             k += 1
             gid = "RH.%02d" % k
             m.append('<%s gml:id="%s"><rhythmOfLight>%s</rhythmOfLight>%s</%s>\n' % (ft, gid, body, _pt(gid, 1.0 + k * 0.001), ft))
-    return _doc("DS.RH", "".join(m))
+    return _doc("DS.RH", "".join(m), _dii() if dii else "")
 
 
 def _prefixed(text):
     """The same dataset with the S-201 namespace bound to ns4:, GML to ns1: and S-100 to ns2: (a producer's prefixes)."""
     import re
-    t = text.replace('xmlns="http://www.iho.int/S-201/gml/cs0/2.0"', 'xmlns:ns4="http://www.iho.int/S-201/gml/cs0/2.0"')
+    t = text.replace('xmlns="http://www.iho.int/S-201/gml/cs0/1.0"', 'xmlns:ns4="http://www.iho.int/S-201/gml/cs0/1.0"')
     t = re.sub(r"<(/?)([A-Za-z_][\w.-]*)(?=[\s/>])", lambda m: "<" + m.group(1) + ("ns4:" if not m.group(2).startswith("?") else "") + m.group(2), t)
     t = t.replace("xmlns:gml=", "xmlns:ns1=").replace("xmlns:S100=", "xmlns:ns2=")
     return t.replace("gml:", "ns1:").replace("S100:", "ns2:")
 
 
 EDGE_FIXTURES = (("edge cases", _edge), ("legacy inline forms", _legacy), ("colour-less rhythms", _rhythm),
-                 ("edge cases, S-201 as ns4:, GML as ns1:", lambda: _prefixed(_edge())))
+                 ("edge cases, S-201 as ns4:, GML as ns1:", lambda dii=False: _prefixed(_edge(dii))))
 
 
-def fixtures():
-    """[(name, text)] — the kitchen in every mode, then the hand-written cases."""
-    return [("FC kitchen (%s)" % m, kitchen(m)) for m in MODES] + [(n, f()) for (n, f) in EDGE_FIXTURES]
+def fixtures(dii=False):
+    """[(name, text)] — the kitchen in every mode, then the hand-written cases; with dii=True each carries a complete
+    dataset identification block (see _dii)."""
+    return [("FC kitchen (%s)" % m, kitchen(m, dii=dii)) for m in MODES] + [(n, f(dii)) for (n, f) in EDGE_FIXTURES]
 
 
 if __name__ == "__main__":

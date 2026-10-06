@@ -827,7 +827,8 @@ def extract_push_rules(js: str, fn_name: str, open_re: 're.Pattern', source_laye
 
 
 def _strip_string_literal(s: str) -> Optional[str]:
-    """If `s` is a quoted string literal, return its decoded content; else None."""
+    """If `s` is a quoted string literal, return its decoded content; else `s` itself, stripped — so a push whose
+    severity or ref is not a literal is mirrored as its raw JS expression."""
     s = s.strip()
     if len(s) >= 2 and s[0] == s[-1] and s[0] in ('"', "'", '`'):
         return _js_unescape(s[1:-1])

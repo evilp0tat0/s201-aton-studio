@@ -47,7 +47,8 @@ before check 3.
      skipped.
  10. Sample-data file existence: every fixture named in the `dev/sample-data/`
      table of dev/README.md exists on disk (a fixture renamed or deleted
-     without the README being updated).
+     without the README being updated), and dev/README.md's scripts tree names
+     exactly the files in dev/scripts/.
  11. Source-file tour anchor freshness: Part A walks the HANDOFF.md
      "Source-file tour" table's `` `<snippet>` (line ~NNN) `` anchors, Part B
      any `| NNN | `<snippet>` |` rows in CLAUDE.md, Part C `` `<snippet>` ...
@@ -69,21 +70,28 @@ before check 3.
      `re.findall(r"^check\\(", __file__)` so it auto-bumps when a check is
      added. Every pattern requires a number AND a context noun, so bare
      numbers never match.
- 13. Doc count-phrase freshness in .md surfaces (Rule 23): scans CLAUDE.md /
+ 13. Doc count-phrase freshness in .md surfaces (Rule 23) — and the browser gate's
+     legs named, in the order they run, wherever they are listed: scans CLAUDE.md /
      README.md / dev/README.md / dev/HANDOFF.md (clipped before § 15) for
      count-phrases (gate results `N/N`, `N-check`, smoke-invariant /
      validator-rule / foundational-rule / ATYPES / Annex D corpus sizes, ...)
      against the same ground truth, then pins the § 15 Live-state footer rows
-     (file size, rule counts, smoke count, foundational count) and rejects any
-     other restatement of the current line count or an `APP_VERSION` value.
+     (file size, rule counts, smoke count, foundational count, pre-commit
+     gate count) and rejects any other restatement of the current line count
+     or an `APP_VERSION` value.
  14. Rule-21 narrative-residue purity in s201_aton_studio.html: rejects
      per-pass-narrative residue patterns (pass-N / Agent-X / audit-finding /
-     quoted-user-dialogue markers) in the app source — that history belongs
-     in dev/CHANGELOG.md.
+     quoted-user-dialogue markers) in the app source, the comments between
+     the FOUNDATIONAL_RULES entries included — that history belongs in
+     dev/CHANGELOG.md.
  15. csv_to_s201.py output conformance self-test: runs the converter against
      its bundled self-test CSV (dev/scripts/csv_to_s201_selftest.csv) and
      asserts the emitted GML keeps its conformance guarantees (FC-mandatory
-     attributes present, no extraneous DII fields, no child featureName).
+     attributes present, no extraneous DII fields, no child featureName);
+     then variants: a cell holding U+0001 and U+000B (removed, named on a
+     REMOVED line, the GML well-formed), a byte cp1252 does not define (an
+     error naming it, its line and offset; exit 1) and a column name the
+     console cannot write (escaped, the run not stopped).
  16. Bundled-asset count/version phrase freshness (Rule 23): doc phrases
      stating bundled-asset facts must match the assets on disk — `Leaflet
      X.Y.Z` vs the lib/leaflet/leaflet.js banner; `N SVG files/symbols` vs
@@ -93,14 +101,39 @@ before check 3.
      every file in dev/pdf-extracts/ must match dev/pdf-extracts/MANIFEST.sha256
      (runs generate-pdf-extracts-manifest.py --check), so a silent
      re-extraction can no longer invalidate the cited line numbers.
+ 18. dev/known-issues.md is complete and consistent: every finding of a
+     complete ledger has a row, every row resolves to its ledger, the status
+     vocabulary is closed and the stated row / severity / open totals match.
+ 19. The FC_ATTR_OWNERS / FC_ROLE_OWNERS / FC_ROLE_BINDINGS / FC_TYPES
+     literals in the HTML equal the bundled Feature Catalogue XML's bindings
+     and concrete types (dev/scripts/fc_bindings.py).
+ 20. The S-201 Ed 2.0.0 Annex B XSD: the app's NS_S201 is its targetNamespace,
+     and the bundled samples exGML[0..3] and the csv_to_s201.py self-test
+     output validate against it (lxml; the schema's remote imports resolved
+     to the bundled copies with the network off). The schema declares its
+     members untyped, so this proves the namespace and the Dataset / DII /
+     members structure, not feature content.
+ 21. XML 1.0 characters: _XML_ILLEGAL (evaluated as JavaScript) and
+     csv_to_s201.py's copy hold exactly the code points libxml2 refuses in a
+     CDATA section, every lone surrogate and no supplementary code point.
+ 22. Notes on every line of code (Rule 26): against the commit where the
+     branch left origin/main, every code line it adds or changes in the app
+     (JavaScript, CSS, markup) and in dev/scripts carries a note, and no
+     unchanged line loses the note it had (dev/scripts/code_notes.py); the
+     lexer reads the app's script as V8 does, as far as compiling it without
+     its comments, and with a mark inside every comment and literal, can
+     show; the step length the rule's text states is the measure's.
 
 Snapshot-tree mode:
   dev/scripts/build-public-snapshot.py cuts a redistributable tree without the
   development documentation and stamps dev/SNAPSHOT.json. When that marker is
   present AND dev/HANDOFF.md is absent, the checks anchored to those documents
   (3, 7, 8, 9, 10, 11, 13 and the HANDOFF half of 1; 17 when the extracts were
-  not shipped) are reported as [n/a ] and do not block; everything else runs
-  unchanged. The marker cannot downgrade a tree that has dev/HANDOFF.md.
+  not shipped; 18, which reads the development ledgers; 19 and 20 when the
+  reference XML / schemas were not shipped; 22, a development-process rule
+  whose measure is not shipped) are reported as [n/a ] and do not block;
+  everything else runs unchanged. The marker cannot downgrade a tree that has
+  dev/HANDOFF.md.
 
 Exit code:
   0 = all checks pass — commit proceeds
@@ -155,12 +188,17 @@ VRULES_GEN_SCRIPT = os.path.join(PROJECT_ROOT, "dev", "scripts", "generate-valid
 # NOT APPLICABLE (listed, not counted as a pass, not blocking) so the code-
 # anchored checks still gate the snapshot. The marker alone never downgrades
 # the development tree: while dev/HANDOFF.md is present every check runs
-# exactly as before.
-SNAPSHOT_MARKER = os.path.join(PROJECT_ROOT, "dev", "SNAPSHOT.json")
+# exactly as before. The test itself is s201_xsd.snapshot_tree, which the
+# browser gate's XSD leg asks too.
+sys.path.insert(0, _SCRIPT_DIR)
+try:
+    import s201_xsd
+finally:
+    sys.path.pop(0)
 
 
 def _snapshot_tree():
-    return os.path.isfile(SNAPSHOT_MARKER) and not os.path.isfile(HANDOFF)
+    return s201_xsd.snapshot_tree(PROJECT_ROOT)
 
 
 class NotApplicable(Exception):
@@ -384,38 +422,45 @@ def check_inline_script_js_syntax():
         )
 
 
-def check_pass_count_consistency():
-    """Check 3: the 'across N passes' phrasing agrees across the three docs.
+# The running pass count written as a total - "across 120 passes", "over the 120 passes", "120 passes so far" - the
+# phrasing the retired pass-count prose used; checks 3 and 7 share it so the two cannot drift apart.
+_PASS_TOTAL_RE = re.compile(
+    r"\b(?:across|over)\s+(?:the\s+)?\d[\d,]*\s+passes\b|\b\d[\d,]*\s+passes\s+(?:so far|to date|in total)\b",
+    re.IGNORECASE)
 
-    Uses re.findall and takes the MAX match per document (the current-state
-    count). HANDOFF.md's narrative contains a chronological history with
-    several "across X passes" phrasings — only the highest is the current
-    state; a first-match read compared a historical figure in HANDOFF.md and
-    dev/README.md against the current one in README.md and reported a false
-    drift. Pass counts grow monotonically, so max() is always current."""
+
+def check_pass_count_consistency():
+    """Check 3 (Rule 23, single source): no developer doc restates the running pass count as prose.
+
+    The count lives in one place, the 'Current pass' row of HANDOFF section 15, which check 1 holds equal to the
+    HTML preface's 'current as of pass N'. This check does not compare those two (check 1 does); it guards the
+    surfaces around them: a total written anywhere else in HANDOFF.md, README.md or dev/README.md is a second copy
+    that drifts the moment the next pass lands - which is how the 'across N passes' phrasings this check once
+    compared went stale and were retired. A line marked historical (the patterns check 7 exempts) is a record of
+    its time, not a claim about now, and is left alone. Each document must be readable and non-empty, so a
+    missing or emptied file cannot pass as a clean one."""
     _needs_dev_docs("dev/HANDOFF.md", "README.md", "dev/README.md")
     files = [(HANDOFF, "HANDOFF.md"), (README, "README.md"), (DEV_README, "dev/README.md")]
-    counts = {}
+    restated = []   # every line that writes the pass count as a total, by document and line
     for path, name in files:
         with open(path, encoding="utf-8") as f:
             txt = f.read()
-        # Find ALL "across N passes" / "across the N passes" matches; take max
-        # (the highest pass count = the current state, since pass count grows monotonically)
-        matches = re.findall(r"across\s+(?:the\s+)?(\d+)\s+passes", txt)
-        if matches:
-            counts[name] = max(int(m) for m in matches)
-    if not counts:
-        return  # no doc has the phrasing — nothing to compare
-    unique_values = set(counts.values())
-    assert len(unique_values) == 1, (
-        f"pass-count drift across docs: {counts}"
-    )
+        assert txt.strip(), f"{name} is empty, so it could not be checked for a restated pass count"   # empty is not clean
+        # a line restating the total, unless it is marked as history
+        for lineno, line in enumerate(txt.splitlines(), start=1):
+            if _PASS_TOTAL_RE.search(line) and not any(re.search(p, line, re.IGNORECASE) for p in _INTENTIONAL_HISTORICAL_HEADING_PATTERNS):
+                restated.append(f"{name} line {lineno}: '{line.strip()[:120]}'")
+    # every restatement is listed with the one place the count lives, so the fix is in the message
+    assert not restated, (
+        "the running pass count is restated outside its single source:\n      " + "\n      ".join(restated)
+        + "\n      It lives in HANDOFF section 15's 'Current pass' row (held equal to the HTML preface by check 1): "
+        "point to it instead, or mark the line historical, e.g. '(historical - as of pass N)'.")
 
 
-# Section headings that are intentionally historical and should NOT be flagged
-# by the intra-section staleness check (check #7). Each entry is a regex
-# pattern that, when present in a heading line, exempts that heading from the
-# "must match max pass count" check.
+# Lines that are intentionally historical and should NOT be flagged by the
+# pass-count checks (#3 for prose, #7 for headings). Each entry is a regex
+# pattern that, when present in a line, exempts it from the "no restated
+# pass count" rule: it records its time, it does not claim the present.
 #
 # Why "Session N" is exempt: Session-headings are narrative summaries that
 # enumerate the full work of that session (e.g. "Session 23 (... pass 54 ... pass 57 ...)").
@@ -432,59 +477,55 @@ _INTENTIONAL_HISTORICAL_HEADING_PATTERNS = [
 
 
 def check_intra_section_staleness():
-    """Check 7: catch stale 'across N passes' phrasings inside section headings
-    (### / ## / #) that don't match the document's current max pass count.
+    """Check 7 (Rule 23, single source): no HANDOFF.md heading carries a count of passes.
 
-    Background: the pass-count consistency check (check #3) uses `max()` to
-    accommodate the master-narrative megaline that contains historical pass
-    references. But that masks intra-section staleness: e.g. HANDOFF once had
-    `### Concrete rules maintained across the 109 passes` while the doc's
-    max-pass narrative said 120+ — the heading itself was stale because the
-    `max()` check ignored it.
-
-    Rule 13 (Atomic delivery) requires every doc-touching pass to keep ALL
-    pass-count phrasings synced — not just the max one. This check enforces
-    that for SECTION HEADINGS specifically (where the pass count is part of
-    the heading semantics, not historical narrative).
-
-    Headings explicitly marked historical (matching one of
-    `_INTENTIONAL_HISTORICAL_HEADING_PATTERNS`) are exempted.
-    """
+    A heading is read as a statement about now, and a count of passes in one ("rules maintained across the 109
+    passes") is stale from the next pass on; HANDOFF once carried exactly that. The running count lives in HANDOFF
+    section 15's 'Current pass' row, which check 1 holds; this check does not read that row, it keeps headings
+    from becoming a second copy. A pass NUMBER ("refreshed pass 276") names an event and is allowed; a heading
+    marked historical (_INTENTIONAL_HISTORICAL_HEADING_PATTERNS) is exempt. HANDOFF.md must have headings at all,
+    so a flattened document cannot pass for a clean one."""
     _needs_dev_docs("dev/HANDOFF.md")
     with open(HANDOFF, encoding="utf-8") as f:
         txt = f.read()
-    matches = re.findall(r"across\s+(?:the\s+)?(\d+)\s+passes", txt)
-    if not matches:
-        return
-    max_pass = max(int(m) for m in matches)
-    # Walk line-by-line looking for headings (## / ### / ####) containing
-    # "across N passes" or "Over N passes" phrasings.
-    stale = []
-    for lineno, line in enumerate(txt.splitlines(), start=1):
-        if not re.match(r"^\s{0,3}#{1,6}\s", line):
-            continue
-        # Skip if this heading is intentionally historical
-        if any(re.search(p, line, re.IGNORECASE) for p in _INTENTIONAL_HISTORICAL_HEADING_PATTERNS):
-            continue
-        # Find pass-count phrasings inside this heading
-        m = re.search(r"(across\s+(?:the\s+)?|over\s+)(\d+)\s+passes?", line, re.IGNORECASE)
-        if not m:
-            continue
-        n = int(m.group(2))
-        if n != max_pass:
-            stale.append(f"line {lineno}: '{line.strip()[:120]}' says {n}, doc max is {max_pass}")
+    headings = [(n, l) for n, l in enumerate(txt.splitlines(), start=1) if re.match(r"^\s{0,3}#{1,6}\s", l)]
+    assert headings, "dev/HANDOFF.md has no markdown heading, so no heading could be checked for a pass count"   # the subject must exist
+    # a count of passes in a heading (any "N passes", the shared total phrasing included), unless marked historical
+    stale = [f"line {n}: '{l.strip()[:120]}'" for n, l in headings
+             if (re.search(r"\b\d[\d,]*\s+passes\b", l, re.IGNORECASE) or _PASS_TOTAL_RE.search(l))
+             and not any(re.search(p, l, re.IGNORECASE) for p in _INTENTIONAL_HISTORICAL_HEADING_PATTERNS)]
+    # every such heading is listed with the one place the count lives, so the fix is in the message
     assert not stale, (
-        "intra-section pass-count staleness in HANDOFF.md (heading lines):\n      "
-        + "\n      ".join(stale)
-        + "\n      Either refresh the heading to match the current max pass count, or "
-        "mark the section explicitly historical (e.g. '(historical — as of pass N)')."
-    )
+        "a HANDOFF.md heading carries a count of passes:\n      " + "\n      ".join(stale)
+        + "\n      The running count lives in HANDOFF section 15's 'Current pass' row (held by check 1): drop the "
+        "count from the heading, or mark the section historical, e.g. '(historical - as of pass N)'.")
 
 
 # Tolerance (in lines) for anchor freshness checks. ±2 absorbs the small drift
 # from rare comment-block-insertion-after-anchor scenarios while still catching
 # meaningful staleness (drift found in practice ranged from +30 to +756 lines).
 _ANCHOR_TOLERANCE = 2
+
+# How many rows each anchor-walking check must actually verify. A check that finds its heading but none (or few) of
+# its rows - a table reformatted so the row regex stops matching, rows deleted - would otherwise pass on what is left,
+# however little. Each value is the count the check verified when its floor was set; it is a ratchet: a pass that
+# adds rows may raise it, and a pass that removes rows on purpose lowers it in the same commit, saying why.
+_SUBJECT_FLOORS = {
+    "key_functions": 31,   # check 8: Key-functions rows compared with their `^function NAME(` line
+    "constants": 32,       # check 9: Constants rows compared with their `^const NAME` line
+    "tour": 41,            # check 11 Part A: Source-file tour anchors resolved and compared
+    "sample_data": 4,     # check 10: dev/sample-data files the dev/README.md table names
+}
+
+
+def _assert_floor(key, verified, what):
+    """Fail when a check verified fewer rows than its floor in _SUBJECT_FLOORS, naming the check's subject, the
+    count it verified and the count it expected - so a shrunken subject reads as a defect, not as flakiness."""
+    floor = _SUBJECT_FLOORS[key]   # the count recorded when the floor was set
+    assert verified >= floor, (
+        f"{what}: verified {verified}, expected at least {floor} (_SUBJECT_FLOORS['{key}']) - the subject has lost "
+        "rows or stopped matching the check's pattern; restore it, or lower the floor in the same commit if the rows "
+        "were removed on purpose")
 
 
 def check_function_anchor_freshness():
@@ -516,9 +557,10 @@ def check_function_anchor_freshness():
         if re.match(r"^###\s+Key functions\b", line):
             start = i
             break
-    if start is None:
-        # Section not found — gate is opt-in on this doc shape.
-        return
+    # the heading is this check's whole subject: without it nothing is verified, which is a doc defect, not a pass
+    assert start is not None, (
+        "dev/HANDOFF.md has no '### Key functions' heading, so no function anchor was checked - restore the heading "
+        "(or point this check at its new name)")
 
     # End of "Key functions" section is the next ## or ### heading at same/higher
     # depth, OR the end of the file.
@@ -544,6 +586,8 @@ def check_function_anchor_freshness():
         r"\|\s*\*?\*?`(_?[A-Za-z][\w$]*)\([^`)]*\)?`\*?\*?\s*\|\s*(~?)\*?\*?(\d+(?:-\d+)?)\*?\*?\s*\|"
     )
     stale = []
+    verified = 0   # rows actually compared with the HTML, for the floor below
+    # each row of the section: an exact anchor is compared with the HTML and counted toward the floor
     for i in range(start, end):
         line = handoff_lines[i]
         m = row_re.search(line)
@@ -554,6 +598,7 @@ def check_function_anchor_freshness():
             continue  # documented approximate
         if "-" in lineno_str:
             continue  # range — multi-anchor row, skip
+        verified += 1   # an exact single-line anchor: this row is compared (a missing function is reported below)
         claimed = int(lineno_str)
         # Find actual location in HTML
         actual_match = re.search(rf"^function\s+{re.escape(name)}\(", html_text, re.MULTILINE)
@@ -572,6 +617,7 @@ def check_function_anchor_freshness():
                 f"line {i+1}: '{name}()' cited as {claimed}, actual {actual_line} (drift {drift:+d})"
             )
 
+    _assert_floor("key_functions", verified, "check 8, HANDOFF.md 'Key functions' rows compared")   # rows lost read as a defect
     assert not stale, (
         "function-anchor freshness drift in HANDOFF.md 'Key functions' tables:\n      "
         + "\n      ".join(stale)
@@ -605,8 +651,10 @@ def check_constants_anchor_freshness():
         if re.match(r"^###\s+Constants\b", line):
             start = i
             break
-    if start is None:
-        return
+    # the heading is this check's whole subject: without it nothing is verified, which is a doc defect, not a pass
+    assert start is not None, (
+        "dev/HANDOFF.md has no '### Constants' heading, so no constant anchor was checked - restore the heading "
+        "(or point this check at its new name)")
 
     # End at the next ## or ### heading
     end = len(handoff_lines)
@@ -623,6 +671,8 @@ def check_constants_anchor_freshness():
         r"\|\s*\*?\*?`?([A-Z][A-Z0-9_]+)`?\*?\*?\s*\|\s*\*?\*?(\d+)\*?\*?\s*\|"
     )
     stale = []
+    verified = 0   # rows actually compared with the HTML, for the floor below
+    # each row of the section: an exact anchor is compared with the HTML and counted toward the floor
     for i in range(start, end):
         line = handoff_lines[i]
         # Skip the header / separator rows
@@ -644,6 +694,7 @@ def check_constants_anchor_freshness():
         if re.search(r"\d+\s*-\s*\d+", line_cell):
             continue
         name, claimed_str = m.group(1), m.group(2)
+        verified += 1   # a single-name, single-line row: this one is compared (a missing const is reported below)
         claimed = int(claimed_str)
         # Find actual `^const NAME` line in HTML
         actual_match = re.search(rf"^const\s+{re.escape(name)}\b", html_text, re.MULTILINE)
@@ -659,6 +710,7 @@ def check_constants_anchor_freshness():
                 f"line {i+1}: '{name}' cited as {claimed}, actual {actual_line} (drift {drift:+d})"
             )
 
+    _assert_floor("constants", verified, "check 9, HANDOFF.md 'Constants' rows compared")   # rows lost read as a defect
     assert not stale, (
         "constants-table anchor freshness drift in HANDOFF.md:\n      "
         + "\n      ".join(stale)
@@ -770,6 +822,11 @@ def check_source_file_tour_anchor_freshness():
         if re.match(r"^###\s+Source-file tour\b", line):
             start = i
             break
+    # Part A's heading is its whole subject: without it the tour's anchors go unchecked, a doc defect, not a pass
+    assert start is not None, (
+        "dev/HANDOFF.md has no '### Source-file tour' heading, so no tour anchor was checked - restore the heading "
+        "(or point this check at its new name)")
+    tour_verified = 0   # tour anchors resolved and compared, for the floor after Part A
     if start is not None:
         end = len(handoff_lines)
         for i in range(start + 1, len(handoff_lines)):
@@ -798,6 +855,7 @@ def check_source_file_tour_anchor_freshness():
                 actual_line = _resolve_identifier(name)
                 if actual_line is None:
                     continue  # not a top-level symbol — skip per self-correcting guard
+                tour_verified += 1   # a top-level symbol: this anchor is compared
                 claimed = int(lineno_str)
                 tolerance = _TOUR_TOLERANCE_APPROX if approx == "~" else _TOUR_TOLERANCE_EXACT
                 drift = actual_line - claimed
@@ -808,6 +866,7 @@ def check_source_file_tour_anchor_freshness():
                         f"(drift {drift:+d}, tolerance ±{tolerance})"
                     )
 
+    _assert_floor("tour", tour_verified, "check 11 Part A, HANDOFF.md 'Source-file tour' anchors compared")   # the self-correcting skip cannot hide a lost table
     # === Part B: CLAUDE.md architecture/source-file region table ===
     # Format: `| NNN | `code` description |` for single-line rows.
     # Range rows like `| 720-820 | ... |` are skipped (only `^\|\s*\d+\s*\|`
@@ -932,13 +991,13 @@ def check_source_file_tour_anchor_freshness():
 # file's own `check()` registration count below (so it auto-bumps when a new
 # check is added).
 _COUNT_GROUND_TRUTH = {
-    "smoke": 439,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here.
-    "foundational": 25,  # FOUNDATIONAL_RULES const length + foundational-rules.json entries
+    "smoke": 558,        # in-app smoke invariants: the runSmokeTests suite size, also the browser-gate baseline. Single source of truth for the suite size; what each pass added or removed lives in dev/CHANGELOG.md (Rule 21/23), not here. 557 -> 558 on pass 768: the SG-20 Builder-chrome restore lock. 557 was pass 767.
+    "foundational": 26,  # FOUNDATIONAL_RULES const length + foundational-rules.json entries
     # Rule 23 (single-source-or-gate): counts that once appeared ungated across
     # .md surfaces. Each value is the current canonical count; bump in lockstep
     # with the underlying code.
-    "validator_total": 258,         # per-feature + structural + exchange-set (lockstep-asserted below)
-    "validator_per_feature": 206,   # RULES[] array length — also locked at runtime by the smoke assertion on RULES.length
+    "validator_total": 268,         # per-feature + structural + exchange-set (lockstep-asserted below)
+    "validator_per_feature": 216,   # RULES[] array length — also locked at runtime by the smoke assertion on RULES.length
     "validator_structural": 25,     # GML-STR-* rule count (validateGMLStructure push calls) — also locked by the smoke assertion that a full-DII dataset yields every GML-STR id
     "validator_exchange_set": 27,   # exchange-set package rule count (validateExchangeSet push calls: S158-PKG-NN per S-158:100 Ed 1.0.0 Collection A Part 15/17 + S201-ES-NN per S-201 PS 2.0.0 §11 Data Product Delivery / §12.2.3 discovery metadata) — run when a full Exchange Set ZIP is ingested on the Validator tab
     "atypes": 76,                   # ATYPES catalogue length (59 S-201 + 17 nonS201:true)
@@ -1458,6 +1517,13 @@ def check_doc_count_phrase_freshness():
         vfs.append("dev/HANDOFF.md: the § 15 'Foundational-rule count | N' footer row is missing or reformatted (Rule 23 gate, pass 582).")
     elif int(_fr.group(1)) != _COUNT_GROUND_TRUTH["foundational"]:
         vfs.append(f"dev/HANDOFF.md: § 15 'Foundational-rule count' row says {_fr.group(1)} but ground truth is {_COUNT_GROUND_TRUTH['foundational']}.")
+    # (a5) the § 15 'Pre-commit gate count' row: below the clip like a2-a4, so it is held here to this file's own count
+    #      of its checks, the figure every other surface is held to
+    _pc = re.search(r"\|\s*Pre-commit gate count\s*\|\s*(\d+)", _handoff_full)
+    if not _pc:
+        vfs.append("dev/HANDOFF.md: the § 15 'Pre-commit gate count | N' footer row is missing or reformatted (Rule 23).")
+    elif int(_pc.group(1)) != GROUND_TRUTH["precommit"]:
+        vfs.append(f"dev/HANDOFF.md: § 15 'Pre-commit gate count' row says {_pc.group(1)} but the gate has {GROUND_TRUTH['precommit']} checks.")
     # (b) no OTHER doc may restate the current line count (`<actual> lines`) or an
     #     APP_VERSION value. Keyed on the actual count so historical figures
     #     (18,830 / 9,757) and deltas (~1,100 lines) are not flagged.
@@ -1485,6 +1551,46 @@ def check_doc_count_phrase_freshness():
         + "\n      These two facts drifted repeatedly across passes 280-284; they now live in exactly one "
         "human source (HANDOFF § 15 Live State footer) + the gate-protected § 3 tour anchor. Added pass 285."
     )
+    # (c) the browser gate's legs — the stages _run_gate runs (`stage = "…"` in run-browser-smoke-gate.py) — are named,
+    #     in the order they run, on every surface that lists them: the gate's own header, dev/README.md's scripts
+    #     tree and the public DEVELOPER-NOTES template; HANDOFF § 14 gives each leg after the suite a section of its
+    #     own, in that order. A leg added, removed or reordered cannot leave one of them behind (Rule 23).
+    leg_names = {"suite": r"suite", "oracle": r"mount oracle", "xsd": r"XSD leg", "first-validation": r"first[- ]validation"}
+    with open(os.path.join(_SCRIPT_DIR, "run-browser-smoke-gate.py"), encoding="utf-8") as f:
+        _gate = f.read()
+    stages = re.findall(r'^\s*stage = "([\w-]+)"', _gate, re.M)
+    _unnamed = [s for s in stages if s not in leg_names]
+    assert stages and not _unnamed, (
+        "the browser gate runs a stage this check cannot name (%s): add it to leg_names here and name it on each surface "
+        "that lists the legs" % (", ".join(_unnamed) or "no `stage = \"…\"` found"))
+    _dn_path = os.path.join(PROJECT_ROOT, "dev", "public-snapshot", "DEVELOPER-NOTES.md")
+    with open(_dn_path, encoding="utf-8") as f:
+        _dn = f.read()
+    with open(DEV_README, encoding="utf-8") as f:
+        _rd = f.read()
+    _surfaces = {
+        "run-browser-smoke-gate.py's header (its gate-stack entry)": (re.search(r"2\. run-browser-smoke-gate\.py[\s\S]*?\n#   3\.", _gate) or [""])[0],
+        "dev/README.md's scripts tree (its run-browser-smoke-gate.py line)": (re.search(r"── run-browser-smoke-gate\.py .*", _rd) or [""])[0],
+        "dev/public-snapshot/DEVELOPER-NOTES.md (its run-browser-smoke-gate.py row)": (re.search(r"^\| `python dev/scripts/run-browser-smoke-gate\.py` \|.*", _dn, re.M) or [""])[0],
+    }
+    leg_faults = []
+    for where, text in _surfaces.items():
+        if not text:
+            leg_faults.append(where + ": not found")
+            continue
+        at = [(re.search(leg_names[s], text, re.I).start() if re.search(leg_names[s], text, re.I) else -1) for s in stages]
+        for s, i in zip(stages, at):
+            if i < 0:
+                leg_faults.append("%s does not name the %s leg" % (where, s))
+        if all(i >= 0 for i in at) and at != sorted(at):
+            leg_faults.append("%s names the legs out of the order they run (%s)" % (where, " → ".join(stages)))
+    _h14 = _handoff_full[_handoff_full.find("## 14. "):_handoff_full.find("## 15. ")]
+    _heads = [m.start() for s in stages[1:] for m in [re.search(r"^### The gate's " + leg_names[s], _h14, re.M | re.I)] if m]
+    if len(_heads) != len(stages) - 1:
+        leg_faults.append("HANDOFF § 14 has no `### The gate's …` section for each leg after the suite (%s)" % ", ".join(stages[1:]))
+    elif _heads != sorted(_heads):
+        leg_faults.append("HANDOFF § 14's leg sections are out of the order the legs run")
+    assert not leg_faults, "the browser gate's legs (" + " → ".join(stages) + ") drifted:\n      " + "\n      ".join(leg_faults)
 
 
 def check_sample_data_files_exist():
@@ -1500,17 +1606,28 @@ def check_sample_data_files_exist():
     sections (e.g. spec-sources/, pdf-extracts/).
     """
     _needs_dev_docs("dev/README.md")
+    # dev/README.md's scripts tree names exactly the files in dev/scripts/: a script added, renamed or removed cannot
+    # leave the tree behind (it once listed 12 of the 14 files)
+    with open(DEV_README, encoding="utf-8") as f:
+        _readme = f.read()
+    _tm = re.search(r"^├── scripts/\n((?:│.*\n)+)", _readme, re.M)
+    assert _tm, "dev/README.md has no `├── scripts/` tree block"
+    _named = set(re.findall(r"^│   [├└]── (\S+)", _tm.group(1), re.M))
+    _on_disk = {n for n in os.listdir(_SCRIPT_DIR) if os.path.isfile(os.path.join(_SCRIPT_DIR, n))}
+    assert _named == _on_disk, (
+        "dev/README.md's scripts tree and dev/scripts/ differ — in the tree only: %s; on disk only: %s"
+        % (", ".join(sorted(_named - _on_disk)) or "none", ", ".join(sorted(_on_disk - _named)) or "none"))
     sample_dir = os.path.join(PROJECT_ROOT, "dev", "sample-data")
-    if not os.path.isdir(sample_dir):
-        # Sample-data dir doesn't exist — nothing to check; skip rather than fail.
-        return
+    # the folder holds the files the smoke gate's mount oracle opens: its absence is a broken tree, not a pass
+    assert os.path.isdir(sample_dir), f"{sample_dir} does not exist, so no sample-data file could be checked"
     with open(DEV_README, encoding="utf-8") as f:
         txt = f.read()
     # Find the sample-data section header
     sec_re = re.compile(r"^##\s+`?dev/sample-data/?`?", re.MULTILINE)
     sm = sec_re.search(txt)
-    if not sm:
-        return  # section not found — opt-in on this doc shape
+    # the section is this half's whole subject: without it no file is checked, a doc defect rather than a pass
+    assert sm, ("dev/README.md has no '## `dev/sample-data/`' heading, so no sample-data row was checked - restore "
+                "the heading (or point this check at its new name)")
     sec_start = sm.start()
     # Section ends at the next `##` heading at the same depth (or end-of-file)
     next_re = re.compile(r"^##\s", re.MULTILINE)
@@ -1521,8 +1638,7 @@ def check_sample_data_files_exist():
     referenced = set()
     for m in re.finditer(r"\|\s*`([^`]+\.(?:gml|xml|zip))`\s*\|", section):
         referenced.add(m.group(1))
-    if not referenced:
-        return
+    _assert_floor("sample_data", len(referenced), "check 10, dev/README.md sample-data rows naming a file")   # an emptied or reformatted table is red
     # Verify each referenced file exists on disk
     missing = []
     for fname in sorted(referenced):
@@ -1573,7 +1689,8 @@ def check_rule21_narrative_purity():
       - two-digit pass references (`pass 5/5`, foundational-rule numbers) —
         the bare-form patterns require 3+ digits.
       - the `addedPass:N` field INSIDE the FOUNDATIONAL_RULES const literal
-        (intentional metadata; the literal is excluded from the scan).
+        (intentional metadata; the literal's entries are excluded from the
+        scan — the comments between them are scanned like any other).
       - FC line references like `FC line 12200` (Rule 5 spec citation).
       - everything ABOVE `const FOUNDATIONAL_RULES = [` — the HTML preface
         `<!-- ... -->` block that describes the project at the top of the
@@ -1700,7 +1817,27 @@ def check_rule21_narrative_purity():
             ctx_end = min(len(body), m.end() + 30)
             ctx = body[ctx_start:ctx_end].replace("\n", " ").strip()
             residues.append(f"HTML line {abs_line}: {friendly} — '...{ctx}...'")
+    # the comments between the FOUNDATIONAL_RULES entries are inline comments like any other (Rule 26 puts notes there):
+    # the entries' data stays exempt, the notes do not — the app's own lexer finds them
+    if m_open and m_close:
+        sys.path.insert(0, _SCRIPT_DIR)
+        try:
+            import source_scan
+        finally:
+            sys.path.pop(0)
+        # the literal's text and its comments, each named by its line in the file
+        lit_at = m_open.end()
+        lit = content[lit_at:lit_at + m_close.start()]
+        lex = source_scan.JSStripper(lit)
+        lex.run()
+        # every pattern, in every comment
+        for x, y in lex.comments:
+            for pattern, friendly in PATTERNS:
+                for m in pattern.finditer(lit[x:y]):
+                    residues.append(f"HTML line {content[:lit_at + x].count(chr(10)) + 1}: {friendly} (a comment inside "
+                                    f"FOUNDATIONAL_RULES) — '...{lit[x:y][max(0, m.start() - 30):m.end() + 30]}...'")
 
+    # every residue found, in the script's comments and between the rules' entries, fails the check at once
     assert not residues, (
         "Rule-21 narrative residue in s201_aton_studio.html inline comments "
         "(log-style markers belong in CHANGELOG/HANDOFF, NOT the source file):\n      "
@@ -1730,10 +1867,12 @@ def check_csv_to_s201_conformance():
     fixture = os.path.join(_SCRIPT_DIR, "csv_to_s201_selftest.csv")
     if not (os.path.exists(conv) and os.path.exists(fixture)):
         raise SkippedCheck("csv_to_s201.py or its self-test fixture is missing")
+    # the converter's output is read as UTF-8 whatever the console's encoding is
+    conv_env = dict(os.environ, PYTHONIOENCODING="utf-8")
     with tempfile.TemporaryDirectory() as td:
         out = os.path.join(td, "out.gml")
         r = subprocess.run([sys.executable, conv, fixture, out],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", env=conv_env)
         if r.returncode != 0 or not os.path.exists(out):
             raise AssertionError("converter run failed: " + ((r.stderr or r.stdout) or "")[:300])
         with open(out, encoding="utf-8") as fh:
@@ -1783,6 +1922,63 @@ def check_csv_to_s201_conformance():
         f"converter emitted only {n_parents} parent marks — the self-test fixture did not convert"
     assert not problems, "csv_to_s201.py emitted non-conformant S-201 (pass-550 fix regressed):\n      " + \
         "\n      ".join(problems)
+
+    # A cell holding a code point XML 1.0 cannot carry has it removed and named (a REMOVED line: CSV line, column, code
+    # point), and the GML stays well-formed; a byte cp1252 does not define is an error that names it, its line and its
+    # offset in the file (exit 1, no traceback); a console whose encoding cannot write a column's name gets it escaped.
+    with open(fixture, "rb") as fh:
+        raw = fh.read()
+    assert raw.count(b"Alfa Approach") and raw.count(b"LFl 10s"), "the self-test fixture no longer holds the cells the variants edit"
+    with tempfile.TemporaryDirectory() as td:
+        bad_chars = os.path.join(td, "chars.csv")
+        with open(bad_chars, "wb") as fh:
+            fh.write(raw.replace(b"Alfa Approach", b"Alfa\x01Approach", 1).replace(b"LFl 10s", b"LFl\x0b 10s", 1))
+        out = os.path.join(td, "chars.gml")
+        r = subprocess.run([sys.executable, conv, bad_chars, out], capture_output=True, text=True, encoding="utf-8", errors="replace", env=conv_env)
+        assert r.returncode == 0 and os.path.exists(out), "the converter failed on a cell holding U+0001: " + ((r.stderr or r.stdout) or "")[:300]
+        removed = [ln for ln in r.stdout.splitlines() if ln.strip().startswith("REMOVED:")]
+        assert removed == [" REMOVED: line 2, column 'Name': U+0001 - XML 1.0 cannot carry it",
+                           " REMOVED: line 2, column 'Character': U+000B - XML 1.0 cannot carry it"], \
+            "the converter did not name the removed code points: %r" % removed
+        with open(out, encoding="utf-8") as fh:
+            ctext = fh.read()
+        ET.fromstring(ctext)   # well-formed
+        assert "AlfaApproach" in ctext and "\x01" not in ctext and "\x0b" not in ctext, "the removed code points are still in the GML"
+        bad_byte = os.path.join(td, "byte.csv")
+        # the byte past the decoder's first chunk (8 KB), where an offset within the chunk is not the offset in the file
+        body = raw.rstrip(b"\n") + b"\n" + b"".join(b"XX-9%02d,Pad %d,port lateral,,can,10 30.000N 100 15.000E,Fl R 4s,5\n" % (k, k) for k in range(150))
+        with open(bad_byte, "wb") as fh:
+            fh.write(body + b"XX-998,Alfa\x81Tail,port lateral,,can,10 30.000N 100 15.000E,Fl R 4s,5\n")
+        r = subprocess.run([sys.executable, conv, bad_byte, os.path.join(td, "byte.gml")], capture_output=True, text=True, encoding="utf-8", errors="replace", env=conv_env)
+        assert len(body) > 8192, "the undefined-byte variant no longer reaches past the decoder's first chunk"
+        where = "byte 0x81 on line %d (offset %d in the file) is not a cp1252 character" % (body.count(b"\n") + 1, len(body) + len(b"XX-998,Alfa"))
+        assert r.returncode == 1 and where in r.stdout and "Traceback" not in (r.stdout + r.stderr), \
+            "a byte cp1252 does not define is not refused with its name, line and offset (exit %s): %s" % (r.returncode, (r.stdout + r.stderr)[:300])
+        lines = raw.split(b"\n")
+        lines[0] += b",Caf\xe9"
+        lines[1] += b",x\x01y"
+        odd_name = os.path.join(td, "name.csv")
+        with open(odd_name, "wb") as fh:
+            fh.write(b"\n".join(lines))
+        r = subprocess.run([sys.executable, conv, odd_name, os.path.join(td, "name.gml")], capture_output=True, text=True, encoding="cp932", errors="replace",
+                           env=dict(os.environ, PYTHONIOENCODING="cp932"))
+        name_out = r.stdout + r.stderr
+        removed = [ln for ln in r.stdout.splitlines() if ln.strip().startswith("REMOVED:")]
+        assert r.returncode == 0 and removed == [" REMOVED: line 2, column 'Caf\\xe9': U+0001 - XML 1.0 cannot carry it"] and "Traceback" not in name_out, \
+            "a console that cannot write a column's name stopped the converter or lost the line (exit %s): %s" % (r.returncode, name_out[:300])
+        # a code point in a quoted field that spans lines is named on its own line, and one in a column's name is taken
+        # out of the name, which the cells are then read by
+        lines = raw.split(b"\n")
+        lines[0] = lines[0].replace(b"Name", b"Na\x01me", 1)
+        lines[1] = lines[1].replace(b"Alfa Approach", b'"Alfa\x0b\nApproach"', 1)
+        span = os.path.join(td, "span.csv")
+        with open(span, "wb") as fh:
+            fh.write(b"\n".join(lines))
+        r = subprocess.run([sys.executable, conv, span, os.path.join(td, "span.gml")], capture_output=True, text=True, encoding="utf-8", errors="replace", env=conv_env)
+        removed = [ln for ln in r.stdout.splitlines() if ln.strip().startswith("REMOVED:")]
+        assert r.returncode == 0 and removed == [" REMOVED: line 1, column name 'Name': U+0001 - XML 1.0 cannot carry it",
+                                                 " REMOVED: line 2, column 'Name': U+000B - XML 1.0 cannot carry it"], \
+            "a column's name or a field spanning lines was not cleaned and named where it is (exit %s): %r" % (r.returncode, (r.stdout + r.stderr)[:400])
 
 
 def check_bundled_asset_count_phrases():
@@ -2317,16 +2513,345 @@ def check_known_issues_register():
 
 
 # Run all checks
+def check_s201_xsd_conformance():
+    """Check 20 (Rule 5/8/23): the S-201 Ed 2.0.0 Annex B XSD
+    (dev/spec-sources/s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd) is the authority for the S-201
+    dataset namespace and the Dataset / DII / members structure. (a) The app's NS_S201 literal equals that schema's
+    targetNamespace (L2), and NS_GML / NS_S100 with NS_GML_XSD_URL / NS_S100_XSD_URL equal its two imports, namespace
+    and schemaLocation (L12-13); _GML_NAMES and _S100_NAMES equal the element names the two imported schemas declare
+    (dev/spec-sources/s-100-xsd/gml-profile/S100_gmlProfile.xsd, s100gmlbase.xsd). (b) The four bundled samples exGML[0..3], read out of the HTML, validate against it.
+    (c) The output of dev/scripts/csv_to_s201.py on its self-test CSV validates against it. (d) Seven shapes derived
+    from exGML[0] that the in-app rules GML-STR-06, -07, -13 and -22 report — an <imember> for the <members>, two
+    <members>, the members before the identification block, a feature outside the members, the identification block
+    in the S-201 namespace, the S-100 base in /1.0, the envelope in GML 3.1.1 — do not validate: the facts those rules
+    cite are the schema's.
+
+    The schema is loaded by dev/scripts/s201_xsd.py, the loader the browser gate's XSD leg uses too: hermetic (the
+    remote imports resolved to the bundled copies, the network off), and the module says what the schema can prove —
+    the dataset's root, identification block, members wrapper and member names, a member's content only laxly. lxml is
+    required in the development tree (without it the check is skipped, which blocks); a snapshot tree ships no
+    reference schema, so there the check is not applicable."""
+    import subprocess
+    import tempfile
+    if not os.path.exists(s201_xsd.xsd_path(PROJECT_ROOT)) and _snapshot_tree():
+        raise NotApplicable("snapshot tree cut without the reference schemas — nothing to validate against")
+    try:
+        from lxml import etree
+    except ImportError:
+        raise SkippedCheck("lxml is not installed (pip install lxml) — the S-201 2.0.0 XSD check could not run")
+    try:
+        schema, xsd_doc = s201_xsd.load(PROJECT_ROOT)
+    except FileNotFoundError as e:
+        if _snapshot_tree():
+            raise NotApplicable("snapshot tree cut without the reference schemas — nothing to validate against")
+        raise AssertionError("%s is missing" % e)
+    except RuntimeError as e:
+        raise AssertionError(str(e))
+    target_ns = xsd_doc.getroot().get("targetNamespace")
+
+    with open(HTML, encoding="utf-8") as f:
+        content = f.read()
+    m = re.search(r'^const NS_S201="([^"]+)";', content, re.M)
+    assert m, "cannot find `const NS_S201=\"…\";` in s201_aton_studio.html"
+    assert m.group(1) == target_ns, (
+        "NS_S201 is %s but the S-201 2.0.0 Annex B XSD's targetNamespace is %s" % (m.group(1), target_ns))
+    imports = {imp.get("namespace"): imp.get("schemaLocation")
+               for imp in xsd_doc.getroot().findall("{http://www.w3.org/2001/XMLSchema}import")}
+    assert len(imports) == 2, "the S-201 2.0.0 XSD imports %d namespaces, not the two (GML, S-100) the app names: %s" % (len(imports), sorted(imports))
+    for const_ns, const_url in (("NS_GML", "NS_GML_XSD_URL"), ("NS_S100", "NS_S100_XSD_URL")):
+        mn = re.search(r'^const %s="([^"]+)";' % const_ns, content, re.M)
+        mu = re.search(r'^const %s="([^"]+)";' % const_url, content, re.M)
+        assert mn and mu, "cannot find `const %s=\"…\";` or `const %s=\"…\";` in s201_aton_studio.html" % (const_ns, const_url)
+        assert mn.group(1) in imports, (
+            "%s is %s, which the S-201 2.0.0 XSD does not import (it imports %s)" % (const_ns, mn.group(1), sorted(imports)))
+        assert imports[mn.group(1)] == mu.group(1), (
+            "%s is %s but the S-201 2.0.0 XSD imports %s from %s" % (const_url, mu.group(1), mn.group(1), imports[mn.group(1)]))
+    # the element names the app reads to tell a GML element from an S-100 one are the two imported schemas' own
+    profile_dir = os.path.join(PROJECT_ROOT, "dev", "spec-sources", "s-100-xsd", "gml-profile")
+    for const_names, schema_file in (("_GML_NAMES", "S100_gmlProfile.xsd"), ("_S100_NAMES", "s100gmlbase.xsd")):
+        mset = re.search(r'^const %s=new Set\(\[([^\]]*)\]\);' % const_names, content, re.M)
+        assert mset, "cannot find `const %s=new Set([...]);` in s201_aton_studio.html" % const_names
+        app_names = sorted(re.findall(r'"([^"]+)"', mset.group(1)))
+        declared = sorted(set(e.get("name") for e in etree.parse(os.path.join(profile_dir, schema_file)).getroot().iter("{http://www.w3.org/2001/XMLSchema}element") if e.get("name")))
+        assert app_names == declared, (
+            "%s is not the set of element names %s declares: only in the app %s, only in the schema %s"
+            % (const_names, schema_file, sorted(set(app_names) - set(declared)), sorted(set(declared) - set(app_names))))
+
+    start = content.find("const exGML=[")
+    assert start != -1, "cannot find `const exGML=[` in s201_aton_studio.html"
+    end = content.find("\n];", start)
+    assert end != -1, "cannot find the end of the exGML array"
+    samples = re.findall(r"`([^`]*)`", content[start:end])
+    assert len(samples) >= 4, "found %d exGML samples, expected at least 4" % len(samples)
+    for i, s in enumerate(samples):
+        # a sample with a ${…} expression or a backslash escape would differ at run time from the text read here
+        assert "${" not in s and "\\" not in s, "exGML[%d] holds a template expression or an escape — its static text is not the runtime value" % i
+
+    problems = []
+
+    def validate(label, text):
+        problems.extend("%s: %s" % (label, p) for p in s201_xsd.problems(schema, text))
+
+    for i, s in enumerate(samples):
+        validate("exGML[%d]" % i, s)
+
+    # (d) what GML-STR-06, -07, -13 and -22 report is what the schema rejects
+    ex0 = samples[0]
+    dii = re.search(r"<S100:DatasetIdentificationInformation>.*?</S100:DatasetIdentificationInformation>", ex0, re.S)
+    assert dii and "</members>" in ex0 and "<gml:boundedBy>" in ex0, "exGML[0] no longer has the identification block, members and envelope the derived shapes need"
+    dii_names = ("DatasetIdentificationInformation|encodingSpecification|encodingSpecificationEdition|productIdentifier|productEdition|"
+                 "applicationProfile|datasetFileIdentifier|datasetTitle|datasetReferenceDate|datasetLanguage|datasetAbstract|"
+                 "datasetTopicCategory|datasetPurpose|updateNumber")
+    must_fail = [
+        ("an <imember> in place of the <members> (GML-STR-13)", re.sub(r"<(/?)members>", r"<\1imember>", ex0)),
+        ("two <members> (GML-STR-13)", ex0.replace("</members>", "</members>\n  <members></members>", 1)),
+        ("the members before the identification block (GML-STR-22)", ex0.replace(dii.group(0), "", 1).replace("</members>", "</members>\n  " + dii.group(0), 1)),
+        ("a feature outside the members (GML-STR-22)", ex0.replace("</members>", "</members>\n  <LateralBuoy gml:id=\"XSD.OUT\"><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark></LateralBuoy>", 1)),
+        ("the identification block in the S-201 namespace (GML-STR-07)", re.sub(r"<(/?)S100:(%s)\b" % dii_names, r"<\1\2", ex0)),
+        ("the S-100 base in /1.0 (GML-STR-07)", ex0.replace("http://www.iho.int/s100gml/5.0", "http://www.iho.int/s100gml/1.0")),
+        ("the envelope in GML 3.1.1 (GML-STR-06)", re.sub(r"<(/?)gml:(boundedBy|Envelope|lowerCorner|upperCorner)\b", r"<\1g311:\2", ex0).replace("<Dataset ", '<Dataset xmlns:g311="http://www.opengis.net/gml" ', 1)),
+    ]
+    for label, text in must_fail:
+        try:
+            doc = s201_xsd.parse(text)
+        except etree.XMLSyntaxError as e:
+            problems.append("derived shape %s: not well-formed — %s" % (label, e))
+            continue
+        if schema.validate(doc):
+            problems.append("derived shape %s validates against the S-201 2.0.0 XSD, which the rule citing it says it does not" % label)
+
+    conv = os.path.join(_SCRIPT_DIR, "csv_to_s201.py")
+    fixture = os.path.join(_SCRIPT_DIR, "csv_to_s201_selftest.csv")
+    if not (os.path.exists(conv) and os.path.exists(fixture)):
+        raise SkippedCheck("csv_to_s201.py or its self-test fixture is missing")
+    with tempfile.TemporaryDirectory() as td:
+        out = os.path.join(td, "out.gml")
+        r = subprocess.run([sys.executable, conv, fixture, out], capture_output=True, text=True)
+        if r.returncode != 0 or not os.path.exists(out):
+            raise AssertionError("csv_to_s201.py run failed: " + ((r.stderr or r.stdout) or "")[:300])
+        with open(out, encoding="utf-8") as fh:
+            validate("csv_to_s201.py output", fh.read())
+    assert not problems, "the S-201 2.0.0 Annex B XSD check found:\n      " + "\n      ".join(problems)
+
+
+def check_xml_illegal_set():
+    """Check 21 (Rule 5/8/23): _XML_ILLEGAL in s201_aton_studio.html — the code points _xmlEsc leaves out of every value
+    the app writes as XML, and the input boundaries take out and name, because XML 1.0 cannot carry them — is the set
+    libxml2 refuses. The XML grammar (production [2] Char) is not bundled; S-100 Part 10b names XML 1.0 among its
+    normative references (§10b-3, dev/pdf-extracts/s100_ed5_2_0_full.txt L32153). So the class is not checked against a
+    transcription but against a parser: every Basic Multilingual Plane code point outside the surrogate block is written
+    as UTF-8 into a CDATA section (which takes the markup characters as text) and parsed with lxml, and the class — the
+    literal itself, evaluated as JavaScript (py_mini_racer) — must hold exactly the ones refused. A surrogate cannot be
+    written as UTF-8, so libxml2 cannot be asked: there the class must hold every lone surrogate (all of D800-DFFF, which
+    is what a u-flag class matches of them) and no code point of the supplementary planes, which must parse (sampled).
+    dev/scripts/csv_to_s201.py keeps its own copy of the class (a Python regular expression, which reads a surrogate as
+    one code point): it is held to the same set."""
+    try:
+        from lxml import etree
+    except ImportError:
+        raise SkippedCheck("lxml is not installed (pip install lxml) — the XML 1.0 character check could not run")
+    try:
+        from py_mini_racer import MiniRacer
+    except ImportError:
+        raise SkippedCheck("py_mini_racer is not installed (pip install py-mini-racer) — the XML 1.0 character check could not run")
+    with open(HTML, encoding="utf-8") as f:
+        content = f.read()
+    m = re.search(r"^const _XML_ILLEGAL=(/.*/[a-z]*);$", content, re.M)
+    assert m, "cannot find `const _XML_ILLEGAL=/…/…;` in s201_aton_studio.html"
+    odd = sorted({"U+%04X" % ord(c) for c in m.group(1) if not 0x20 <= ord(c) < 0x7F})
+    assert not odd, "_XML_ILLEGAL holds the character(s) %s as written — write every code point as a \\u escape" % ", ".join(odd)
+    ctx = MiniRacer()
+    js = ("(function(){const re=%s;const out=[];for(let c=0;c<0x10000;c++){re.lastIndex=0;if(re.test(String.fromCodePoint(c)))out.push(c);}"
+          "const sup=[0x10000,0x1F600,0x10FFFF].filter(c=>{re.lastIndex=0;return re.test(String.fromCodePoint(c));});"
+          "return JSON.stringify({bmp:out,sup:sup});})()") % m.group(1)
+    got = json.loads(ctx.eval(js))
+    in_class = set(got["bmp"])
+    refused = set()
+    for c in range(0x10000):
+        if 0xD800 <= c <= 0xDFFF:
+            continue
+        try:
+            etree.fromstring(b"<a><![CDATA[" + chr(c).encode("utf-8") + b"]]></a>")
+        except etree.XMLSyntaxError:
+            refused.add(c)
+    names = lambda cs: ", ".join("U+%04X" % c for c in sorted(cs)[:8]) + (" …" if len(cs) > 8 else "")
+    problems = []
+    non_sur = {c for c in in_class if not 0xD800 <= c <= 0xDFFF}
+    if non_sur - refused:
+        problems.append("in _XML_ILLEGAL but accepted by libxml2: " + names(non_sur - refused))
+    if refused - non_sur:
+        problems.append("refused by libxml2 but not in _XML_ILLEGAL: " + names(refused - non_sur))
+    sur = {c for c in in_class if 0xD800 <= c <= 0xDFFF}
+    if len(sur) != 0x800:
+        problems.append("_XML_ILLEGAL holds %d of the 2048 lone surrogates" % len(sur))
+    if got["sup"]:
+        problems.append("_XML_ILLEGAL matches supplementary-plane code points: " + names(got["sup"]))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("_csv_to_s201_chars", os.path.join(_SCRIPT_DIR, "csv_to_s201.py"))
+    conv = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(conv)
+    want = refused | set(range(0xD800, 0xE000))
+    py_in = {c for c in range(0x10000) if conv._XML_ILLEGAL.search(chr(c))}
+    if py_in != want:
+        problems.append("csv_to_s201.py's _XML_ILLEGAL differs from the refused set: holds " + names(py_in - want) + "; lacks " + names(want - py_in))
+    py_sup = [c for c in (0x10000, 0x1F600, 0x10FFFF) if conv._XML_ILLEGAL.search(chr(c))]
+    if py_sup:
+        problems.append("csv_to_s201.py's _XML_ILLEGAL matches supplementary-plane code points: " + names(py_sup))
+    for c in (0x10000, 0x1F600, 0x10FFFF):
+        try:
+            etree.fromstring(b"<a><![CDATA[" + chr(c).encode("utf-8") + b"]]></a>")
+        except etree.XMLSyntaxError:
+            problems.append("libxml2 refuses U+%04X, which XML 1.0 admits" % c)
+    assert not problems, "; ".join(problems)
+
+
+def check_code_notes():
+    """Check 22 (Rule 26 — notes on every line of code): every line of code a branch writes or changes carries a note
+    that explains it from its author's perspective; the code written before the rule is not retrofitted. What a note says
+    is the reviewer's to judge; this check makes sure none is missing, mechanically, by the measure of
+    dev/scripts/code_notes.py (a note on the line or heading its step of at most code_notes.REACH lines of code; a
+    function's first line a note of its own; the lines a literal runs on to the note of the line it starts on).
+    Against the commit where the branch left origin/main (git merge-base), counting what is committed, staged or not:
+      (a) every code line the branch adds or changes in s201_aton_studio.html (JavaScript, CSS, markup) or in
+          dev/scripts carries a note;
+      (b) every line it leaves unchanged that carried a note still does — no note is taken away, directly or by
+          pushing a line out of its note's reach;
+      (c) the lexer the measure reads the app with (source_scan.py, the end-user build's too) reads its script as V8
+          does, as far as a compile can show: the script without the comments it found compiles; so does the script
+          with a mark that is code nowhere (@@@) written inside every comment and literal it found, which puts the mark
+          in code wherever V8 sees no comment or literal there; and no quoted string it found crosses a line break,
+          which JavaScript does not allow;
+      (d) wherever the rule's text states a step's length — CLAUDE.md, dev/HANDOFF.md, dev/foundational-rules.json and
+          the in-app mirror, each the number of times it is stated there — it states code_notes.REACH.
+    Without an origin/main the branch cannot be measured: the check is skipped, which blocks (git fetch origin); a git
+    failure, or a changed script of a kind the measure cannot read, fails it. A development-process rule: not applicable
+    in a snapshot tree."""
+    _needs_dev_docs("dev/HANDOFF.md")
+    # the measure and the lexer sit beside this script: its directory is put on the import path for them, as for
+    # s201_xsd (Python does not add it when PYTHONSAFEPATH is set); V8 is check #6's engine
+    sys.path.insert(0, _SCRIPT_DIR)
+    try:
+        import code_notes
+        import source_scan
+    finally:
+        sys.path.pop(0)
+    # V8 compiles the app's script in (c); without it the check cannot run, and a check that cannot run blocks
+    try:
+        from py_mini_racer import MiniRacer
+    except ImportError:
+        raise SkippedCheck("py_mini_racer is not installed (pip install py-mini-racer) — the Rule-26 notes check could not run")
+    # (a) and (b): the branch's lines, measured against where it left origin/main
+    try:
+        found = code_notes.branch_findings(PROJECT_ROOT)
+    except code_notes.NoBase as e:
+        raise SkippedCheck("the Rule-26 notes check could not measure this branch: %s" % e)
+    except (code_notes.GitError, code_notes.Unmeasurable) as e:
+        raise AssertionError("the lines this branch changes could not be measured: %s" % e)
+    # each line is named (the first thirty of each kind), with what the rule asks
+    listed = lambda xs: "\n      ".join(xs[:30]) + ("\n      ..." if len(xs) > 30 else "")
+    problems = []
+    # (a) the lines the branch adds or changes without a note
+    if found["new"]:
+        problems.append("%d line(s) this branch adds or changes (since %s) carry no note — every line of code written or "
+                        "changed is explained from its author's perspective: a note on it or heading its step of at most %d "
+                        "lines of code, a function's first line a note of its own (python dev/scripts/code_notes.py lists "
+                        "them):\n      %s" % (len(found["new"]), found["base"][:7], code_notes.REACH, listed(found["new"])))
+    # (b) the unchanged lines that had a note at the base and have none now
+    if found["lost"]:
+        problems.append("%d unchanged line(s) lost the note they had at %s — an edit took it away or pushed the line out of "
+                        "its note's reach; head them with a note again:\n      %s" % (len(found["lost"]), found["base"][:7], listed(found["lost"])))
+    # (c) the script, the lexer's comments and literals in it
+    with open(HTML, encoding="utf-8") as f:
+        content = f.read()
+    a, b = content.index(source_scan.OPEN) + len(source_scan.OPEN), content.index(source_scan.CLOSE)
+    js = content[a:b]
+    lex = source_scan.JSStripper(js)
+    stripped = lex.run()
+    # the marks: inside a comment at each of its line breaks and at its end (before a block comment's "*/"); inside a
+    # literal after its first character and before its last (a template's text piece: after its backtick or brace)
+    marks = []
+    for x, y in lex.comments:
+        marks += [x + m.start() for m in re.finditer(r"[\n\r]", js[x:y])]
+        marks.append(y - 2 if js.startswith("/*", x) and js.startswith("*/", y - 2) else y)
+    for x, y in lex.literals:
+        marks += [x + 1] + ([y - 1] if y - x > 1 and js[y - 1] in "'\"`" else [])
+    # the marked script: the text with the mark written at every one of those offsets
+    marked, pos = [], 0
+    for p in sorted(set(marks)):
+        marked += [js[pos:p], "@@@"]
+        pos = p
+    marked.append(js[pos:])
+    # compiled, not run, as check #6 does (new Function only parses its body); each text goes in as a JSON string literal
+    for label, body in (("without its comments", stripped), ("with a mark inside every comment and literal", "".join(marked))):
+        try:
+            MiniRacer().eval("new Function(" + json.dumps(body) + ")")
+        except Exception as e:
+            problems.append("the app's script %s does not compile, so source_scan.py and V8 disagree about where a comment "
+                            "or a literal is: %s" % (label, "\n      ".join(str(e).split("\n")[:5])))
+    # a quoted string the lexer found that crosses a line break is one V8 would refuse: a quote misread somewhere
+    for x, y in lex.literals:
+        if js[x] in "'\"" and re.search(r"(?<![\\\r])(?:\\\\)*(?:\r\n|[\n\r])", js[x:y]):
+            problems.append("source_scan.py read a quoted string across a line break at script line %d, which JavaScript does "
+                            "not allow: a quote was misread there" % (js[:x].count("\n") + 1))
+            break
+    # (d) the step's length the rule's text states, wherever and as often as it is written, is the one the measure applies
+    words = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+    for rel, times in (("CLAUDE.md", 1), ("dev/HANDOFF.md", 2), ("dev/foundational-rules.json", 1), ("s201_aton_studio.html", 1)):
+        with open(os.path.join(PROJECT_ROOT, rel), encoding="utf-8") as f:
+            stated = re.findall(r"\bsteps?\b[^.]{0,40}?\bat\s+most\s+(\w+)\s+lines", f.read())
+        # as many statements as the rule's text has there, so a reworded one cannot drift unseen
+        if len(stated) != times:
+            problems.append("%s states Rule 26's step length (\"a step ... at most N lines\") %d time(s), not %d: a statement "
+                            "was reworded, added or removed — keep it in this form, or change the count here" % (rel, len(stated), times))
+        # every statement of it, in words or digits, must be REACH
+        for w in stated:
+            if words.get(w, int(w) if w.isdigit() else None) != code_notes.REACH:
+                problems.append("%s states a step of at most %s lines; the measure's REACH is %d" % (rel, w, code_notes.REACH))
+    # every problem found is reported at once
+    assert not problems, "\n    ".join(problems)
+
+
+SPEC_SOURCES_MANIFEST_SCRIPT = os.path.join(_SCRIPT_DIR, "generate-spec-sources-manifest.py")
+
+
+def check_spec_sources_manifest():
+    """Check 23 (Rule 5/8 - the primary-source trust anchor): dev/spec-sources/MANIFEST.md lists every file under
+    dev/spec-sources, dev/pdf-extracts and dev/tmp_verify_imgs with the size and SHA-256 the disk holds.
+
+    Check 17 freezes the extracts; this freezes what they were extracted from and what the citations name - the
+    FC XML (the app's single source of truth for enums and multiplicities), the schemas, the IHO and IALA
+    publications - and the manifest the public snapshot ships in their place. It runs the generator's --check,
+    which names every changed, unlisted or missing file, and writes nothing. A red result is not answered by
+    regenerating until the changed bytes are explained: regenerating would record an unexplained change as the
+    new truth."""
+    # a snapshot tree ships the manifest without the corpus it describes, so there is nothing to compare there
+    if _snapshot_tree():
+        raise NotApplicable("snapshot tree - it ships dev/spec-sources/MANIFEST.md but not the files it lists")
+    import subprocess
+    # a check that cannot run must not pass (the SkippedCheck doctrine of checks 5 and 17)
+    if not os.path.exists(SPEC_SOURCES_MANIFEST_SCRIPT):
+        raise SkippedCheck(f"manifest script missing at {SPEC_SOURCES_MANIFEST_SCRIPT} - the primary corpus was not verified")
+    result = subprocess.run([sys.executable, SPEC_SOURCES_MANIFEST_SCRIPT, "--check"],
+                            capture_output=True, text=True, cwd=PROJECT_ROOT)
+    # the checker's own lines name every difference; they are passed on whole
+    assert result.returncode == 0, (
+        "the reference corpus differs from dev/spec-sources/MANIFEST.md - explain every changed file before "
+        "regenerating (`python dev/scripts/generate-spec-sources-manifest.py`). Checker output:\n"
+        f"{(result.stdout + result.stderr).strip()}")
+
+
+# the checks, in the order they run; the report numbers them in this order
 check("APP_VERSION consistency (HTML JS vs preface)", check_app_version_consistency)
 check("foundational-rules.json shape", check_foundational_rules_json_shape)
 check("FOUNDATIONAL_RULES const length matches JSON", check_foundational_rules_in_app_const_count)
-check("pass-count consistency across HANDOFF + README + dev/README", check_pass_count_consistency)
+check("the running pass count is not restated outside HANDOFF section 15 (HANDOFF + README + dev/README; Rule 23)", check_pass_count_consistency)
 check("validator-rules.json in sync with in-app RULES (pass 116)", check_validator_rules_json_sync)
 check("inline <script> JS syntax via V8 (pass 117)", check_inline_script_js_syntax)
-check("intra-section pass-count staleness in HANDOFF.md (pass 123)", check_intra_section_staleness)
+# check 7 keeps HANDOFF headings free of a pass count; check 3 above keeps the docs' prose free of one
+check("no HANDOFF.md heading carries a count of passes (Rule 23)", check_intra_section_staleness)
 check("function-anchor freshness in HANDOFF.md Key functions (pass 129)", check_function_anchor_freshness)
 check("constants-table anchor freshness in HANDOFF.md (pass 129)", check_constants_anchor_freshness)
-check("sample-data files referenced in dev/README.md exist on disk (pass 135)", check_sample_data_files_exist)
+check("sample-data files referenced in dev/README.md exist on disk, and its scripts tree is dev/scripts (pass 135)", check_sample_data_files_exist)
 check("Source-file tour table anchor freshness (pass 255)", check_source_file_tour_anchor_freshness)
 check("count-phrase freshness in HTML <script> + .py files (pass 257)", check_count_phrase_freshness)
 check("doc count-phrase freshness in .md surfaces (pass 259, Rule 23)", check_doc_count_phrase_freshness)
@@ -2336,6 +2861,12 @@ check("bundled-asset count/version phrases match disk (pass 570, Rule 23)", chec
 check("pdf-extracts integrity manifest (Rule 5/8 citation trust anchor)", check_pdf_extracts_manifest)
 check("known-issues register complete + consistent (Rule 23 living status surface)", check_known_issues_register)
 check("FC_ATTR_OWNERS / FC_ROLE_OWNERS / FC_ROLE_BINDINGS / FC_TYPES equal the FC XML attribute and role bindings and concrete types (passes 719, 729; Rule 5/8/23)", check_fc_attr_owners_parity)
+check("S-201 2.0.0 Annex B XSD: NS_S201 is its targetNamespace; the bundled samples and the csv_to_s201.py output validate against it (Rule 5/8/23)", check_s201_xsd_conformance)
+check("XML 1.0 characters: _XML_ILLEGAL and csv_to_s201.py's copy hold exactly the code points libxml2 refuses (Rule 5/8/23)", check_xml_illegal_set)
+# Rule 26: every line of code written or changed carries a note, and no note is taken away from the old code
+check("notes on every line of code written or changed (Rule 26)", check_code_notes)
+# the primary reference corpus and the manifest the snapshot ships in its place agree, file by file (Rule 5/8)
+check("spec-sources integrity manifest (Rule 5/8 primary-source trust anchor)", check_spec_sources_manifest)
 
 # Report
 # `_total` is every check() invocation above — passed + failed + skipped. Reporting

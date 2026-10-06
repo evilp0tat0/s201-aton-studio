@@ -18,7 +18,7 @@ What it produces in --out:
   Annex_D/portrayal_catalogue.xml
   lib/leaflet/            leaflet.js, leaflet.css + LICENSE (optional map layer)
   dev/validator-rules.json   machine-readable rule catalogue — the app's self-test
-                          suite (which runs on every "Run validation" click) fetches
+                          suite (which runs before a session's first validation) fetches
                           it; without it every validation shows a red self-test
   start-server.bat/.sh    copied from --assets-root when present
   README.txt, NOTICE.txt  written from the templates in this script
@@ -49,301 +49,33 @@ full self-test suite in headless Chromium (the same Playwright harness as
 run-browser-smoke-gate.py), asserting the suite size matches the pre-commit
 ground truth, every test passes, and the _SRC_COMMENTS_KEPT probe reports the
 comments stripped (so comment-anchored source lints ran in their explicit-skip
-mode instead of false-failing). A tester-visible self-test failure is a BUILD
-failure. Skip only with --no-verify — the bundle is then unverified.
+mode instead of false-failing), and the gate's other legs (its header names
+them; the XSD leg needs lxml and validates against this development tree's
+S-201 2.0.0 schema) pass on the bundle. A tester-visible self-test failure
+is a BUILD failure. Skip only with --no-verify — the bundle is then unverified.
 """
 import argparse
 import os
 import shutil
 import sys
 
-OPEN = "<script>"
-CLOSE = "</script>"
+# The lexer that removes the comments is shared with code_notes.py (pre-commit check #22), so the two never
+# disagree about what is a comment; the script's own directory is put on the import path for it.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from source_scan import CLOSE, strip_comments  # noqa: E402  (the path is set on the line above)
+
 TEST_BTN_LABEL = "Run tests</button>"        # the Validator tab's "Run tests" button (label + closing tag, so the plain words cannot match elsewhere)
 TEST_URL_ANCHOR = 'params.get("test")==="1"'
-
-REGEX_PRECEDING_KEYWORDS = {
-    "return", "typeof", "instanceof", "in", "of", "new", "delete", "void",
-    "do", "else", "yield", "await", "throw", "case", "default",
-}
-
-
-def _preceding_ws_count(out):
-    cnt = 0
-    k = len(out) - 1
-    while k >= 0:
-        ch = out[k]
-        if ch == "\n":
-            break
-        if ch == " " or ch == "\t":
-            cnt += 1
-            k -= 1
-            continue
-        return -1
-    return cnt
-
-
-class JSStripper:
-    def __init__(self, s):
-        self.s = s
-        self.i = 0
-        self.n = len(s)
-        self.out = []
-        self.prev = ""
-
-    def run(self):
-        self._scan_code(top=True)
-        return "".join(self.out)
-
-    def _regex_allowed(self):
-        return self.prev in ("", "op", "rbrace", "kw_expr")
-
-    def _scan_string(self, quote):
-        s, n, out = self.s, self.n, self.out
-        out.append(quote)
-        i = self.i + 1
-        while i < n:
-            c = s[i]
-            if c == "\\":
-                out.append(s[i:i + 2]); i += 2; continue
-            out.append(c); i += 1
-            if c == quote:
-                break
-        self.i = i; self.prev = "str"
-
-    def _scan_regex(self):
-        s, n, out = self.s, self.n, self.out
-        out.append("/")
-        i = self.i + 1
-        in_class = False
-        while i < n:
-            c = s[i]
-            if c == "\\":
-                out.append(s[i:i + 2]); i += 2; continue
-            if c == "\n":
-                break
-            if c == "[":
-                in_class = True; out.append(c); i += 1; continue
-            if c == "]":
-                in_class = False; out.append(c); i += 1; continue
-            if c == "/" and not in_class:
-                out.append(c); i += 1
-                while i < n and s[i].isalpha():
-                    out.append(s[i]); i += 1
-                self.i = i; self.prev = "regex"; return
-            out.append(c); i += 1
-        self.i = i; self.prev = "regex"
-
-    def _scan_ident(self):
-        s, n = self.s, self.n
-        j = self.i
-        while j < n and (s[j].isalnum() or s[j] == "_" or s[j] == "$"):
-            j += 1
-        word = s[self.i:j]
-        self.out.append(word)
-        self.i = j
-        self.prev = "kw_expr" if word in REGEX_PRECEDING_KEYWORDS else "ident"
-
-    def _scan_template(self):
-        s, n, out = self.s, self.n, self.out
-        out.append("`")
-        i = self.i + 1
-        while i < n:
-            c = s[i]
-            if c == "\\":
-                out.append(s[i:i + 2]); i += 2; continue
-            if c == "`":
-                out.append(c); i += 1; self.i = i; self.prev = "str"; return
-            if c == "$" and i + 1 < n and s[i + 1] == "{":
-                out.append("${"); self.i = i + 2; self.prev = "op"
-                self._scan_code(top=False)
-                if self.i < self.n and self.s[self.i] == "}":
-                    out.append("}"); self.i += 1
-                i = self.i
-                continue
-            out.append(c); i += 1
-        self.i = i; self.prev = "str"
-
-    def _scan_code(self, top):
-        s, out = self.s, self.out
-        depth = 0
-        while self.i < self.n:
-            n = self.n
-            i = self.i
-            c = s[i]
-            nx = s[i + 1] if i + 1 < n else ""
-
-            if c == "}":
-                if not top and depth == 0:
-                    return
-                if depth > 0:
-                    depth -= 1
-                out.append(c); self.i = i + 1; self.prev = "rbrace"; continue
-            if c == "{":
-                depth += 1
-                out.append(c); self.i = i + 1; self.prev = "op"; continue
-            if c in " \t\r\n":
-                out.append(c); self.i = i + 1; continue
-
-            if c == "/" and nx == "/":
-                pw = _preceding_ws_count(out)
-                j = i + 2
-                while j < n and s[j] != "\n":
-                    j += 1
-                if pw >= 0:
-                    for _ in range(pw):
-                        out.pop()
-                    self.i = j + 1 if j < n else j
-                else:
-                    while out and (out[-1] == " " or out[-1] == "\t"):
-                        out.pop()
-                    self.i = j
-                continue
-            if c == "/" and nx == "*":
-                end = s.find("*/", i + 2)
-                if end == -1:
-                    end = n - 2
-                after = end + 2
-                pw = _preceding_ws_count(out)
-                k = after
-                while k < n and s[k] in " \t":
-                    k += 1
-                line_ends = (k >= n or s[k] == "\n")
-                if pw >= 0 and line_ends:
-                    for _ in range(pw):
-                        out.pop()
-                    self.i = (k + 1) if (k < n and s[k] == "\n") else k
-                else:
-                    out.append(" "); self.i = after
-                continue
-
-            if c == "/":
-                if self._regex_allowed():
-                    self._scan_regex()
-                else:
-                    out.append(c); self.i = i + 1; self.prev = "op"
-                continue
-            if c == '"' or c == "'":
-                self._scan_string(c); continue
-            if c == "`":
-                self._scan_template(); continue
-            if c.isalpha() or c == "_" or c == "$":
-                self._scan_ident(); continue
-            if c.isdigit():
-                out.append(c); self.i = i + 1; self.prev = "num"; continue
-            if c == "+" and nx == "+":
-                out.append("++"); self.i = i + 2; self.prev = "num"; continue
-            if c == "-" and nx == "-":
-                out.append("--"); self.i = i + 2; self.prev = "num"; continue
-            if c == "." and self.prev == "num":
-                out.append("."); self.i = i + 1; self.prev = "num"; continue
-            if c == ")":
-                out.append(c); self.i = i + 1; self.prev = "rparen"; continue
-            if c == "]":
-                out.append(c); self.i = i + 1; self.prev = "rbracket"; continue
-            out.append(c); self.i = i + 1; self.prev = "op"
-        return
-
-
-class HtmlCssStripper:
-    def __init__(self, s):
-        self.s = s
-        self.i = 0
-        self.n = len(s)
-        self.out = []
-
-    def run(self):
-        s, n, out = self.s, self.n, self.out
-        while self.i < n:
-            i = self.i
-            if s[i:i + 6].lower() == "<style" and (i + 6 >= n or not s[i + 6].isalnum()):
-                tag_end = s.find(">", i)
-                if tag_end == -1:
-                    out.append(s[i:]); self.i = n; break
-                out.append(s[i:tag_end + 1]); self.i = tag_end + 1
-                self._scan_css()
-                continue
-            if s[i:i + 4] == "<!--":
-                end = s.find("-->", i + 4)
-                if end == -1:
-                    self.i = n; break
-                after = end + 3
-                pw = _preceding_ws_count(out)
-                k = after
-                while k < n and s[k] in " \t":
-                    k += 1
-                line_ends = (k >= n or s[k] == "\n")
-                if pw >= 0 and line_ends:
-                    for _ in range(pw):
-                        out.pop()
-                    self.i = (k + 1) if (k < n and s[k] == "\n") else k
-                else:
-                    self.i = after
-                continue
-            out.append(s[i]); self.i = i + 1
-        return "".join(out)
-
-    def _scan_css(self):
-        s, n, out = self.s, self.n, self.out
-        while self.i < n:
-            i = self.i
-            if s[i:i + 8].lower() == "</style>":
-                out.append("</style>"); self.i = i + 8; return
-            c = s[i]
-            if c == '"' or c == "'":
-                out.append(c); i += 1
-                while i < n:
-                    d = s[i]
-                    if d == "\\":
-                        out.append(s[i:i + 2]); i += 2; continue
-                    out.append(d); i += 1
-                    if d == c:
-                        break
-                self.i = i; continue
-            if s[i:i + 4].lower() == "url(":
-                out.append(s[i:i + 4]); i += 4
-                while i < n and s[i] != ")":
-                    out.append(s[i]); i += 1
-                if i < n:
-                    out.append(")"); i += 1
-                self.i = i; continue
-            if c == "/" and i + 1 < n and s[i + 1] == "*":
-                end = s.find("*/", i + 2)
-                if end == -1:
-                    end = n - 2
-                after = end + 2
-                pw = _preceding_ws_count(out)
-                k = after
-                while k < n and s[k] in " \t":
-                    k += 1
-                line_ends = (k >= n or s[k] == "\n")
-                if pw >= 0 and line_ends:
-                    for _ in range(pw):
-                        out.pop()
-                    self.i = (k + 1) if (k < n and s[k] == "\n") else k
-                else:
-                    out.append(" "); self.i = after
-                continue
-            out.append(c); self.i = i + 1
-        return
-
-
-def strip_comments(text):
-    a = text.index(OPEN)
-    b = text.index(CLOSE)
-    assert a < b
-    pre = text[:a]
-    js = text[a + len(OPEN):b]
-    tail = text[b:]
-    return HtmlCssStripper(pre).run() + OPEN + JSStripper(js).run() + HtmlCssStripper(tail).run()
 
 
 def remove_test_button(html):
     idx = html.find(TEST_BTN_LABEL)
+    # the button must be found exactly once: removing a guess could cut the wrong markup (messages in ASCII, which every
+    # console can print)
     if idx == -1:
-        raise SystemExit("FATAL: could not find the 'Run tests' button to remove — anchor changed?")
+        raise SystemExit("FATAL: could not find the 'Run tests' button to remove - anchor changed?")
     if html.find(TEST_BTN_LABEL, idx + 1) != -1:
-        raise SystemExit("FATAL: 'Run tests' appears more than once after comment strip — refusing to guess.")
+        raise SystemExit("FATAL: 'Run tests' appears more than once after comment strip - refusing to guess.")
     start = html.rfind("<button", 0, idx)
     end = html.find("</button>", idx)
     if start == -1 or end == -1:
@@ -506,8 +238,13 @@ def verify_bundle(out_dir):
     (comment-stripped): the _SRC_COMMENTS_KEPT probe must report False (comment-anchored
     source lints skip explicitly instead of false-failing), the suite size must match the
     pre-commit ground truth, and every test must pass — the same banner a tester sees on
-    "Run validation" must be green. Any failure (including Playwright missing) fails the
-    build; --no-verify is the only bypass.
+    "Run validation" must be green. The gate's other legs run too (its header names them): the XSD
+    leg validates the GML the bundle writes against the S-201 2.0.0 schema of this development tree
+    (s201_xsd.py; lxml required), and the first-validation leg is the one that matters most here —
+    in the bundle, which has no Run tests button, a session's first validation is the only way the
+    suite ever runs. Any
+    failure (including Playwright or lxml missing) fails the build; --no-verify is the only
+    bypass.
 
     Returns the number of passed tests."""
     import asyncio
@@ -526,18 +263,20 @@ def verify_bundle(out_dir):
         )
         if exit_code != 0:
             raise SystemExit(
-                "FATAL: bundle verify could not run the self-test suite (see message above). "
+                f"FATAL: bundle verify: the browser gate failed with exit {exit_code} (see message above). "
                 "Use --no-verify only if you accept shipping an UNVERIFIED bundle."
             )
         size_err = gate._assert_suite_size(results)
         if size_err:
             raise SystemExit(f"FATAL: bundle verify: {size_err}")
+        # each failing self-test is named with its detail, then the build stops: testers must never get a bundle whose
+        # banner is red
         failed = [t for t in results if not t.get("passed")]
         if failed:
             for t in failed:
-                print(f"  [FAIL] {t.get('name')} — {t.get('detail') or 'failed'}", file=sys.stderr)
+                print(f"  [FAIL] {t.get('name')} - {t.get('detail') or 'failed'}", file=sys.stderr)
             raise SystemExit(
-                f"FATAL: bundle verify: {len(failed)} self-test(s) failed in the built bundle — "
+                f"FATAL: bundle verify: {len(failed)} self-test(s) failed in the built bundle - "
                 "testers would see a red self-test banner on every validation. Not shipping."
             )
         return len(results)
@@ -561,6 +300,13 @@ def copytree_files(src_dir, dst_dir, names=None, pattern=None):
 
 
 def main():
+    # a path or a test's name the console cannot write is shown escaped rather than stopping the build (a cp932 or
+    # cp1252 console, not only UTF-8); the build's own messages are ASCII
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="backslashreplace")
+        except (AttributeError, ValueError):
+            pass
     ap = argparse.ArgumentParser(description="Regenerate the end-user test-build snapshot.")
     ap.add_argument("--src", required=True, help="source s201_aton_studio.html (the CURRENT version)")
     ap.add_argument("--out", required=True, help="output bundle directory")
@@ -578,9 +324,11 @@ def main():
         text = f.read()
     assert text.count(CLOSE) == 1, f"expected 1 </script>, got {text.count(CLOSE)}"
 
+    # the comments are stripped, and stripping again must change nothing: a second pass that finds more means the lexer
+    # missed some
     html = strip_comments(text)
     if strip_comments(html) != html:
-        raise SystemExit("FATAL: idempotence check failed — comments may remain.")
+        raise SystemExit("FATAL: idempotence check failed - comments may remain.")
     html = remove_test_button(html)
     html = neutralize_test_url(html)
     html = inject_iho_credit(html)
@@ -609,13 +357,13 @@ def main():
     shutil.copy2(os.path.join(ad, "portrayal_catalogue.xml"), os.path.join(out, "Annex_D", "portrayal_catalogue.xml"))
     copytree_files(os.path.join(root, "lib", "leaflet"), os.path.join(out, "lib", "leaflet"),
                    names={"leaflet.js", "leaflet.css", "LICENSE"})
-    # machine-readable rule catalogue — the self-test suite (auto-run on every "Run validation")
+    # machine-readable rule catalogue — the self-test suite (run before a session's first validation)
     # fetches dev/validator-rules.json and hard-fails on a 404, so a bundle without it shows a red
     # self-test banner on every validation; ship the current copy (it must match the app's RULES,
     # which the verify step's suite run asserts)
     vr = os.path.join(root, "dev", "validator-rules.json")
     if not os.path.isfile(vr):
-        raise SystemExit("FATAL: dev/validator-rules.json not found under --assets-root — "
+        raise SystemExit("FATAL: dev/validator-rules.json not found under --assets-root - "
                          "cannot build a self-test-clean bundle.")
     os.makedirs(os.path.join(out, "dev"), exist_ok=True)
     shutil.copy2(vr, os.path.join(out, "dev", "validator-rules.json"))
@@ -645,10 +393,11 @@ def main():
     print(f"   total files   : {n_files}")
     print(f"   test button   : removed;  ?test=1 auto-run: neutralised")
     print(f"   IHO credit    : injected in topbar; NOTICE.txt + README credits written")
-    print("   font LICENSE  : copied from the tracked Annex_D/Fonts/LICENSE (Apache-2.0 with the bundle header)" + (" — replaced by --apache-license" if a.apache_license else ""))
+    # the fonts' licence and whether --apache-license replaced it, then the self-tests' verdict (ASCII, as every message)
+    print("   font LICENSE  : copied from the tracked Annex_D/Fonts/LICENSE (Apache-2.0 with the bundle header)" + (" - replaced by --apache-license" if a.apache_license else ""))
 
     if a.no_verify:
-        print("   self-tests    : SKIPPED (--no-verify) — the bundle is UNVERIFIED")
+        print("   self-tests    : SKIPPED (--no-verify) - the bundle is UNVERIFIED")
     else:
         n_pass = verify_bundle(out)
         print(f"   self-tests    : all {n_pass} passed in the built bundle "

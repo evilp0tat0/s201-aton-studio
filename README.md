@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, and converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished).
 
-Version **1.26.3**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **2.4.11**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
@@ -54,7 +54,7 @@ lib/leaflet/                Leaflet 1.9.4, loaded only for the optional base map
 dev/validator-rules.json    machine-readable mirror of the validator corpus (fetched by a self-test)
 dev/foundational-rules.json the engineering rules the code was written under
 dev/spec-sources/           MANIFEST.md only — every IHO / IALA / OGC / ISO / W3C document, schema
-                            and text extract the code cites (836 files), with
+                            and text extract the code cites (846 files), with
                             size, SHA-256 and where to obtain it
 dev/sample-data/            datasets for regression checks
 dev/scripts/                the gates (pre-commit, browser smoke), the rule-mirror generator,
@@ -70,7 +70,7 @@ The runtime footprint is the HTML file plus `Annex_D/` (and `lib/` for the map).
 
 ## Check that it works
 
-Open the Validator tab and click **Use example** — a bundled three-feature dataset loads and validates cleanly. Click **Run tests** at the top of that tab (or open the app with `?test=1`) to run the built-in self-test suite; it should report every invariant passed.
+Open the Validator tab and click **Use example** — a bundled three-feature dataset loads and validates cleanly. The first validation after the page is opened runs the built-in self-test suite first, behind a cover, and shows its result in a banner above the findings. Click **Run tests** at the top of that tab (or open the app with `?test=1`) to run the built-in self-test suite; it should report every invariant passed.
 
 From a terminal, the same suite runs headless and the static gate checks the tree:
 
@@ -84,6 +84,8 @@ python dev/scripts/run-browser-smoke-gate.py     # once: pip install playwright 
 ## Sources
 
 The app implements the **IALA S-201 Product Specification 2.0.0** (May 2025) on the IHO S-100 framework. Every enumeration, multiplicity, symbol rule, colour value and validator rule is taken from a primary document — the S-201 Feature Catalogue 2.0.0 XML, the S-201 DCEG and Portrayal Catalogue, IHO S-100 Ed 5.2.0, IHO S-158, and the IALA R- and G-series recommendations (R1001 Maritime Buoyage System, R0110 rhythmic characters, R0106, R0126, R0201, R0202, R0108 and others). The rule corpus in `dev/validator-rules.json` carries the citation of every rule.
+
+Datasets are written in the namespace of the S-201 2.0.0 Annex B schema, `http://www.iho.int/S-201/gml/cs0/1.0`, since app version 2.0.0. Files written by earlier versions (namespace `http://www.iho.int/S-201/gml/cs0/2.0`) still open everywhere; the Validator reports their namespace as critical and offers a one-click fix, and the Builder writes them back in the 2.0.0 namespace and says so on import.
 
 The publications, the Feature Catalogue XML, the schemas and the text extracts are not included; all are freely available from their official sources, and `dev/spec-sources/MANIFEST.md` lists each file with its size, SHA-256 and where to obtain it.
 

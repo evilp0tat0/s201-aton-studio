@@ -1,20 +1,20 @@
 # Reference-source manifest
 
-The public snapshot of S-201 AtoN Studio redistributes **none** of the third-party reference material listed here: the IHO and IALA publications, the S-201 Feature Catalogue XML, the IHO S-100 / S-201 schema families with the OGC, ISO and W3C schemas they import, the S-158 check tables and the S-62 producer-code data under `dev/spec-sources/`; the plain-text extracts under `dev/pdf-extracts/` derived from those publications; and `dev/tmp_verify_imgs/`. All of it is freely obtainable from its official source (the IALA publications carry no redistribution grant in their text, and the IHO copyright terms permit free-of-charge redistribution only together with an IHO-Secretariat permission statement this project does not hold), so the snapshot ships this manifest instead.
+The public snapshot of S-201 AtoN Studio redistributes **none** of the third-party reference material listed here: the IHO and IALA publications, the S-201 and S-125 Feature Catalogue XML, the IHO S-100 / S-201 / S-125 schema families with the OGC, ISO and W3C schemas they import, the S-158 check tables and the S-62 producer-code data under `dev/spec-sources/`; the plain-text extracts under `dev/pdf-extracts/` derived from those publications; and `dev/tmp_verify_imgs/`. All of it is freely obtainable from its official source (the IALA publications carry no redistribution grant in their text, and the IHO copyright terms permit free-of-charge redistribution only together with an IHO-Secretariat permission statement this project does not hold), so the snapshot ships this manifest instead.
 
-To follow a citation in the source (`FC 2.0.0 XML L11003-11023`, `r1001_ed2_full.txt L384-393`, `S-100 Pt 10b §10b-11.7`, an XSD line), obtain the named file from the source given for its folder, check that its SHA-256 matches the value below, and place it at the manifest path relative to the project root; the line numbers then resolve byte-for-byte to what the validator's citations were checked against. The extracts are regenerated from the publications, not downloaded.
+To follow a citation in the source (`FC 2.0.0 XML L11003-11023`, `r1001_ed2_full.txt L384-393`, `S-100 Pt 10b §10b-11.7`, an XSD line), obtain the named file from the source given for its folder, check that its SHA-256 matches the value below, and place it at the manifest path relative to the project root; the line numbers then resolve byte-for-byte to what the validator's citations were checked against. The extracts are regenerated from the publications, not downloaded. Text files (XML, XSD, the extracts) are kept with LF line endings (the repository's `.gitattributes`), so an original published with CRLF line endings matches its SHA-256 here after a CRLF-to-LF conversion; the line numbers are the same either way.
 
 The development repository keeps all of these files; `Annex_D/` (the S-201 Annex D portrayal library, © IHO / IALA) is the one third-party component the snapshot does ship, because the app cannot render without it — see NOTICE.txt.
 
 
-## `dev/pdf-extracts/` (72 files)
+## `dev/pdf-extracts/` (75 files)
 
-Obtain from: Plain-text extractions of the publications above (PyMuPDF; the `.docx`-derived one by a zipfile + document.xml parse), regenerable from the originals; `MANIFEST.sha256` is the development repository's integrity manifest for them (pre-commit check #17).
+Obtain from: Plain-text extractions of the publications above (PyMuPDF; the three `s125_*` extracts by pypdf; the `.docx`-derived one by a zipfile + document.xml parse), regenerable from the originals; `MANIFEST.sha256` is the development repository's integrity manifest for them (pre-commit check #17).
 
 | File | Size (bytes) | SHA-256 |
 |---|---:|---|
-| INDEX.md | 18,523 | `c13d20ef6a894bb1af32f8adc65038e94abb649b7229b518635fc9a1405cf562` |
-| MANIFEST.sha256 | 6,215 | `9f8dc4f3b98ceac04dfa6e6176fb92e2fc8019380f9ffdb39376052a870252cf` |
+| INDEX.md | 20,249 | `11edc94beb41cdc3750988d4da0bb2d9227cfcc6bc009e4efe2333fe90664455` |
+| MANIFEST.sha256 | 6,517 | `992d912c1bdd88a84e9b24ec8430499225c11b4bdcebf1427e063e718e1b92fa` |
 | annex_c1_full.txt | 600,008 | `c5a09e4725429b68c5a9cc35412e3dbbbea81a623cdb7d20d97635a0fcfe231c` |
 | annex_c1_pages_1_30.txt | 55,400 | `87e728ec78088284cbbc53baccb42562c035ec5a23048131193ac78c481fc137` |
 | dceg_annex_a.txt | 467,151 | `bc32949b2f74da556edc3bc43ba2f68ebfce3cd1ad4c286ed3ebdb54d6c7c30b` |
@@ -77,6 +77,9 @@ Obtain from: Plain-text extractions of the publications above (PyMuPDF; the `.do
 | s100_roadmap_annex4_2023_full.txt | 113,901 | `3229d579621c6d3bed996a1bbacbfae6d4404f70c1589cdf08b731e183677adb` |
 | s1010_ed2_full.txt | 7,927 | `c83a43d55b36085d5489b4df966d592376838a4dda3e1912f5925e3579baf99d` |
 | s1020_ed2_full.txt | 8,050 | `a48714be21033eedba6f2f835e08efd8e2a1d434ebb1dc63ae3fa6e7a191d062` |
+| s125_dceg_annex_a_1_0_0_full.txt | 354,173 | `31385bfe71b987940f1f119343d9a922ee560a05998679b8bc996954b9286d58` |
+| s125_interop_guidance_draft_0_0_5_full.txt | 40,876 | `3c244958048176783c59eafc6475b01877e63751d0c86e54b88df145e2182835` |
+| s125_ps_1_0_0_main_full.txt | 65,683 | `f454a649fd90aac920643a098c48d58253522422af5c7e814a5dfd14c1cf1d73` |
 | s158_100_checks_table.txt | 112,671 | `8fb42687ea5760540f5fb9b5703a7bf741f4cb90b4a869ae4cb9553ffadecd96` |
 | s158_100_full.txt | 27,221 | `1dd32cc5d56bbfbfa4f41172f739aedaa6914c1f6a56bc6ff8b6256cd97ca716` |
 | s158_intro_structure_full.txt | 67,295 | `4ef4eb323868a16fdac910a5e63dfbcfb73e050e6566a07f8b6b34fce78f2dab` |
@@ -88,7 +91,7 @@ Obtain from: Plain-text extractions of the publications above (PyMuPDF; the `.do
 
 ## `dev/pdf-extracts/pdf_extract/` (18 files)
 
-Obtain from: Plain-text extractions of the publications above (PyMuPDF; the `.docx`-derived one by a zipfile + document.xml parse), regenerable from the originals; `MANIFEST.sha256` is the development repository's integrity manifest for them (pre-commit check #17).
+Obtain from: Plain-text extractions of the publications above (PyMuPDF; the three `s125_*` extracts by pypdf; the `.docx`-derived one by a zipfile + document.xml parse), regenerable from the originals; `MANIFEST.sha256` is the development repository's integrity manifest for them (pre-commit check #17).
 
 | File | Size (bytes) | SHA-256 |
 |---|---:|---|
@@ -2071,6 +2074,19 @@ Obtain from: IHO S-100 Ed 5.2.0 schema package (GML profile, exchange, feature a
 |---|---:|---|
 | XMLCatalog.xml | 4,338 | `3f60a2cdcad22bb9d4bdeed829346a8a52a012cc95db5fb008f3552f6e2e04fa` |
 
+## `dev/spec-sources/s-125/` (6 files)
+
+Obtain from: IHO S-125 Marine Aids to Navigation (AtoN) Edition 1.0.0: the product specification, Annex A DCEG, the HSSC-18 interoperability guidance (Draft 005), the Feature Catalogue XML and the Portrayal Catalogue zip are the files attached to the S-125 entry of the IHO Geospatial Information Registry <https://registry.iho.int/productspec/view.do?idx=222>; the GML schema `125_1.0.0.xsd`: the IHO schema server <https://schemas.s100dev.net/schemas/S125/1.0.0/20260303/125_1.0.0.xsd>.
+
+| File | Size (bytes) | SHA-256 |
+|---|---:|---|
+| 125_1.0.0.xsd | 437,585 | `2469da383b133c89a0091a6a8d1abdec9eb4e9b3bb409d77c4ad69eaab445471` |
+| 125_Feature_Catalogue_1.0.0.xml | 648,255 | `5948d0ccb735477e53ed32712cd7130a764b62aacece09737afd5cd7716a8b94` |
+| 125_Portrayal_Catalogue_1.0.0.zip | 20,636 | `40068ffb05d0e8f5624a46a6e15b97cb67af750c98311b8a12db1376d91ae518` |
+| HSSC_18_NIPWG_ANNEX_F_S125TG_Interoperability-guidance_Draft_005.pdf | 1,602,723 | `efadb569efa34453bf73f88b2ff31e5c9f6c95cefa6eb63e0f121078e6a544be` |
+| S-125_Annex_A_DCEG_Ed_1.0.0.pdf | 1,893,196 | `6a7a66eae84f33aefa8acb66a64435516603458b4b2472f1e28d1bf0e27a87c4` |
+| S-125_Product_Specification_Ed_1.0.0.pdf | 2,320,725 | `c731f0c96df0274b69f251bfe9a38c748711c654e8cf654b550cc3db1a2e4c5e` |
+
 ## `dev/spec-sources/s-158/` (12 files)
 
 Obtain from: IHO S-158 validation-check publications and check tables: <https://iho.int> (S-158 series) and the S-100 Validation Checks working repository <https://github.com/iho-ohi/S-100-Validation-Checks>.
@@ -2090,14 +2106,15 @@ Obtain from: IHO S-158 validation-check publications and check tables: <https://
 | S-158_98_Data_Product_Interoperability_Validation_Checks_Introduction_Ed_1.0.0.pdf | 428,747 | `dc4223441f8bebf2fe068210080483b224552b9a3ce3980710bcc1b4fd72787b` |
 | S-158_Validation_Checks_Introduction_and_Structure_Ed_1.0.0.pdf | 795,954 | `e228594612b4c8ae11f13f54c54c4b762d9657c45d2fb18925581014c18e78ae` |
 
-## `dev/spec-sources/s-201-xsd/` (2 files)
+## `dev/spec-sources/s-201-xsd/` (3 files)
 
-Obtain from: IALA S-201 Ed 1.1.0 Annex B1 data-product-format schema: <https://www.iala.int> and the IHO Geospatial Information Registry <https://registry.iho.int>.
+Obtain from: IALA S-201 Ed 1.1.0 Annex B1 data-product-format schema: <https://www.iala.int> and the IHO Geospatial Information Registry <https://registry.iho.int>. The Ed 2.0.0 Annex B schema (`S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd`, published as `4. S-201 Data Product Format Schemas - Annex B.xsd`): IALA's S-201 repository <https://github.com/IALA-IGO/S-201_AtoN-Information>.
 
 | File | Size (bytes) | SHA-256 |
 |---|---:|---|
 | S-201_Ed1.1.0_Annex_B1_DataProductFormatSchemas.xsd | 434,822 | `4d2d7310e6db99400de2c14656a7762ac834f6417fe256c8058ceadcb44a2d4d` |
 | S-201_Ed1.1.0_Annex_B2_DataProductFormatSchemas_Document.docx | 2,825,696 | `53a84bede2648ecd18b37f3b0123d8db8229b370433dbdf89e7a58685f2dbb17` |
+| S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd | 423,257 | `76b601176c96d8260d84ac11f9ed8fb5a44608fbded9b327f702c0285a7c3f24` |
 
 ## `dev/spec-sources/w3c-xsd/` (3 files)
 
@@ -2126,4 +2143,4 @@ Obtain from: Courseware-derived verification scratch; not a source.
 
 ---
 
-**Total: 836 files, 126,060,474 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.
+**Total: 846 files, 133,869,611 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.

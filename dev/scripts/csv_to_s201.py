@@ -43,6 +43,12 @@ parent_colour / lateral_category_resolved / topmark_colour.
 
 Usage:  python csv_to_s201.py [<input.csv> [<output.gml>]]   (defaults: CSV_PATH/OUT_PATH)
 
+A cell or a column name holding a code point XML 1.0 cannot carry (a C0 control other than tab, line feed and carriage
+return; W3C XML 1.0 production [2] Char, a normative reference of S-100 Part 10b, s100_ed5_2_0_full.txt L32153) has it
+removed when it is read, and a REMOVED line names the CSV line it is on, the column and the code points. The input is
+read as cp1252; a byte cp1252 does not define is an error naming the byte, its line and its offset in the file, and the
+script exits 1 — as it does when the input is missing.
+
 Conformance: the emitted GML validates with ZERO error/warning findings against the
 S-201 AtoN Studio validator (structural GML-STR + per-feature RULES) across all type
 branches — see dev/scripts/precommit-check.py's converter self-test (check #15).
@@ -56,6 +62,7 @@ navigation beacons, not yellow special marks (R1001-SPM-01/02) — forcing yello
 misrepresent a white light, so their true colour is kept.
 """
 import csv
+import io
 import re
 import os
 import sys
@@ -325,9 +332,14 @@ def colour_pattern(type_col, light_colour=None):
     return None
 
 # ───────── XML helpers ─────────
+# The code points XML 1.0 cannot carry (production [2] Char admits #x9, #xA, #xD, #x20-#xD7FF, #xE000-#xFFFD and
+# #x10000-#x10FFFF); main() removes them from each cell and says so, and xe() leaves them out of anything else.
+_XML_ILLEGAL = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\ufffe\uffff]")
+
+
 def xe(s):
     if s is None: return ""
-    return str(s).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;").replace("'","&apos;")
+    return _XML_ILLEGAL.sub("", str(s)).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace('"',"&quot;").replace("'","&apos;")
 
 def el(tag, content, indent=10):
     if content is None or content == "": return ""
@@ -476,16 +488,64 @@ def main():
     # This lets the converter run against any input without hand-editing the source constants.
     csv_path = sys.argv[1] if len(sys.argv) > 1 else CSV_PATH
     out_path = sys.argv[2] if len(sys.argv) > 2 else OUT_PATH
+    # The messages name columns and paths as the file writes them: a console whose encoding cannot write a character
+    # shows it escaped rather than stopping the run.
+    for stream in (sys.stdout, sys.stderr):
+        if stream is not None and hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(errors="backslashreplace")
+            except Exception:
+                pass
     if not os.path.exists(csv_path):
-        print("CSV not found:", csv_path); return
-    rows = []
-    # CSV has cp1252-encoded degree symbol; use that encoding for safety
-    with open(csv_path, "r", encoding="cp1252") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row.get("National Number"):
-                rows.append(row)
+        print("CSV not found:", csv_path); sys.exit(1)
+    rows, removed = [], []
+    # CSV has cp1252-encoded degree symbol; use that encoding for safety. The bytes are decoded whole first, so a byte
+    # cp1252 does not define is named with its line and its offset in the file; the rows are then read as a cp1252
+    # text file reads them.
+    with open(csv_path, "rb") as f:
+        data = f.read()
+    try:
+        data.decode("cp1252")
+    except UnicodeDecodeError as e:
+        line = data.count(b"\n", 0, e.start) + 1
+        print(f"CSV is not cp1252 text: byte 0x{data[e.start]:02X} on line {line} (offset {e.start} in the file) is not "
+              "a cp1252 character - save the file as cp1252 (Windows-1252) or remove the byte.")
+        sys.exit(1)
+    reader = csv.DictReader(io.TextIOWrapper(io.BytesIO(data), encoding="cp1252"))
+    # A column's name is cleaned the same way, and its cells are read by the cleaned name.
+    if reader.fieldnames:
+        names = []
+        for k in reader.fieldnames:
+            if isinstance(k, str) and _XML_ILLEGAL.search(k):
+                clean = _XML_ILLEGAL.sub("", k)
+                removed.append((reader.line_num, "name " + repr(clean), sorted(set(_XML_ILLEGAL.findall(k)))))
+                k = clean
+            names.append(k)
+        reader.fieldnames = names
+
+    def _nl(v):
+        """The line breaks a field holds (a quoted field may span lines; a row's extra fields come as a list)."""
+        if isinstance(v, str):
+            return v.count("\n")
+        if isinstance(v, list):
+            return sum(x.count("\n") for x in v if isinstance(x, str))
+        return 0
+
+    for row in reader:
+        # the record's first line: the line it ends on less the line breaks inside its fields
+        line = reader.line_num - sum(_nl(v) for v in row.values())
+        for k, v in list(row.items()):
+            if isinstance(v, str) and _XML_ILLEGAL.search(v):
+                at = line + v[:_XML_ILLEGAL.search(v).start()].count("\n")
+                removed.append((at, repr(k), sorted(set(_XML_ILLEGAL.findall(v)))))
+                row[k] = _XML_ILLEGAL.sub("", v)
+            line += _nl(v)
+        if row.get("National Number"):
+            rows.append(row)
     print(f"Parsed {len(rows)} rows from CSV.")
+    for line, col, cps in removed:
+        print(f" REMOVED: line {line}, column {col}: " + ", ".join("U+%04X" % ord(c) for c in cps)
+              + " - XML 1.0 cannot carry " + ("it" if len(cps) == 1 else "them"))
 
     # Bounding box
     lats, lons = [], []
@@ -545,9 +605,17 @@ def main():
         if tid:
             feats.append(build_topmark(tid, name, lat, lon, pid, topmark_shape, topmark_colour(type_col, parent_ft, light_colour)))
 
-    # Wrap in dataset
+    # Wrap in dataset. The S-201 2.0.0 namespace (the targetNamespace of the S-201 Ed 2.0.0 Annex B XSD,
+    # dev/spec-sources/s-201-xsd/S-201_Ed2.0.0_Annex_B_DataProductFormatSchemas.xsd L2) is bound both to the S201:
+    # prefix the features use and as the default namespace, so the unprefixed <members> wrapper and the attribute
+    # elements are in it too (elementFormDefault "qualified"). The DII values are the ones the S-100 base schema fixes
+    # or enumerates (dev/spec-sources/s-100-xsd/S100/5.0.0/S100GML/20220620/s100gmlbase.xsd: encodingSpecification
+    # "S-100 Part 10b", encodingSpecificationEdition "1.0", datasetPurpose base | update), with applicationProfile "1"
+    # for a base dataset (S-100 Pt 10b Table 10b-4), as the app's generator writes them. Pre-commit check #20
+    # validates this output against that XSD.
     dataset = f'''<?xml version="1.0" encoding="UTF-8"?>
-<S201:Dataset xmlns:S201="http://www.iho.int/S-201/gml/cs0/2.0"
+<S201:Dataset xmlns:S201="http://www.iho.int/S-201/gml/cs0/1.0"
+              xmlns="http://www.iho.int/S-201/gml/cs0/1.0"
               xmlns:S100="http://www.iho.int/s100gml/5.0"
               xmlns:gml="http://www.opengis.net/gml/3.2"
               xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -560,18 +628,18 @@ def main():
     </gml:Envelope>
   </gml:boundedBy>
   <S100:DatasetIdentificationInformation>
-    <S100:encodingSpecification>S-100 Pt 10b GML</S100:encodingSpecification>
-    <S100:encodingSpecificationEdition>5.2.0</S100:encodingSpecificationEdition>
+    <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
+    <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
     <S100:productIdentifier>S-201</S100:productIdentifier>
     <S100:productEdition>2.0.0</S100:productEdition>
-    <S100:applicationProfile>S-201</S100:applicationProfile>
+    <S100:applicationProfile>1</S100:applicationProfile>
     <S100:datasetFileIdentifier>{xe(PRODUCER_CODE)}PORTSUHAR</S100:datasetFileIdentifier>
     <S100:datasetTitle>{xe(DS_NAME)}</S100:datasetTitle>
     <S100:datasetReferenceDate>2025-05-11</S100:datasetReferenceDate>
     <S100:datasetLanguage>eng</S100:datasetLanguage>
     <S100:datasetTopicCategory>oceans</S100:datasetTopicCategory>
     <S100:datasetTopicCategory>transportation</S100:datasetTopicCategory>
-    <S100:datasetPurpose>Base</S100:datasetPurpose>
+    <S100:datasetPurpose>base</S100:datasetPurpose>
     <S100:updateNumber>0</S100:updateNumber>
   </S100:DatasetIdentificationInformation>
   <members>

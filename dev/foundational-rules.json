@@ -491,7 +491,7 @@
       "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 22 row)",
       "Rule 11 (Smoke-test-or-die)",
       "Rule 12 (Audit-driven major batches — verify-prior-fixes-INTACT step is the same pattern)",
-      "Rule 13 (Atomic delivery — gate verification is part of the 12-item checklist)"
+      "Rule 13 (Atomic delivery — gate verification is part of the What-ships-together checklist, HANDOFF § 2)"
     ],
     "relatedRules": [
       5,
@@ -535,14 +535,15 @@
   },
   {
     "number": 24,
-    "name": "Local working copy tracks every push",
+    "name": "Local working copy tracks main",
     "theme": "Process discipline",
     "addedPass": 565,
+    "extendedPass": 741,
     "addedSession": 23,
-    "summary": "Whenever a pass is pushed to the remote, the user's canonical local working copy — the main git tree at the project root, NOT the per-session worktree the pass was authored in — must be brought to the pushed commit in the SAME step; the main tree is never left stale relative to what was pushed. Rationale: development happens on a worktree branch, but the files the user actually runs (start-server.bat, s201_aton_studio.html) are the main-tree copies, so a push that updates only the remote (or only the worktree) leaves the user running old code. Landing sequence: commit on the worktree branch → fast-forward the main tree to that commit, preserving any unrelated main-tree WIP → push. A push is not complete until the main tree's HEAD equals the pushed commit.",
+    "summary": "Whenever a pass lands on the remote's main, the user's canonical local working copy — the main git tree at the project root, NOT the per-session worktree the pass was authored in — is fast-forwarded to it in the SAME step; the main tree is never left behind the remote's main. Rationale: development happens on a worktree branch, but the files the user actually runs (start-server.bat, s201_aton_studio.html) are the main-tree copies, so a landing that updates only the remote (or only the worktree) leaves the user running old code. Landing sequence (a dev team shares the repository): commit on the pass's branch → push the branch and open a pull request into main → merge it once both gates are green on its final commit and no teammate has objected → fast-forward the main tree to the merged main, preserving any unrelated main-tree WIP. A landing is not complete until the main tree's HEAD equals the remote's main.",
     "scope": [
-      "every push to the remote",
-      "worktree branch -> main-tree fast-forward",
+      "every landing on the remote's main (a merged pull request)",
+      "remote main -> main-tree fast-forward",
       "the main git tree at the project root",
       "the files the user runs (start-server.bat, s201_aton_studio.html)"
     ],
@@ -578,6 +579,32 @@
     ],
     "citations": [
       "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 25 row)"
+    ]
+  },
+  {
+    "number": 26,
+    "name": "Notes on every line of code",
+    "theme": "Quality & naming",
+    "addedPass": 741,
+    "addedSession": 23,
+    "summary": "Every line of code written or changed carries a note that explains it from its author's perspective, so a developer who did not write it understands it without reverse-engineering the code: what the code is for, why it is done this way (the decision, the constraint, the alternative ruled out) and what it rests on (a spec source with its line range, a measured fact, a user decision). A function opens with a note of its own on its purpose, inputs, result and effects; each step inside it is headed by a note, a step being at most six lines of code (blank lines, and the lines a string or template runs on to, not counted); a comment after code notes only its own line. Scope: the JavaScript, CSS and markup of s201_aton_studio.html and every script under dev/scripts, the smoke suite included. Notes are plain language for a teammate, stay true to the code beside them (a change updates its notes in the same pass, Rule 6) and carry no history (Rule 21). The code written before the rule is not retrofitted: pre-commit check #22 refuses a branch that adds or changes a line of code without a note, or leaves a line it did not change without the note that line had, measured against the commit where the branch left origin/main.",
+    "scope": [
+      "s201_aton_studio.html (JavaScript, CSS, markup)",
+      "dev/scripts/*.py",
+      "dev/scripts/*.sh",
+      "dev/scripts/*.bat"
+    ],
+    "citations": [
+      "dev/HANDOFF.md § 2. Foundational engineering rules (Rule 26 row)",
+      "dev/HANDOFF.md § 2 — Notes on every line of code (Rule 26 expansion)",
+      "dev/scripts/code_notes.py (pre-commit check #22)"
+    ],
+    "relatedRules": [
+      2,
+      6,
+      8,
+      21,
+      23
     ]
   }
 ]
