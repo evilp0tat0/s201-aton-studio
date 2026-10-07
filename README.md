@@ -72,7 +72,7 @@ Open the Validator tab and click **Use example** — a bundled three-feature dat
 
 The app implements the **IALA S-201 Product Specification 2.0.0** (May 2025) on the IHO S-100 framework. Every enumeration, multiplicity, symbol rule, colour value and validator rule is taken from a primary document — the S-201 Feature Catalogue 2.0.0 XML, the S-201 DCEG and Portrayal Catalogue, IHO S-100 Ed 5.2.0, IHO S-158, and the IALA R- and G-series recommendations (R1001 Maritime Buoyage System, R0110 rhythmic characters, R0106, R0126, R0201, R0202, R0108 and others). The rule corpus in `dev/validator-rules.json` carries the citation of every rule.
 
-Datasets are written in the namespace of the S-201 2.0.0 Annex B schema, `http://www.iho.int/S-201/gml/cs0/1.0`, since app version 2.0.0. Files written by earlier versions (namespace `http://www.iho.int/S-201/gml/cs0/2.0`) still open everywhere; the Validator reports their namespace as critical and offers a one-click fix, and the Builder writes them back in the 2.0.0 namespace and says so on import.
+Since app version 2.0.0, datasets are written in the S-201 2.0.0 namespace (version `cs0/1.0`), the one the S-201 Edition 2.0.0 Annex B schema declares. Files written by earlier versions (the older `cs0/2.0` namespace) still open everywhere; the Validator reports their namespace as critical and offers a one-click fix, and the Builder writes them back in the 2.0.0 namespace and says so on import.
 
 The publications, the Feature Catalogue XML, the schemas and the text extracts are not included; all are freely available from their official sources, and `dev/spec-sources/MANIFEST.md` lists each file with its size, SHA-256 and where to obtain it.
 
