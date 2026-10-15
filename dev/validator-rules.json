@@ -1876,12 +1876,12 @@
     "id": "S201-LGT-07",
     "ref": "S-201 FC 2.0.0 sectorLimit complex — sectorLimitOne (1..1) + sectorLimitTwo (1..1) (FC XML lines 9237-9259)",
     "severity": "critical",
-    "message": "Each <sectorLimit> (when present) requires BOTH <sectorLimitOne> AND <sectorLimitTwo> per FC 2.0.0 (sub-bindings 1..1 each at lines 9237-9259). Partial wrapper rejected. Quick-fix unavailable (per-sector compound array — needs sector index picker).",
+    "message": "Each <sectorLimit> (when present) requires BOTH <sectorLimitOne> AND <sectorLimitTwo> per FC 2.0.0 (sub-bindings 1..1 each at lines 9237-9259), each with its <sectorBearing> (1..1, FC lines 9260-9307). A wrapper with a bearing on one side only, or on neither (an empty <sectorLimit/>, or limits holding only a sectorLineLength), is rejected; only an absent wrapper passes. Quick-fix unavailable (per-sector compound array — needs sector index picker).",
     "sourceLayer": "per-feature",
     "noFix": "The missing sector bearing is a real-world value - enter it in the Builder's sector editor row the finding names.",
     "expected": {
       "kind": "compound",
-      "description": "each lightSector's <sectorLimit> wrapper is FC 0..1 optional, but if present must carry BOTH <sectorLimitOne> AND <sectorLimitTwo> (1..1 each per FC 9237-9259). Partial wrapper (one bearing only) is FC-invalid."
+      "description": "each lightSector's <sectorLimit> wrapper is FC 0..1 optional, but if present must carry BOTH <sectorLimitOne> AND <sectorLimitTwo> (1..1 each per FC 9237-9259), each with its <sectorBearing> (1..1 per FC 9260-9307). A wrapper with one bearing only, or with none, is FC-invalid."
     }
   },
   {
@@ -2175,10 +2175,46 @@
     }
   },
   {
+    "id": "S201-FEA-61",
+    "ref": "S-201 FC 2.0.0 sectorLimitOne / sectorLimitTwo complexes — sectorBearing (1..1) (FC XML L9260-9283 and L9284-9307; lower 1 at L9271 / L9295); bound 0..1 each on RadarTransponderBeacon (FC XML L13538-13551)",
+    "severity": "critical",
+    "message": "A <sectorLimitOne> or <sectorLimitTwo> on a RadarTransponderBeacon requires <sectorBearing> (1..1 per S-201 FC 2.0.0, FC XML L9271-9274 / L9295-9298). A limit carrying only <sectorLineLength>, or nothing, has no sectorBearing: it is not written when the file is saved.",
+    "sourceLayer": "per-feature",
+    "noFix": "The sector bearing is a real-world value only you have — add <sectorBearing> inside the <sectorLimitOne> or <sectorLimitTwo> the finding names.",
+    "expected": {
+      "kind": "compound",
+      "description": "each <sectorLimitOne> / <sectorLimitTwo> the beacon carries holds <sectorBearing> (1..1); sectorLineLength is 0..1 optional; both limits are 0..1 and may be absent"
+    }
+  },
+  {
+    "id": "S201-FEA-62",
+    "ref": "S-201 FC 2.0.0 textualDescription complex — fileReference (1..1) (FC XML L9813-9836; lower 1 at L9824, ref L9827); bound 0..1 on QualityOfNonBathymetricData (FC XML L15934-15940)",
+    "severity": "critical",
+    "message": "A <textualDescription> on a QualityOfNonBathymetricData requires <fileReference> (1..1 per S-201 FC 2.0.0, FC XML L9824-9827). One carrying only <language>, an empty <fileReference>, or nothing, has no fileReference: it is not written when the file is saved.",
+    "sourceLayer": "per-feature",
+    "noFix": "The file reference is a value only you have — add <fileReference> inside the <textualDescription>.",
+    "expected": {
+      "kind": "compound",
+      "description": "a <textualDescription>, when the feature carries one, holds <fileReference> (1..1); language is 0..1 optional; the attribute itself is 0..1 and may be absent"
+    }
+  },
+  {
+    "id": "S201-FEA-63",
+    "ref": "S-201 FC 2.0.0 attribute bindings with upper multiplicity 1 where the same attribute is bound with a higher upper on another type (FC XML: status on RadioStation L12820-12869; natureOfConstruction on SinkerAnchor L14984-15006, MooringShackle L15046-15068, Swivel L15259-15281, CounterWeight L15391-15413; lightVisibility on LightAllAround L12231-12248; exhibitionConditionOfLight on LightSectored L12096-12108 and LightAllAround L12218-12230; categoryOfSpecialPurposeMark on Daymark L12910-12984); S-158:100 check 100_0004",
+    "severity": "critical",
+    "message": "An attribute the S-201 FC 2.0.0 allows once on this feature type (binding 0..1) carries more than one value. The FC binds the same attribute several times on other types, which is why a file can hold a list here; on this type only one value is permitted. Keep one. The values are not changed when the file is saved.",
+    "sourceLayer": "per-feature",
+    "noFix": "Which of the values is the right one is yours to say - keep one in the Builder (the FC allows a single value here).",
+    "expected": {
+      "kind": "compound",
+      "description": "at most one value of an attribute on a feature type whose FC binding of it has upper multiplicity 1 (the attribute may be bound 0..* or 1..* on other types)"
+    }
+  },
+  {
     "id": "S201-FEA-38",
     "ref": "S-201 FC 2.0.0 radarWaveLength complex — radarBand (1..1) + waveLengthValue (1..1) (FC XML lines 9050-9072)",
     "severity": "critical",
-    "message": "<radarWaveLength> requires BOTH <radarBand> AND <waveLengthValue> sub-attributes (1..1 each per FC 2.0.0 lines 9050-9072). A PARTIAL wrapper is rejected; a fully-empty <radarWaveLength/> is normalised away at parse and reads as wrapper-absent (binding 0..1 optional). Quick-fix sets radarBand; re-run validation to fix waveLengthValue separately if still missing.",
+    "message": "<radarWaveLength> requires BOTH <radarBand> AND <waveLengthValue> sub-attributes (1..1 each per FC 2.0.0 lines 9050-9072). A partial wrapper is rejected, and so is an empty one (<radarWaveLength/>, or one whose parts carry no value); only an absent wrapper passes (binding 0..1 optional). Quick-fix sets radarBand; re-run validation to fix waveLengthValue separately if still missing.",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
@@ -2196,7 +2232,7 @@
     "id": "S201-FEA-39",
     "ref": "S-201 FC 2.0.0 sinkerDimensions complex — heightLengthUnits (1..1) (FC XML lines 9677-9714); bound 0..1 on SinkerAnchor (FC ~15007-15013)",
     "severity": "critical",
-    "message": "<sinkerDimensions> requires <heightLengthUnits> 1..1 sub-attribute when wrapper present (FC 2.0.0 lines 9677-9714). Other dimensions (horizontalLength/horizontalWidth/verticalLength) are 0..1 optional. FC binds sinkerDimensions itself 0..1 on SinkerAnchor (single).",
+    "message": "<sinkerDimensions> requires <heightLengthUnits> 1..1 sub-attribute when wrapper present (FC 2.0.0 lines 9677-9714). Other dimensions (horizontalLength/horizontalWidth/verticalLength) are 0..1 optional. An empty wrapper (<sinkerDimensions/>) is rejected like a partial one; only an absent wrapper passes. FC binds sinkerDimensions itself 0..1 on SinkerAnchor (single).",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
@@ -2214,7 +2250,7 @@
     "id": "S201-FEA-40",
     "ref": "S-201 FC 2.0.0 positioningMethod complex — positioningEquipment (1..1) + NMEAString (1..1) (FC XML lines 9716-9740)",
     "severity": "critical",
-    "message": "<positioningMethod> requires BOTH <positioningEquipment> AND <NMEAString> sub-attributes (1..1 each per FC 2.0.0 lines 9716-9740). A PARTIAL wrapper is rejected; a fully-empty <positioningMethod/> is normalised away at parse and reads as wrapper-absent (binding 0..1 optional). Quick-fix sets positioningEquipment; re-run validation to fix NMEAString separately if still missing.",
+    "message": "<positioningMethod> requires BOTH <positioningEquipment> AND <NMEAString> sub-attributes (1..1 each per FC 2.0.0 lines 9716-9740). A partial wrapper is rejected, and so is an empty one (<positioningMethod/> with no xlink:href, or one whose parts carry no value); only an absent wrapper passes (binding 0..1 optional). A <positioningMethod xlink:href> is the association role, not this complex. Quick-fix sets positioningEquipment; re-run validation to fix NMEAString separately if still missing.",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
@@ -2235,13 +2271,13 @@
   },
   {
     "id": "S201-FEA-41",
-    "ref": "S-201 FC 2.0.0 signalSequence complex — signalDuration (1..1) + signalStatus (1..1) (FC XML lines 9332-9359); feature-level 0..1 on FogSignal (FC 12692-12695) + RTB (FC 13554-13557)",
+    "ref": "S-201 FC 2.0.0 signalSequence complex — signalDuration (1..1) + signalStatus (1..1) (FC XML lines 9332-9359); feature-level 0..1 on FogSignal (FC 12692-12695) + RTB (FC 13554-13557); nested 0..10 inside rhythmOfLight (FC 9073-9139) and sectorCharacteristics (FC 9140-9213)",
     "severity": "critical",
-    "message": "<signalSequence> binds 0..1 (single) at feature level on FogSignal/RadarTransponderBeacon (FC 12692-12695 / 13554-13557) — at most ONE is permitted — and requires BOTH <signalDuration> AND <signalStatus> sub-attributes (1..1 each, FC 9332-9359). More than one feature-level wrapper, or a PARTIAL wrapper, is rejected; a fully-empty wrapper is normalised away at parse and reads as absent. Quick-fix sets signalStatus; re-run validation to fix signalDuration separately if still missing.",
+    "message": "<signalSequence> binds 0..1 (single) at feature level on FogSignal/RadarTransponderBeacon (FC 12692-12695 / 13554-13557) — at most ONE is permitted — and requires BOTH <signalDuration> AND <signalStatus> sub-attributes (1..1 each, FC 9332-9359). More than one feature-level wrapper, a partial wrapper, or an empty one (<signalSequence/>, or one whose parts carry no value) is rejected; only an absent wrapper passes. Inside <rhythmOfLight> and each <sectorCharacteristics> block, <signalSequence> binds 0..10 (FC 9073-9139 / 9140-9213) and EVERY entry needs both parts: an entry at any position that lacks one, or is empty, is rejected, and the finding names its place and position. Quick-fix (FogSignal / RadarTransponderBeacon only) sets signalStatus; re-run validation to fix signalDuration separately if still missing.",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
-      "description": "both signalDuration (1..1, numeric real period in seconds) AND signalStatus (1..1, FC enum {Lit/Sound, Eclipsed/Silent}) populated inside <signalSequence> wrapper"
+      "description": "both signalDuration (1..1, numeric real period in seconds) AND signalStatus (1..1, FC enum {Lit/Sound, Eclipsed/Silent}) populated inside every <signalSequence>: the one feature-level wrapper on FogSignal / RadarTransponderBeacon, and each of the 0..10 entries inside <rhythmOfLight> and each <sectorCharacteristics> block"
     },
     "fix": {
       "field": "signalSequence",
@@ -2251,7 +2287,14 @@
       "options": [
         "Lit/Sound",
         "Eclipsed/Silent"
-      ]
+      ],
+      "skipFts": [
+        "LightAllAround",
+        "LightAirObstruction",
+        "LightFogDetector",
+        "LightSectored"
+      ],
+      "skipNote": "A light's signal sequences are inside its rhythmOfLight (or, on a LightSectored, its sectorCharacteristics blocks) — correct the entry the finding names in the Builder's signal-sequence rows."
     }
   },
   {
@@ -2270,7 +2313,7 @@
     "id": "S201-FEA-43",
     "ref": "S-201 FC 2.0.0 multiplicityOfFeatures complex — multiplicityKnown (1..1) (FC XML lines 8981-9003)",
     "severity": "critical",
-    "message": "<multiplicityOfFeatures> requires <multiplicityKnown> sub-attribute (1..1 per FC 2.0.0 lines 8981-9003; numberOfFeatures 0..1 optional). A wrapper carrying only numberOfFeatures is rejected; a fully-empty wrapper is normalised away at parse and reads as absent.",
+    "message": "<multiplicityOfFeatures> requires <multiplicityKnown> sub-attribute (1..1 per FC 2.0.0 lines 8981-9003; numberOfFeatures 0..1 optional). A wrapper carrying only numberOfFeatures is rejected, and so is an empty one (<multiplicityOfFeatures/>); only an absent wrapper passes.",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
@@ -2412,7 +2455,7 @@
     "id": "S201-FEA-52",
     "ref": "S-201 FC 2.0.0 CableDimensions complex — cableLength/heightLengthUnits/diameter all 1..1 (FC XML 9390-9424); wrapper 0..1 on CableSubmarine (FC 15150-15156)",
     "severity": "critical",
-    "message": "<CableDimensions> requires cableLength (1..1) + heightLengthUnits (1..1, FC enum) + diameter (1..1) when the wrapper is present (FC 2.0.0 lines 9390-9424). The wrapper itself is 0..1 optional on CableSubmarine.",
+    "message": "<CableDimensions> requires cableLength (1..1) + heightLengthUnits (1..1, FC enum) + diameter (1..1) when the wrapper is present (FC 2.0.0 lines 9390-9424). An empty wrapper (<CableDimensions/>, or one whose parts carry no value) is rejected like a partial one; only an absent wrapper passes. The wrapper itself is 0..1 optional on CableSubmarine.",
     "sourceLayer": "per-feature",
     "noFix": "Cable length/diameter are measured values - enter them in the Builder's cable dimensions fields.",
     "expected": {
@@ -2901,14 +2944,14 @@
     "id": "S158-FMT-01",
     "ref": "S-158:100 check 100_0006 (C) Collection A (PS §6.2) — dev/pdf-extracts/s158_100_checks_table.txt L21",
     "severity": "critical",
-    "message": "[S-158:100 check 100_0006] Invalid format of attribute value — an FC real/integer-typed attribute carries a non-canonical decimal form (leading dot like \".6\" or trailing dot like \"6.\"). The FC value-type format expects a full decimal number (e.g. 0.6); FC-based S-100 validators reject the short form",
+    "message": "[S-158:100 check 100_0006] Invalid format of attribute value — an FC real/integer-typed attribute carries a non-canonical number form: a leading dot like \".6\" or a trailing dot like \"6.\", or an integer-typed value written with an exponent or a point (\"1e3\", \"2.0\"; xs:integer). The FC value-type format expects a full decimal number (e.g. 0.6, 1000); FC-based S-100 validators reject the other forms. The quick fix rewrites an integer value only when it is one integer exactly; \"1e-1\" has to be corrected by hand",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "text",
       "description": "every FC real/integer attribute value written as a full decimal number — digits before the point, and no bare trailing point (S-158:100 check 100_0006, classification C)"
     },
     "fix": {
-      "label": "Rewrite to the canonical decimal form (\".6\" → \"0.6\", \"6.\" → \"6\")",
+      "label": "Rewrite to the canonical form (\".6\" → \"0.6\", \"6.\" → \"6\", an integer attribute's \"1e3\" → \"1000\")",
       "kind": "rewrite",
       "keysConst": "_S158_REAL_KEYS"
     }
