@@ -1,6 +1,6 @@
 # Developer notes — S-201 AtoN Studio
 
-For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.25.0`, cut from commit `2a31f9e` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
+For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.25.0`, cut from commit `5600641` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
 
 Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 the feature object · 5 validator rules · 6 verifying a change · 7 sources and citations · 8 the rules the code was written under · 9 reusing parts elsewhere · 10 known limitations · 11 provenance
 
@@ -60,6 +60,7 @@ The script is laid out in this order. Positions move as the file grows, so ancho
 | Excel → S-201: the native workbook reader, the column mapper, the converter and its readback | `_impParseXlsx`, `_impParseDelimited`, `_IMP_TARGETS`, `_impConvert`, `_impReadback`, `_impRequiredChecks`, `_IMP_SAMPLE_TSV` |
 | Builder state arrays (after the import region) | `let compStack`, `let builderFeats` |
 | Validator: structural rules, the inline quick-fix, the orchestrator | `function validateGMLStructure`, `function applyQuickFix`, `function runVal`, `_deepFreeze` |
+| S-125 export: the writer, the click's write with its read-back, and the summary panel. The mapping table it reads sits with the enumerations near the top of the script; it is generated in the development repository from both Feature Catalogues, a label table and the S-125 1.0.0 schema, and a pre-commit check there fails if the table in the source drifts from what its generator prints. The read-back the export runs on its own file before writing it sits after the parser | `function generateS125`, `s125ExportOpen`, `_s125Write`, `const S125_MAP`, `_s125ReadBack` |
 | Self-tests | `async function runSmokeTests` |
 
 Every region opens with a block comment that explains what it does and where its behaviour comes from, with the source cited by document and line range (section 7).
@@ -115,7 +116,9 @@ Run the built-in self-test suite: **Run tests** at the top of the Validator tab,
 
 The suite covers the round trip of every bundled sample, determinism of the output, the rule corpus size and shape, the structural rules against known-good and known-bad documents, Builder form ↔ feat fidelity, quick fixes, the ZIP encoder and decoder, the SHA-256 implementation against the FIPS vectors, the spreadsheet importer end to end, and XSS inertness of every surface that renders user-file text. When you add an invariant, register it with the suite's `_t` helper next to the region it protects.
 
-The command-line gates (a static pre-commit check, a headless browser run of the same suite with its import and schema legs, the rule-mirror generator) live in the development repository and are not part of this tree; every cut of it passes them before it is published.
+The command-line gates (a static pre-commit check, a headless browser run of the same suite with its import, schema and S-125 legs, the rule-mirror generator) live in the development repository and are not part of this tree; every cut of it passes them before it is published. The S-125 leg runs the export on the gate's fixture datasets, each whole and each feature alone, validates every file it writes against the S-125 1.0.0 schema, strictly and whole, and reads it back: a value that comes back wrong, or a field lost without a line in the report, fails the gate.
+
+The text extracts the citations rest on (section 7) are measured against their publications, page by page, by a script in the development repository, and every run's result is recorded in a verification report there; neither the script nor the report ships in this tree.
 
 ---
 
@@ -126,6 +129,8 @@ Precedence: **IHO and IALA over OGC.** S-201 is a profile of S-100, and S-100 re
 The single source of truth for enumerations, multiplicities and feature types is the S-201 Feature Catalogue 2.0.0 XML. Every enum constant's values, every `ATYPES` entry and every mandatory-attribute rule was copied from it, and the inline comments cite it by line range (`FC 2.0.0 XML L11003-11023`). The multiplicity flag deserves care: `infinite="false"` with an upper bound of 1 means 0..1, not 0..*; misreading it caused a real round-trip bug once.
 
 **None of the cited material is in this tree.** The publications, the Feature Catalogue XML, the schema families and the text extracts are all freely available from their official sources, and `dev/spec-sources/MANIFEST.md` lists every file the development repository holds, with its size, SHA-256 and the place to obtain it. To follow a citation: fetch the named file, check that its SHA-256 matches the manifest, and put it at the manifest path relative to the project root (`dev/spec-sources/201_Feature_Catalogue_2.0.0.xml`, `dev/pdf-extracts/r1001_ed2_full.txt`, …). A matching hash means you hold byte-for-byte what the citations were checked against, so the line numbers resolve. The text extracts are regenerated from the publications (PyMuPDF), not downloaded — the manifest says so per folder.
+
+The S-125 export is specified by a conversion design document in the development repository (not in this tree): the mapping, what S-125 has no place for and why, the read-back, and six defects found in the published S-125 1.0.0 documents themselves, each recorded with its lines for report to the S-125 project team. The S-125 Product Specification, Feature Catalogue and schema are listed in the manifest with the S-201 sources.
 
 Where the citation forms point:
 
