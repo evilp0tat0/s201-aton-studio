@@ -130,7 +130,7 @@ is dev/HANDOFF.md § 11 "Specification document index")
      ENC-* cross-checks; :102 / :130 / :98 are other products. No IHO
      validation-checks package specifically for S-201 exists yet (no
      S-158:201; the corpus will be cross-referenced when one is published).
-     Our 271-rule validator (219 per-feature + 25 GML structural + 27 exchange-set, current as of pass 804 / v2.24.0) is the first
+     Our 271-rule validator (219 per-feature + 25 GML structural + 27 exchange-set, current as of pass 806 / v2.25.0) is the first
      validation implementation specifically for S-201.
   OGC and W3C (the substrate)
   15. OGC GML 3.2 schemas — the authority for every gml: element we emit
@@ -318,7 +318,7 @@ KEY ARCHITECTURAL CONVENTIONS (per S-100 5.2.0 Part 10b + production data)
 
 VERSION
 ────────────────────────────────────────────────────────────────────────────────
-See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.24.0. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
+See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.25.0. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
 ================================================================================
 -->
 <html lang="en">
@@ -1526,16 +1526,16 @@ python3 -m http.server 8080
       <button class="btn" onclick="downloadGMLFromVal()" title="Download the current GML text as a .gml file — preserves exactly what's in the textarea. If the text came from the Builder and the Builder has changed since, you'll be offered a refresh first.">↓ Download .gml</button>
       <button class="btn" onclick="downloadExchangeSetFromVal()" title="Parse the current GML and build a full S-100 Exchange Set ZIP (CATALOG.XML + GML + MD_*.XML + folder structure per S-100 Part 17 + S-201 §11). Checks Builder freshness first, like ↓ Download .gml.">⬇ Download full Exchange Set (ZIP)</button>
       <!-- S-125 export (board #62, design dev/s125-conversion-design.md 11.1, D1): converts the dataset in this text area to
-           S-125 1.0.0. It opens a panel below listing what converts and what does not; nothing is written until the user
-           confirms there (Rule 25). -->
-      <button class="btn" onclick="s125ExportOpen()" title="Convert this dataset to S-125 1.0.0 (IHO Marine Aids to Navigation). A panel lists what converts and what S-125 has no place for, with the reasons; nothing is written until you confirm">Export as S-125…</button>
+           S-125 1.0.0 and, on the click, downloads the file and its conversion report together (the Host's word, room
+           #2352, board #72); the panel below then sums up what was converted and what was not (Rule 25). -->
+      <button class="btn" onclick="s125ExportOpen()" title="Convert this dataset to S-125 1.0.0 (IHO Marine Aids to Navigation) and download the S-125 file with its conversion report. A summary below says what converted and what S-125 has no place for; the full report opens under it">Export as S-125…</button>
       <!-- Validation report export. Self-contained HTML file with embedded CSS — opens in any browser, printable to PDF via Ctrl+P. Per Rule 14 (error messages teach the spec) the report includes spec citations + decorated messages so the producer can attach it to a delivery package as a portable QA artefact. The button is always available; if no validation has run, the function triggers runVal first. -->
       <button class="btn" onclick="downloadValReport()" title="Download a self-contained HTML validation report (open in any browser; print to PDF via Ctrl+P) — includes structural + per-feature results, spec citations, and stat summary. Use as a portable QA artefact alongside delivery.">Download Validation Report</button>
       <!-- Reverse Validator→Builder handoff. Parses whatever GML is in valIn into the Builder through the SAME strict error-gated import core the Drawing-tab import uses (`_importGMLTextToBuilder` — Rule 9/23: one gate, two entries). Closes the quick-fix loop: fixes rewrite only this textarea, so without this path the Builder kept showing pre-fix data (user-reported). On success the textarea is re-synced from the Builder's canonical output (`_refreshValInFromBuilder`), re-arming the download freshness gate. -->
       <button class="btn" onclick="importValToBuilder()" title="Parse the GML in this textarea into the Builder (same strict error gate as the Drawing-tab import; replaces the current Builder dataset after confirmation). After a successful load this textarea is re-synced from the Builder's canonical output and re-validated.">⇪ Load into Builder</button>
     </div>
-    <!-- the S-125 export's confirmation panel: filled by _s125RenderPanel from the conversion report, hidden until the
-         export is opened and after it is cancelled -->
+    <!-- the S-125 export's summary panel (board #72): filled by _s125RenderPanel from the conversion report, hidden until
+         the export runs and after it is closed -->
     <div id="s125Panel" style="display:none;margin-top:8px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;line-height:1.5"></div>
     <!-- Builder-freshness stale notice. Shown by _updateValStaleNote() ONLY when valIn's content came from the Builder (sendToVal provenance) and the Builder dataset has since changed — the Download buttons above would otherwise ship the older copy (they act on valIn verbatim). Recomputed on every switch to this tab (showTab hook) + at the end of every runVal; hidden the moment the user edits valIn (provenance → 'manual') or clicks ↻. Placed AFTER the second .btn-row, NOT between the two rows — the `.btn-row+.btn-row{margin-top}` adjacent-sibling rule must keep matching. -->
     <div id="valStaleNote" style="display:none;margin-top:8px;padding:8px 10px;border:1px solid #d97706;border-radius:6px;background:rgba(217,119,6,.09);font-size:12px;line-height:1.5">⚠ <strong>Builder has newer changes.</strong> This GML was sent from the Builder, but the Builder dataset has changed since — the Download buttons above would save the older copy. <button class="btn" style="margin-left:6px;padding:3px 10px;font-size:11px" onclick="_refreshValInFromBuilder(true)" title="Re-copy the current Builder GML here and re-run validation">↻ Refresh from Builder</button></div>
@@ -1690,7 +1690,7 @@ python3 -m http.server 8080
 </div>
 <script>
 /* ════════════════════════════════════════════════════════════════════════ APP VERSION — S-201 AtoN Studio semver ════════════════════════════════════════════════════════════════════════ Format: MAJOR.MINOR.PATCH (semantic versioning per https://semver.org). Bump rules: • MAJOR — Breaking change to GML output format that prior consumers could not parse (root element rename, namespace URI change, element removal). Reserved for substantial milestones. • MINOR — Added a new validator rule, a new feature type in ATYPES, a new UI feature, or a new attribute in the GML output (additive change that prior consumers can ignore). • PATCH — Bug fixes, comment improvements, doc refreshes, refactors that don't change observable behaviour. Track scheme: ONE track — plain semver continues from this constant, and a `-beta` pre-release suffix (semver.org §9) may mark work-in-progress between public release tags. ⚠️ Bump the version on every change. The user has explicitly required this. Even a comment-only change is at minimum a PATCH bump. The badge in the topbar, the generated GML `<!-- comment -->`, the CHANGELOG entry, and the HANDOFF Live State line all reference this constant. Bump checklist: 1. Update the const just below this comment. 2. Update the `Current:` line in the HTML preface (grep `Current:` — precommit check 1 and the self-test both compare it with this constant). 3. Add a per-pass entry at the top of dev/CHANGELOG.md in the development repository (not shipped in the public snapshot; Rule 21: facts only — that file IS the canonical log). 4. Update the Live State row in dev/HANDOFF.md. 5. The topbar version badge + generated-GML watermark auto-update from APP_VERSION (no manual sync needed). Per-pass history lives in dev/CHANGELOG.md. This file intentionally does NOT carry version history — the canonical log is one place. `No comment without spec citation` policy: This file is the entire app. There is no separate documentation generator, no test suite outside the inline smoke tests, no type system. The comments + the docs in dev/ are the only thing keeping this codebase maintainable. Every fix is justified by a spec reference — re-read the comments before changing anything. ════════════════════════════════════════════════════════════════════════ */
-const APP_VERSION = "2.24.0";
+const APP_VERSION = "2.25.0";
 
 /* ════════════════════════════════════════════════════════════════════════ FOUNDATIONAL_RULES — (Rule 19) machine-readable in-app projection of the foundational engineering rules. The CANONICAL machine-readable form lives at `dev/foundational-rules.json` . This in-app constant is the same data, embedded here for sync access (smoke tests can't await fetch). Both surfaces MUST agree on the entry count and, entry by entry, on number / name / theme / addedPass / summary, character for character: pre-commit check #2 reads this const through V8 and compares those five fields with the JSON's by rule number, and the smoke suite verifies the count + entry shape every run (Rule 23: the agreement is stated here because a gate holds it). Authoring direction: HANDOFF.md prose sections are the source of truth. When adding a new foundational rule: 1. Write the section in HANDOFF.md. 2. Append the entry to dev/foundational-rules.json. 3. Append the entry to FOUNDATIONAL_RULES below (the same number / name / theme / addedPass / summary as the JSON, character for character — pre-commit check #2 fails on any difference). 4. Bump the smoke test's expected length from N to N+1 (grep `FOUNDATIONAL_RULES.length!==`) AND its 1..N title/detail phrases in the same edit — the prose phrases are pre-commit-gated, the length literal is enforced by the suite itself at runtime, and the per-entry loop derives its bound from the array. ════════════════════════════════════════════════════════════════════════ */
 const FOUNDATIONAL_RULES = [
@@ -19949,11 +19949,12 @@ function _s125Geometry(geo,prims){
 }
 
 /* converts the S-201 2.0.0 document `src` (the app writer's output) into an S-125 1.0.0 document.
-   opts.sourceName: the source file's name for the provenance comment (D7); opts.fileName: the S-125 file's confirmed
-   name, written as its datasetFileIdentifier (S-100 Part 10b Table 10b-4); without one the source's value is carried; opts.omitted: the S-201 writer's own
+   opts.sourceName: the source file's name for the provenance comment (D7); opts.fileName: the name the S-125 file is
+   written under, also its datasetFileIdentifier (S-100 Part 10b Table 10b-4); without one the source's value is carried; opts.omitted: the S-201 writer's own
    omission records from _genDisclosed (planner's condition, room #1928), carried into the report.
-   Returns {text, report}; report = {converted:{s125Type:n}, notConverted:[{id,ft,why}], leftOut:[{id,ft,attr,why}],
-   broader, ambiguous, s201Omitted}. */
+   Returns {text, report}; report = {converted:{s125Type:n}, notConverted:[{id,ft,why,left}], leftOut:[{id,ft,attr,why}],
+   broader, ambiguous, s201Omitted}; leftOut holds fields of converted features only, and a feature not converted carries
+   what it had left out on its own notConverted row (left: [{attr,why}], board #72). */
 function generateS125(src,opts){
   opts=opts||{};
   const doc=new DOMParser().parseFromString(src,"application/xml");
@@ -20057,10 +20058,9 @@ function generateS125(src,opts){
         if(held.length)parts.push(held.map(n=>"its "+n+" cannot be written: "+heldLine(n).why).join("; ")+", and S-125 makes "+held.join(", ")+" mandatory on "+f.t125);
         if(lostOnes.length)parts.push(lostOnes.map(n=>"its "+n+" "+f.lost[n].join(", ")+" is not converted").join("; ")+", and S-125 makes "+lostOnes.join(", ")+" mandatory on "+f.t125);
         if(never.length)parts.push("S-125 makes "+never.join(", ")+" mandatory on "+f.t125+" and the source has "+(never.length>1?"none of them":"none"));
-        /* the feature reported and taken out; the pass repeats, since a link to it may now empty another mandatory role */
-        report.notConverted.push({id,ft:f.ft,why:parts.join("; ")+" (design 6.1; D3)"});
-        /* what it had already left out (a voided value, a dropped link) is reported with it, never lost (Fable5, #2002) */
-        for(const x of f.left)report.leftOut.push({id,ft:f.ft,attr:x.attr,why:x.why});
+        /* the feature reported and taken out, with what it had already left out (a voided value, a dropped link) on its own
+           row - never lost (Fable5, #2002), and never counted as left out of a converted feature (planner, room #2377) */
+        report.notConverted.push({id,ft:f.ft,why:parts.join("; ")+" (design 6.1; D3)",left:f.left.map(x=>({attr:x.attr,why:x.why}))});
         out.delete(id);changed=true;
       }
     }
@@ -20085,7 +20085,7 @@ function generateS125(src,opts){
     if(n==="productIdentifier"||n==="productEdition"){diiLines.push("    <S100:"+n+">"+(n==="productIdentifier"?S125_PRODUCT.id:S125_PRODUCT.edition)+"</S100:"+n+">");continue;}
     const src=dii?[...dii.children].filter(c=>c.localName===n&&c.textContent.trim()):[];
     /* datasetFileIdentifier is the file's own name with its extension (S-100 Part 10b Table 10b-4, s100_ed5_2_0_full.txt
-       L33041-33049), so the S-125 file carries the name the user confirmed, never the S-201 source's; the change is
+       L33041-33049), so the S-125 file carries the name it is written under, never the S-201 source's; the change is
        disclosed, source value -> written value (planner's ruling, room #2006) */
     if(n==="datasetFileIdentifier"&&opts.fileName){
       const was=src.length?src[0].textContent.trim():"";
@@ -20128,14 +20128,15 @@ function generateS125(src,opts){
   return {text:lines.join("\n"),report};
 }
 /* ═══════════════════════════════════════════════════ S-125 EXPORT ON THE VALIDATOR TAB (D1, design 11.1-11.2) ═══════════════
-   "Export as S-125…" converts the dataset in the Validator's text area. Before anything is written the user sees, in a
-   panel under the download buttons, what converts and what does not, each with its reason, and confirms (Rule 25). The
-   panel and the downloadable report are one list of lines (_s125ReportLines), so the record of what was left out is the
-   one the user read. The source is never touched: the features are a private parse (_parseOrReuse returns a copy),
+   "Export as S-125…" converts the dataset in the Validator's text area and, on the click, writes the S-125 file and its
+   conversion report together (the Host's word, room #2352, board #72). The panel under the download buttons then sums
+   up what was done: the one cause of what did not convert, what was written or why nothing was, three counts, and the
+   whole report under one "Full report" (room #2365), the same text the downloaded report holds (Rule 25: every
+   conversion disclosed). The source is never touched: the features are a private parse (_parseOrReuse returns a copy),
    written through the app's own S-201 writer, then converted. */
 
-/* the conversion waiting for the user's confirmation: the result and the text it was made from, so a confirmation
-   after the text area changed writes nothing stale */
+/* the last conversion and the text it was made from, with what its write did (outcome), so a later "Write as" after
+   the text area changed writes nothing stale */
 let _s125Pending=null;
 
 /* the report as sections of lines, the one source for the panel and the downloaded text. Each section is
@@ -20150,7 +20151,7 @@ function _s125ReportLines(res,sourceName){
   /* what does not convert, grouped by its reason so a family (the mooring parts, design 4.1) reads as one paragraph
      with a row per feature */
   const by=new Map();
-  for(const x of r.notConverted){if(!by.has(x.why))by.set(x.why,[]);by.get(x.why).push(x.id+" ("+x.ft+")");}
+  for(const x of r.notConverted){if(!by.has(x.why))by.set(x.why,[]);by.get(x.why).push(x.id+" ("+x.ft+")",...(x.left||[]).map(l=>"  "+l.attr+" - "+l.why));}
   if(r.notConverted.length)out.push({title:"Not converted: "+r.notConverted.length+" feature(s)",kind:"warn",
     lines:[...by].flatMap(([why,ids])=>[why+":",...ids.map(i=>"  "+i)])});
   /* each attribute or link left out of a converted feature, with its reason */
@@ -20195,14 +20196,17 @@ function _s125ReportText(sections){
    and _ (PS L1262-1268), with the .GML extension */
 const _S125_FILE_NAME=/^125[A-Z0-9]{4}[A-Z0-9_]{1,10}\.GML$/;
 
-/* the name offered for the user to confirm: the S-201 file identifier's producer code and its own part when it has the
-   S-201 form (201 + four + up to ten), otherwise nothing is guessed and the field starts empty */
+/* the name the click writes under: the S-201 file identifier's producer code and its own part when it has the S-201
+   form (201 + four + up to ten); otherwise nothing is guessed, nothing is written, and the user types the name (planner,
+   room #2374: a producer code is never invented, Rule 8) */
 function _s125SuggestName(s201Text){
   const m=String(s201Text).match(/<(?:\w+:)?datasetFileIdentifier>\s*201([A-Z0-9]{4})([A-Z0-9_]{1,10})/);
   return m?"125"+m[1]+m[2]+".GML":"";
 }
 
-/* opens the confirmation panel for the dataset in the text area: the conversion is made, nothing is written */
+/* the click: converts the dataset in the text area and writes the S-125 file and its report at once under the name
+   the source gives (board #72), then shows the summary; a source that gives no name, a dataset S-125 cannot hold or a
+   file that does not read back writes nothing, and the panel says why in one line */
 function s125ExportOpen(){
   if(!_ensureValInFresh())return;
   const t=document.getElementById("valIn").value;
@@ -20216,6 +20220,9 @@ function s125ExportOpen(){
   try{gd=_genDisclosed(()=>generateAllGML(feats));res=generateS125(gd.text,{sourceName:_s125SourceName(t),omitted:gd.omitted});}
   catch(e){alert("The dataset could not be converted: "+((e&&e.message)||e));return;}
   _s125Pending={res,text:t,s201:gd.text,omitted:gd.omitted,source:_s125SourceName(t),sections:_s125ReportLines(res,_s125SourceName(t))};
+  /* the name the source gives; with none, nothing is written and the panel asks for one (room #2374) */
+  const name=_s125SuggestName(t);
+  _s125Pending.outcome=name?_s125Write(name):{written:false,name:"",why:"Nothing was written: no S-125 file name - the source's file identifier is not of the S-201 form, so its producer code is unknown; enter the name below"};
   _s125RenderPanel();
 }
 
@@ -20225,71 +20232,111 @@ function _s125SourceName(t){
   return m?m[1]:"the dataset in the Validator";
 }
 
-/* draws the panel from the pending conversion, by DOM nodes only (no markup built from the dataset's text) */
+/* the export's three counts from its report, as the panel shows them and the report's section titles state them:
+   features converted, features not converted, values left out of converted features (board #72) */
+function _s125Counts(r){
+  return {converted:Object.values(r.converted).reduce((a,b)=>a+b,0),notConverted:r.notConverted.length,leftOut:r.leftOut.length};
+}
+
+/* the one cause of what does not convert, in plain words, when S-125 lacks a type the dataset uses (design 10.4: the
+   PS names Lighthouse, the FC defines none): the types, and how many of the dataset's features they take with them -
+   each such feature and everything whose reason names it as its parent (Fable5, room #2364). Null when there is none */
+function _s125Cause(r){
+  /* the types S-125 has no place for, read from the report's own reasons (S125_MAP gives them) */
+  const types=[...new Set(r.notConverted.filter(x=>/design 10\.4/.test(x.why)).map(x=>x.ft))];
+  if(!types.length)return null;
+  /* the features those types take out: their own, and every one whose reason names one of them as its parent */
+  const n=r.notConverted.filter(x=>types.includes(x.ft)||types.some(t=>x.why.indexOf("("+t+")")>=0)).length;
+  const total=_s125Counts(r).converted+r.notConverted.length;
+  return "S-125 1.0.0 has no "+types.join(", ")+" type, so every "+types.join(", ")+" and everything mounted on it is left out: "+n+" of "+total+" features. This is a gap in the S-125 standard, not in the data (design 10.4).";
+}
+
+/* draws the summary from the last export, by DOM nodes only (no markup built from the dataset's text): the cause,
+   what was written or why nothing was, the three counts, the identifier line, then ONE "Full report" holding the whole
+   report at its full height - no inner scroll box anywhere (the Host, rooms #2356, #2365) */
 function _s125RenderPanel(){
   const p=document.getElementById("s125Panel");if(!p||!_s125Pending)return;
   p.textContent="";
   /* one element with its style and text, text set as text, never as markup */
   const el=(tag,css,txt)=>{const e=document.createElement(tag);if(css)e.style.cssText=css;if(txt!=null)e.textContent=txt;return e;};
-  p.appendChild(el("div","font-weight:600;margin-bottom:6px","Export as S-125 1.0.0 - nothing is written until you confirm"));
-  /* the head's line on types S-125 cannot hold at all, when there is one, first and in the warning colour */
-  for(const l of _s125Pending.sections[0].lines.slice(2))p.appendChild(el("div","margin-top:4px;font-weight:600;color:#b45309",l));
-  /* each section of the report, the head line excepted, as a heading and its lines */
-  for(const s of _s125Pending.sections.slice(1)){
-    const c=s.kind==="block"?"#b91c1c":s.kind==="ok"?"var(--fg)":"#b45309";
-    p.appendChild(el("div","margin-top:6px;font-weight:600;color:"+c,s.title));
-    const pre=el("pre","margin:2px 0 0;white-space:pre-wrap;font-size:12px;max-height:180px;overflow:auto",s.lines.join("\n"));
-    p.appendChild(pre);
-  }
-  /* a dataset S-125 cannot be written for: the write button stays disabled */
-  const blocked=_s125Pending.res.report.blocking.length>0;
-  /* the name the user confirms becomes the file's own datasetFileIdentifier (S-100 Part 10b Table 10b-4, room #2006);
-     said here, before the name is asked for, since the report that records the change is written only on confirm */
-  p.appendChild(el("div","margin-top:8px;font-size:12px","The file's datasetFileIdentifier will be the name you confirm below, not the source's (S-100 Part 10b Table 10b-4); the downloaded report's Changed line records both."));
-  /* the file name, offered from the source and confirmed by the user (PS L1262-1268) */
+  const r=_s125Pending.res.report,o=_s125Pending.outcome||{written:false,name:"",why:""},c=_s125Counts(r);
+  p.appendChild(el("div","font-weight:600;margin-bottom:6px","Export as S-125 1.0.0"));
+  /* the cause first, before any count, in the warning colour */
+  const cause=_s125Cause(r);
+  if(cause)p.appendChild(el("div","margin-top:4px;font-weight:600;color:#b45309",cause));
+  /* what was written, or the one line saying why nothing was */
+  const done=o.written?"Written: "+o.name+" and "+o.report+" (downloaded)":o.why;
+  p.appendChild(el("div","margin-top:6px;font-weight:600;color:"+(o.written?"var(--fg)":"#b91c1c"),done));
+  /* the three counts, one per line, the numbers the report's section titles carry */
+  for(const l of ["Features converted: "+c.converted,"Features not converted: "+c.notConverted,"Values left out of converted features: "+c.leftOut])
+    p.appendChild(el("div","margin-top:2px",l));
+  /* the file's identifier is its own name, not the source's (S-100 Part 10b Table 10b-4, room #2006) */
+  p.appendChild(el("div","margin-top:6px;font-size:12px",o.written?"The file's datasetFileIdentifier is its own name, "+o.name+", not the source's (S-100 Part 10b Table 10b-4).":"The file's datasetFileIdentifier will be the name it is written under, not the source's (S-100 Part 10b Table 10b-4)."));
+  /* the whole report under one control, closed, laid out at its full height: the page scrolls, the box never does */
+  const det=el("details","margin-top:8px");det.id="s125Full";
+  det.appendChild(el("summary","cursor:pointer;font-weight:600","Full report"));
+  det.appendChild(el("div","margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-family:monospace;font-size:12px",_s125ReportText(_s125Pending.sections)));
+  p.appendChild(det);
+  /* a second write under another name (or the first, when the source gave none), the report alone, and close */
+  const blocked=r.blocking.length>0;
   const row=el("div","margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap");
   row.appendChild(el("label","font-size:12px","File name"));
-  const inp=el("input","font-family:monospace;font-size:12px;width:22ch");inp.id="s125Name";inp.value=_s125SuggestName(_s125Pending.text);
+  const inp=el("input","font-family:monospace;font-size:12px;width:22ch");inp.id="s125Name";inp.value=o.name||"";
   inp.setAttribute("aria-label","S-125 file name: 125, the producer code, then up to ten characters, .GML");
   row.appendChild(inp);
-  const ok=el("button","","Write S-125 file");ok.className="btn btn-primary";ok.id="s125Write";
-  /* the report download and the cancel button beside the write */
+  /* the write button: "Write again as" after a write, "Write as" before one */
+  const ok=el("button","",o.written?"Write again as":"Write as");ok.className="btn btn-primary";ok.id="s125Write";
   const rep=el("button","","Download report");rep.className="btn";
-  const no=el("button","","Cancel");no.className="btn btn-ghost";
-  /* the write is offered only for a dataset S-125 can hold and a name of the PS form */
+  const no=el("button","","Close");no.className="btn btn-ghost";
+  /* offered only for a dataset S-125 can hold and a name of the PS form (PS L1262-1268) */
   const sync=()=>{ok.disabled=blocked||!_S125_FILE_NAME.test(inp.value);};
   inp.addEventListener("input",sync);sync();
   ok.addEventListener("click",()=>s125ExportConfirm(inp.value));
   rep.addEventListener("click",()=>_s125Download(_s125ReportText(_s125Pending.sections),(inp.value||"S-125").replace(/\.GML$/,"")+"_report.txt","text/plain"));
   no.addEventListener("click",s125ExportCancel);
-  row.append(ok,rep,no);
   /* the row added and the panel shown */
+  row.append(ok,rep,no);
   p.appendChild(row);
   p.style.display="";
 }
 
-/* writes the S-125 file the user confirmed, with its report; a text area changed since the panel opened writes nothing */
-function s125ExportConfirm(name){
-  if(!_s125Pending)return;
-  if(document.getElementById("valIn").value!==_s125Pending.text){alert("The GML changed since the export was prepared - open Export as S-125 again.");s125ExportCancel();return;}
-  if(_s125Pending.res.report.blocking.length||!_S125_FILE_NAME.test(name))return;
-  /* the conversion made again with the confirmed name, so the file's datasetFileIdentifier is its own name and the
-     report says so (room #2006) */
-  const res=generateS125(_s125Pending.s201,{sourceName:_s125Pending.source,omitted:_s125Pending.omitted,fileName:name});
-  const sections=_s125ReportLines(res,_s125Pending.source);
-  /* the read-back (design 11.3, board #63): the written text held to the S-201 document it was made from, field by
-     field; its verdict joins the report, and a file that does not read back faithfully is not written (Rule 25) */
-  const faults=_s125ReadBack(res.text,null,res.report,{text:_s125Pending.s201,omitted:_s125Pending.omitted});
+/* writes the S-125 file under `name` with its report, both or neither (board #72): the conversion made again with the
+   name, so the file's datasetFileIdentifier is its own name (room #2006); the read-back run (design 11.3, board #63);
+   and only a faithful file of a dataset S-125 can hold reaches a download (Rule 25). Returns what the panel says */
+function _s125Write(name){
+  const P=_s125Pending;
+  /* a dataset S-125 cannot hold, or a name not of the PS form: nothing written, the reason in one line */
+  if(P.res.report.blocking.length)return{written:false,name,why:"Nothing was written: S-125 cannot hold this dataset - "+P.res.report.blocking[0]};
+  if(!_S125_FILE_NAME.test(name))return{written:false,name,why:"Nothing was written: '"+name+"' is not an S-125 file name (125, the producer code, up to ten characters, .GML)"};
+  /* the conversion made again with the name, its report sections, and the read-back of the written text */
+  const res=generateS125(P.s201,{sourceName:P.source,omitted:P.omitted,fileName:name});
+  const sections=_s125ReportLines(res,P.source);
+  const faults=_s125ReadBack(res.text,null,res.report,{text:P.s201,omitted:P.omitted});
+  P.res=res;
+  /* an unfaithful file: nothing written, the faults in the full report and their count in the panel's one line */
   if(faults.length){
-    /* the faults shown in the panel, nothing downloaded */
-    _s125Pending.sections=sections.concat([{title:"Read back against the source: "+faults.length+" fault(s) - nothing was written",kind:"block",lines:faults}]);
-    _s125RenderPanel();
-    return;
+    P.sections=sections.concat([{title:"Read back against the source: "+faults.length+" fault(s) - nothing was written",kind:"block",lines:faults}]);
+    return{written:false,name,why:"Nothing was written: the file did not read back faithfully - "+faults.length+" fault(s), listed in the full report"};
   }
+  /* faithful: the verdict joins the report, and both texts are made before either download starts, so the file never
+     leaves without its report (lead, room #2369) */
   sections.push({title:"Read back against the source: faithful",kind:"ok",lines:["every source value is written or named above, and every code is the S-125 code of its label (design 11.3)"]});
+  P.sections=sections;
+  const report=_s125ReportText(sections),rname=name.replace(/\.GML$/,"")+"_report.txt";
   /* the file and its report together, so the record of what was left out travels with the data (design 11.2) */
   _s125Download(res.text,name,"application/xml");
-  _s125Download(_s125ReportText(sections),name.replace(/\.GML$/,"")+"_report.txt","text/plain");
+  _s125Download(report,rname,"text/plain");
+  return{written:true,name,report:rname};
+}
+
+/* "Write as" / "Write again as": the same write under the name typed in the panel; a text area changed since the
+   export ran writes nothing stale */
+function s125ExportConfirm(name){
+  if(!_s125Pending)return;
+  if(document.getElementById("valIn").value!==_s125Pending.text){alert("The GML changed since the export was made - click Export as S-125 again.");s125ExportCancel();return;}
+  /* the write, and the summary drawn again from what it did */
+  _s125Pending.outcome=_s125Write(name);
+  _s125RenderPanel();
 }
 
 /* closes the panel and forgets the pending conversion */
@@ -30176,15 +30223,19 @@ async function runSmokeTests(){
     return n&&/10\.6/.test(n.why)?true:{pass:false,detail:"the report does not give design 10.6: "+JSON.stringify(n)};
   });
   /* design 10.4, the planner's ruling (room #2001): a lighthouse and what is mounted on it are left out and named */
-  _t("S-125 export (design 10.4): exGML[3], a lighthouse with its light, converts no feature, and the report carries exactly the two reasons and the heading line","s125",()=>{
+  _t("S-125 export (design 10.4): exGML[3], a lighthouse with its light, converts no feature, leaves out no value of a converted one, and the report carries exactly the two reasons, the light's dropped link under it, and the heading line","s125",()=>{
     const r=_s125Of(exGML[3]);
     /* nothing converted, and the two lines: the lighthouse (no S-125 type), the light (its parent is not converted) */
     const n=Object.values(r.report.converted).reduce((a,b)=>a+b,0);
     if(n)return{pass:false,detail:n+" feature(s) of exGML[3] converted"};
     const nc=r.report.notConverted.map(x=>x.id+": "+x.why);
     if(nc.length!==2||!/^LH\.001: .*design 10\.4/.test(nc[0])||!/^LT\.004: its parent LH\.001 \(Lighthouse\) is not converted/.test(nc[1]))return{pass:false,detail:"report lines: "+JSON.stringify(nc)};
-    /* the light's own lines reach the report though it was dropped in the second pass (Fable5, #2002) */
-    if(!r.report.leftOut.some(x=>x.id==="LT.004"&&x.attr==="parent"))return{pass:false,detail:"LT.004's dropped parent link is not in the report"};
+    /* the light's own lines reach the report though it was dropped in the second pass (Fable5, #2002): on its own
+       notConverted row and under it in the report text, and none counted as left out of a converted feature (board #72) */
+    if(r.report.leftOut.length)return{pass:false,detail:r.report.leftOut.length+" value(s) left out of converted features, with none converted"};
+    const lt=r.report.notConverted.find(x=>x.id==="LT.004");
+    if(!lt||!(lt.left||[]).some(x=>x.attr==="parent"))return{pass:false,detail:"LT.004's dropped parent link is not on its row"};
+    if(!/\n\s+LT\.004 \(LightAllAround\)\n\s+parent - its target LH\.001 \(Lighthouse\) is not converted/.test(_s125ReportText(_s125ReportLines(r,"lock"))))return{pass:false,detail:"the report text does not carry LT.004's dropped link under it"};
     /* the report's heading says it for the type */
     const head=_s125ReportLines(r,"lock")[0].lines.join(" ");
     return /Not convertible: every Lighthouse and everything mounted on it/.test(head)?true:{pass:false,detail:"the heading line does not say it: "+head};
@@ -30199,8 +30250,9 @@ async function runSmokeTests(){
     if(!/<AtonStatusInformation gml:id="SI\.9">/.test(r.text))return{pass:false,detail:"SI.9 not written: "+JSON.stringify(r.report.notConverted.find(x=>x.id==="SI.9"))};
     return /<statusPart xlink:href="#SI\.9"\/>/.test(r.text)?true:{pass:false,detail:"the buoy's statusPart link to SI.9 is not written"};
   });
-  /* the written file name (room #2006): the confirmed name is the datasetFileIdentifier, the change disclosed */
-  _t("S-125 export: the S-125 file's datasetFileIdentifier is the confirmed file name, and the report gives source -> written","s125",()=>{
+  /* the written file name (room #2006): the name the file is written under is its datasetFileIdentifier, the change
+     disclosed */
+  _t("S-125 export: the S-125 file's datasetFileIdentifier is the name it is written under, and the report gives source -> written","s125",()=>{
     const r=_s125Of(exGML[0]),gd=_genDisclosed(()=>generateAllGML(parseAllGML(exGML[0])));
     const w=generateS125(gd.text,{sourceName:"lock",omitted:gd.omitted,fileName:"125XX01ALFA.GML"});
     if(!/<S100:datasetFileIdentifier>125XX01ALFA\.GML<\/S100:datasetFileIdentifier>/.test(w.text))return{pass:false,detail:"the confirmed name is not the datasetFileIdentifier"};
@@ -30237,23 +30289,40 @@ async function runSmokeTests(){
     if(!/<colour code="3">Red<\/colour>/.test(r.text))return{pass:false,detail:"the other colour was not kept"};
     return r.report.leftOut.some(x=>x.attr==="colour"&&/Red Temporary/.test(x.why))?true:{pass:false,detail:"the report does not name 'Red Temporary'"};
   });
-  /* the panel and the custody of the source (Rule 25), through the real DOM and download path */
-  _t("S-125 export (Rule 25): the panel opens with nothing written, names what is not converted, and confirming writes the file and its report; the text area and the Builder are untouched","s125",()=>{
+  /* exGML[0]'s document with an S-201-form file identifier `id` (201 + producer + own part), so the export's click
+     has a name to write under (board #72); exGML[0] itself carries DS.001.gml, which gives none */
+  const _s125Named=(t,id)=>t.replace(/(<S100:datasetFileIdentifier>)[^<]*/,"$1"+id);
+  /* the panel's text and every element in it, for the summary checks */
+  const _s125PanelText=()=>{const p=document.getElementById("s125Panel");return p&&p.style.display!=="none"?p.textContent:"";};
+  /* the panel and the custody of the source (Rule 25), through the real DOM and download path (board #72: the click
+     writes the file and its report at once, and the panel is a summary of three counts with one full report) */
+  _t("S-125 export (Rule 25): the click writes the file and its report when faithful, the panel's three counts equal the report's, no box in the panel scrolls, and the text area and the Builder are untouched","s125",()=>{
     /* the source as held, and a count of every object URL and link click the export makes */
     const ta=document.getElementById("valIn"),old=ta.value,bld=JSON.stringify(builderFeats);
     const oc=URL.createObjectURL,oclick=HTMLAnchorElement.prototype.click;let urls=0,clicks=0;
     /* the two download primitives counted, the click stopped so no file reaches the disk */
     URL.createObjectURL=b=>{urls++;return oc.call(URL,b);};HTMLAnchorElement.prototype.click=function(){clicks++;};
     try{
-      ta.value=_s125Doc('<SinkerAnchor gml:id="SA.9">'+_s125Pt("SA.9")+'</SinkerAnchor>\n'+exGML[0].match(/<LateralBuoy[\s\S]*?<\/LateralBuoy>/)[0].replace(/<child[^>]*\/>/g,""));
-      /* opened: the panel shows, and nothing is written */
+      /* a mooring part S-125 cannot hold beside a lateral buoy it can, under an S-201-form name */
+      const src=_s125Named(_s125Doc('<SinkerAnchor gml:id="SA.9">'+_s125Pt("SA.9")+'</SinkerAnchor>\n'+exGML[0].match(/<LateralBuoy[\s\S]*?<\/LateralBuoy>/)[0].replace(/<child[^>]*\/>/g,"")),"201XX01LOCK.GML");
+      ta.value=src;
+      /* the click: the file and its report, two downloads, nothing confirmed (the Host, room #2352) */
       s125ExportOpen();
-      const p=document.getElementById("s125Panel");
-      if(urls||clicks)return{pass:false,detail:"opening the export wrote a file before confirmation"};
-      if(!p||p.style.display==="none"||p.textContent.indexOf("SA.9")<0)return{pass:false,detail:"the panel does not name the mooring part that is not converted"};
-      /* confirmed: the file and its report, two downloads (design 11.2) */
-      s125ExportConfirm("125XX01LOCK.GML");
-      if(urls!==2||clicks!==2)return{pass:false,detail:"confirming made "+urls+" object URL(s) and "+clicks+" click(s), not two (the file and its report)"};
+      if(urls!==2||clicks!==2)return{pass:false,detail:"the click made "+urls+" object URL(s) and "+clicks+" click(s), not two (the file and its report)"};
+      const txt=_s125PanelText();
+      if(txt.indexOf("Written: 125XX01LOCK.GML and 125XX01LOCK_report.txt")<0)return{pass:false,detail:"the panel does not say what was written"};
+      if(txt.indexOf("SA.9")<0)return{pass:false,detail:"the full report does not name the mooring part that is not converted"};
+      /* the three counts, each equal to the number the report's own section title carries (0 when it has none) */
+      const secs=_s125Pending.sections,num=re=>{const s=secs.find(x=>re.test(x.title));return s?Number(s.title.match(/(\d+)/)[1]):0;};
+      for(const [label,re] of [["Features converted: ",/^Converted: /],["Features not converted: ",/^Not converted: /],["Values left out of converted features: ",/^Left out of converted features: /]])
+        if(txt.indexOf(label+num(re))<0)return{pass:false,detail:"the panel's '"+label+"' does not equal the report's "+num(re)};
+      /* no inner scroll box: no element of the panel may clip or scroll its content (the Host, room #2365) */
+      for(const e of document.getElementById("s125Panel").querySelectorAll("*")){
+        const cs=getComputedStyle(e);
+        if(/auto|scroll|hidden/.test(cs.overflowY)||cs.maxHeight!=="none")return{pass:false,detail:"a "+e.tagName+" in the panel has overflow "+cs.overflowY+" / max-height "+cs.maxHeight};
+      }
+      /* the source untouched by the click */
+      if(ta.value!==src)return{pass:false,detail:"the export changed the text area"};
       return true;
     }finally{
       /* the stubs put back and the panel closed whatever the outcome */
@@ -30264,25 +30333,23 @@ async function runSmokeTests(){
     }
   });
 
-  /* board #63: the export reads its own file back before writing it (design 11.3), and the panel says what the
-     confirmed name becomes in the file (room #2006) */
-  _t("S-125 export reads its file back before writing: a faithful file downloads with 'Read back against the source: faithful' in its report, and the panel names the file-name change before confirmation","s125",()=>{
+  /* board #63: the export reads its own file back before writing it (design 11.3); board #72: on the click, and the
+     panel says the written name is the file's own identifier (room #2006) */
+  _t("S-125 export reads its file back before writing: the click downloads a faithful file with 'Read back against the source: faithful' in its report, the file's identifier its own name, and the panel says so","s125",()=>{
     /* the source and the download primitive held, each download recorded instead of reaching the disk */
     const ta=document.getElementById("valIn"),old=ta.value,od=_s125Download;const got=[];
     /* a download recorded with its text and name, never handed to the browser */
     _s125Download=(text,name)=>{got.push({text:String(text),name});};
     try{
-      ta.value=exGML[0];
+      ta.value=_s125Named(exGML[0],"201XX01RB.GML");
       s125ExportOpen();
-      /* the panel's note, before anything is written */
-      const p=document.getElementById("s125Panel");
-      if(!p||p.textContent.indexOf("datasetFileIdentifier will be the name you confirm below")<0)return{pass:false,detail:"the panel does not say what the confirmed name becomes in the file"};
-      if(got.length)return{pass:false,detail:"opening the export wrote a file"};
-      /* confirmed: the file and the report, the report carrying the read-back's verdict */
-      s125ExportConfirm("125XX01RB.GML");
-      const rep=got.find(g=>/_report\.txt$/.test(g.name));
-      if(got.length!==2||!rep)return{pass:false,detail:"confirming gave "+got.length+" download(s): "+got.map(g=>g.name).join(", ")};
-      if(rep.text.indexOf("Read back against the source: faithful")<0)return{pass:false,detail:"the report does not carry the read-back's verdict"};
+      /* the file and the report, under the names the source gives */
+      const names=got.map(g=>g.name).join(", ");
+      if(names!=="125XX01RB.GML, 125XX01RB_report.txt")return{pass:false,detail:"the click gave "+got.length+" download(s): "+names};
+      if(got[1].text.indexOf("Read back against the source: faithful")<0)return{pass:false,detail:"the report does not carry the read-back's verdict"};
+      /* the file's identifier is its own name, and the panel says so (S-100 Part 10b Table 10b-4) */
+      if(got[0].text.indexOf("<S100:datasetFileIdentifier>125XX01RB.GML</S100:datasetFileIdentifier>")<0)return{pass:false,detail:"the file's datasetFileIdentifier is not its own name"};
+      if(_s125PanelText().indexOf("datasetFileIdentifier is its own name, 125XX01RB.GML")<0)return{pass:false,detail:"the panel does not say the file's identifier is its own name"};
       return true;
     }finally{
       /* the download primitive put back, the panel closed, the source restored */
@@ -30290,8 +30357,9 @@ async function runSmokeTests(){
     }
   });
 
-  /* board #63: a file that does not read back faithfully is not written; the panel names the fault (Rule 25) */
-  _t("S-125 export writes nothing when its file does not read back: a value dropped without a report line is named in the panel and no download is made","s125",()=>{
+  /* board #63: a file that does not read back faithfully is not written; board #72: the click writes nothing and the
+     panel's one line gives the fault count, the faults themselves in the full report (Rule 25) */
+  _t("S-125 export writes nothing when its file does not read back: the click makes no download, the panel's one line gives the fault count and the full report names the dropped value","s125",()=>{
     /* the writer wrapped to drop one value silently, the downloads recorded */
     const ta=document.getElementById("valIn"),old=ta.value,od=_s125Download,og=generateS125;const got=[];
     /* a download recorded by name only */
@@ -30299,18 +30367,48 @@ async function runSmokeTests(){
     /* the real writer, then one value taken out of its text and out of nothing else */
     generateS125=(src,opts)=>{const r=og(src,opts);r.text=String(r.text).replace("<valueOfNominalRange>5</valueOfNominalRange>","");return r;};
     try{
-      ta.value=exGML[0];
+      ta.value=_s125Named(exGML[0],"201XX01RB.GML");
+      /* the click, with a name the source gives: the read-back must stop the write */
       s125ExportOpen();
-      /* confirmed with a valid name: the read-back must stop the write */
-      s125ExportConfirm("125XX01RB.GML");
-      /* nothing written, and the panel names the dropped value */
       if(got.length)return{pass:false,detail:"an unfaithful file was written: "+got.join(", ")};
-      const p=document.getElementById("s125Panel");
-      if(!p||p.textContent.indexOf("nothing was written")<0||p.textContent.indexOf("valueOfNominalRange")<0)return{pass:false,detail:"the panel does not name the read-back's fault"};
+      /* the one line with the count, and the dropped value in the full report */
+      const txt=_s125PanelText();
+      if(!/Nothing was written: the file did not read back faithfully - \d+ fault\(s\)/.test(txt))return{pass:false,detail:"the panel's line does not give the read-back's fault count"};
+      if(txt.indexOf("valueOfNominalRange")<0)return{pass:false,detail:"the full report does not name the read-back's fault"};
       return true;
     }finally{
       /* the writer and the download primitive put back, the panel closed, the source restored */
       generateS125=og;_s125Download=od;s125ExportCancel();ta.value=old;
+    }
+  });
+
+  /* board #72 (planner, room #2374): a source whose file identifier is not of the S-201 form gives no producer code,
+     so the click writes nothing and asks for the name; a typed name then writes both files; and a write is both or
+     neither - a report that cannot be made leaves the file unwritten too (lead, room #2369) */
+  _t("S-125 export with no name from the source: the click writes nothing and asks for one, 'Write as' then writes the file and its report, and a write whose report cannot be made writes neither","s125",()=>{
+    /* the source and the report builder held, each download recorded */
+    const ta=document.getElementById("valIn"),old=ta.value,od=_s125Download,ot=_s125ReportText;const got=[];
+    /* a download recorded by name only, never handed to the browser */
+    _s125Download=(text,name)=>{got.push(name);};
+    try{
+      /* exGML[0] as shipped: DS.001.gml, no producer code */
+      ta.value=exGML[0];
+      s125ExportOpen();
+      const txt=_s125PanelText(),btn=document.getElementById("s125Write");
+      if(got.length)return{pass:false,detail:"the click wrote "+got.join(", ")+" with no name from the source"};
+      if(txt.indexOf("Nothing was written: no S-125 file name")<0||txt.indexOf("enter the name below")<0)return{pass:false,detail:"the panel does not say why nothing was written and ask for the name"};
+      if(!btn||btn.textContent!=="Write as"||document.getElementById("s125Name").value!=="")return{pass:false,detail:"the name box is not empty under a 'Write as' button"};
+      /* a typed name: the file and its report, under that name */
+      s125ExportConfirm("125XX01NM.GML");
+      if(got.join(", ")!=="125XX01NM.GML, 125XX01NM_report.txt")return{pass:false,detail:"'Write as' gave: "+got.join(", ")};
+      /* a report that cannot be made: no download at all, not the file alone */
+      _s125ReportText=()=>{throw new Error("report refused (lock)");};
+      try{s125ExportConfirm("125XX01NN.GML");}catch(e){}
+      if(got.length!==2)return{pass:false,detail:"a write whose report failed still downloaded: "+got.slice(2).join(", ")};
+      return true;
+    }finally{
+      /* the report builder and the download primitive put back, the panel closed, the source restored */
+      _s125ReportText=ot;_s125Download=od;s125ExportCancel();ta.value=old;
     }
   });
 
