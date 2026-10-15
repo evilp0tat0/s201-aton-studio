@@ -13,8 +13,8 @@ Obtain from: Plain-text extractions of the publications above (PyMuPDF; the thre
 
 | File | Size (bytes) | SHA-256 |
 |---|---:|---|
-| INDEX.md | 20,249 | `11edc94beb41cdc3750988d4da0bb2d9227cfcc6bc009e4efe2333fe90664455` |
-| MANIFEST.sha256 | 6,517 | `992d912c1bdd88a84e9b24ec8430499225c11b4bdcebf1427e063e718e1b92fa` |
+| INDEX.md | 20,435 | `0e7c0a86ce54fe0d08ee6cd2459ea6d7f7edcb01326b7c82c620be5482143301` |
+| MANIFEST.sha256 | 8,306 | `43bc7942259688e7c2c58851ea2d209608394b8578f1e0db9274cb58b6d50cbe` |
 | annex_c1_full.txt | 600,008 | `c5a09e4725429b68c5a9cc35412e3dbbbea81a623cdb7d20d97635a0fcfe231c` |
 | annex_c1_pages_1_30.txt | 55,400 | `87e728ec78088284cbbc53baccb42562c035ec5a23048131193ac78c481fc137` |
 | dceg_annex_a.txt | 467,151 | `bc32949b2f74da556edc3bc43ba2f68ebfce3cd1ad4c286ed3ebdb54d6c7c30b` |
@@ -2143,4 +2143,4 @@ Obtain from: Courseware-derived verification scratch; not a source.
 
 ---
 
-**Total: 846 files, 133,869,611 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.
+**Total: 846 files, 133,871,586 bytes.** Regenerate this manifest with `python dev/scripts/generate-spec-sources-manifest.py` whenever a file under these folders is added, replaced or removed.

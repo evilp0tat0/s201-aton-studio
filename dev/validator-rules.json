@@ -2970,21 +2970,22 @@
   },
   {
     "id": "R0106-RFL-01",
-    "ref": "IALA R0106 Ed.2.1 Standard Code §1 (IALA only — not in S-201)",
+    "ref": "IALA R0106 Ed.2.1 Standard Code §1 + Comprehensive Code §2 (IALA only — not in S-201)",
     "severity": "info",
-    "message": "[IALA check — not in S-201] Retroreflector on lateral mark must match body colour — R0106 §1 Standard Code (red retroreflector on red marks, green on green marks) + §2 Comprehensive Code (a preferred-channel mark carries a TWO-colour retroreflector: green+red bands, so both {red,green} are permitted and the dominant must be present)",
+    "message": "[IALA check — not in S-201] Retroreflector on lateral mark must match body colour — R0106 §1 Standard Code (red retroreflector on red marks, green on green marks) + §2 Comprehensive Code (a preferred-channel mark carries a TWO-colour retroreflector, red and green bands, so its colours must be exactly {red,green}, both present; the Standard Code describes no preferred-channel mark)",
     "sourceLayer": "per-feature",
     "expected": {
       "kind": "compound",
-      "description": "Retroreflector child on a plain lateral mark must be the parent's DOMINANT body colour (red parent → red; green parent → green); a PREFERRED-CHANNEL mark may carry the two-colour {red,green} Comprehensive-Code set (including the dominant). Per IALA R0106 Ed.2.1 §1 Standard Code + §2 Comprehensive Code."
+      "description": "Retroreflector child on a plain lateral mark must be the parent's DOMINANT body colour (red parent → red; green parent → green); a PREFERRED-CHANNEL mark carries the two-colour Comprehensive-Code set, exactly {red,green} with both present. Per IALA R0106 Ed.2.1 §1 Standard Code + §2 Comprehensive Code."
     },
     "fix": {
       "field": "colour",
       "inputType": "select",
-      "label": "Retroreflector colour (match parent lateral mark)",
+      "label": "Retroreflector colour (plain lateral: red or green; preferred channel: red/green)",
       "options": [
         "red",
-        "green"
+        "green",
+        "red/green"
       ]
     }
   },
