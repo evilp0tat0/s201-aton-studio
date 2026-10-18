@@ -1239,6 +1239,23 @@
     }
   },
   {
+    "id": "S201-ATON-02",
+    "ref": "S-201 PS 2.0.0 §10.9 Object identifiers (s201_ps_2_0_0_main_full.txt L983-984) - advisory: S-201 FC 2.0.0 binds iDCode 0..1 on AidsToNavigation (FC XML L10503-10507)",
+    "severity": "info",
+    "message": "No iDCode on this feature. S-201 PS 2.0.0 §10.9 says every geographic feature class has the idCode attribute and that it shall hold the feature's Maritime Resource Name (MRN); the FC binds it 0..1, so the dataset is valid without one - add the MRN (urn:mrn:...) when the feature is identified.",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "text",
+      "description": "a Maritime Resource Name in <iDCode> (urn:mrn:...), S-201 PS 2.0.0 §10.9; optional per the FC (0..1)"
+    },
+    "fix": {
+      "field": "iDCode",
+      "inputType": "text",
+      "label": "ID code - the feature's Maritime Resource Name (iDCode)",
+      "placeholder": "e.g. urn:mrn:xx:aton:xx-lb-001"
+    }
+  },
+  {
     "id": "S201-FEA-06",
     "ref": "S-201 FC 2.0.0 / DCEG §4.1, §5.6 (1..*)",
     "severity": "critical",
@@ -2005,6 +2022,52 @@
     }
   },
   {
+    "id": "S201-REL-05",
+    "ref": "S-201 DCEG 2.0.0 §8.8.1 Radar reflectors, Remarks (dceg_annex_a.txt L8019-8021) + §2.4.8 Radar conspicuous features (L348-349) + encoding rule L435-436 + S-201 FC 2.0.0 radarConspicuous bindings (FC XML L10895, L11089, L11515, L13972, L14161, L14395, L14653)",
+    "severity": "error",
+    "message": "A Radar Reflector is encoded as a separate feature on a point or area aid. S-201 DCEG §8.8.1: an area or point feature fitted with a radar reflector is encoded with radarConspicuous = true on the feature itself, and \"A Radar Reflector feature must not be encoded in this case\" - the RadarReflector feature is for curve features such as overhead cables. Set radarConspicuous on this aid and remove the RadarReflector feature (the quick fix does both).",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "text",
+      "description": "no RadarReflector feature linked to a point or surface aid; the aid carries <radarConspicuous>true</radarConspicuous> instead (DCEG §8.8.1 Remarks; §2.4.8). A RadarReflector feature is encoded only on a curve feature."
+    },
+    "fix": {
+      "field": "radarConspicuous",
+      "label": "Set <radarConspicuous>true</radarConspicuous> on this aid and remove its Radar Reflector feature(s) - DCEG §8.8.1",
+      "kind": "foldChild",
+      "fields": [
+        {
+          "field": "radarConspicuous",
+          "value": "true"
+        }
+      ]
+    }
+  },
+  {
+    "id": "S201-COV-01",
+    "ref": "S-201 PS 2.0.0 §10.11 Data coverage - \"All areas of a dataset must be covered by a DataCoverage meta feature.\" (s201_ps_2_0_0_main_full.txt L991-992); §4.7 Dataset rules (L728-729)",
+    "severity": "critical",
+    "message": "This feature lies outside every DataCoverage surface in the dataset. S-201 PS 2.0.0 §10.11: all areas of a dataset must be covered by a DataCoverage meta feature - a feature outside the declared coverage is data the dataset does not say it holds. Widen the DataCoverage surface to take the feature in, or correct its position.",
+    "sourceLayer": "per-feature",
+    "noFix": "Which is wrong - the coverage surface or the feature's position - is a fact about your data: widen the DataCoverage surface (the Builder's Data Coverage type, drawn as a surface) to take the feature in, or correct the feature's position.",
+    "expected": {
+      "kind": "text",
+      "description": "every position of the feature (its point, or each vertex of its curve or surface; a geometry-less child at its parent's) inside the exterior ring of a DataCoverage surface of the dataset, boundary included (S-201 PS §10.11)"
+    }
+  },
+  {
+    "id": "S201-COV-02",
+    "ref": "S-201 PS 2.0.0 §10.13 Data quality - \"One or more QualityOfNonBathymetricData features must cover the dataset.\" (s201_ps_2_0_0_main_full.txt L998-999)",
+    "severity": "critical",
+    "message": "This feature lies outside every QualityOfNonBathymetricData surface in the dataset. S-201 PS 2.0.0 §10.13: one or more QualityOfNonBathymetricData features must cover the dataset - a feature outside them has no stated positional quality. Widen the quality surface to take the feature in, or correct its position.",
+    "sourceLayer": "per-feature",
+    "noFix": "Which is wrong - the quality surface or the feature's position - is a fact about your data: widen the QualityOfNonBathymetricData surface (the Builder's Quality of Non-Bathymetric Data type, drawn as a surface) to take the feature in, or correct the feature's position.",
+    "expected": {
+      "kind": "text",
+      "description": "every position of the feature (its point, or each vertex of its curve or surface; a geometry-less child at its parent's) inside the exterior ring of a QualityOfNonBathymetricData surface of the dataset, boundary included (S-201 PS §10.13)"
+    }
+  },
+  {
     "id": "S201-NAV-01",
     "ref": "S-201 DCEG §10.2 Remarks — \"The value populated for the mandatory complex attribute orientation must be the value of the bearing from seaward\" (dceg_annex_a.txt L9961-9963; two-way RecommendedTrack twin L9812-9817) + FC 2.0.0 orientationValue definition (FC XML L3263-3273) + NavigationLine \"A straight line…\" (L11723) + S-201 PS §5.4 degrees (L796) / §4 loxodromic segments (L757)",
     "severity": "error",
@@ -2545,6 +2608,25 @@
       "kind": "pattern",
       "regex": "^[A-Z0-9]{4}$",
       "description": "4-char IHO producer code (A-Z / 0-9 only, no placeholder 'XX00') per S-201 PS 2.0.0 §11.4 — registered via IHO S-62 Producer-Code registry"
+    }
+  },
+  {
+    "id": "S201-DII-04",
+    "ref": "S-201 PS 2.0.0 §11.4 Dataset file naming (s201_ps_2_0_0_main_full.txt L1135-1159) + S-100 Ed.5.2.0 Pt 10b §11.6.1 Table 10b-4 datasetFileIdentifier = the file name with its extension (s100_ed5_2_0_full.txt L33041-33048) + S-158:100 check 100_0303 (C) dataset name does not conform to product specification (s158_100_checks_table.txt L318)",
+    "severity": "critical",
+    "message": "The dataset file identifier does not have the S-201 file name form. S-100 Part 10b Table 10b-4 makes <S100:datasetFileIdentifier> the file's own name with its extension, and S-201 PS 2.0.0 §11.4 names a dataset file 201CCCCXXXXXXXX_EEE.GML - \"201\", the 4-character IHO producer code (zero-padded), 8 producer characters, \"_\", the 3-digit edition (000 for a first edition) and .GML or .gml, from A-Z, 0-9 and _ only. Write the identifier in that form (the quick fix), or clear it in the Builder's File settings, where the agency code, filename stem and edition build it.",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "pattern",
+      "regex": "^201[A-Z0-9]{4}[A-Z0-9_]{8}_\\d{3}\\.(GML|gml)$",
+      "description": "201 + CCCC (4-char IHO S-62 producer code, zero-padded) + XXXXXXXX (8 producer characters, A-Z 0-9 _) + _EEE (3-digit edition, 000 first) + .GML or .gml (S-201 PS 2.0.0 §11.4)"
+    },
+    "fix": {
+      "field": "datasetFileIdentifier",
+      "inputType": "text",
+      "label": "Dataset file identifier - the file's own name, 201CCCCXXXXXXXX_EEE.GML (corrects <S100:datasetFileIdentifier> in the DII block)",
+      "placeholder": "e.g. 201XX01HARBOUR1_000.GML",
+      "target": "dii"
     }
   },
   {
@@ -3954,6 +4036,20 @@
     "ref": "S-201 FC 2.0.0 signalGroup multiplicity 0..10 per wrapper (FC XML lines 9118-9124 inside rhythmOfLight; lines 9192-9198 inside sectorCharacteristics)",
     "severity": "critical",
     "message": "wrapper(s) exceed the FC 2.0.0 signalGroup 0..10 bound: <...> — FC binds signalGroup to at most 10 ordered values per wrapper. Remove the surplus; every value read is preserved and re-emitted, so none of them is being dropped silently.",
+    "sourceLayer": "structural"
+  },
+  {
+    "id": "GML-STR-26",
+    "ref": "S-201 PS 2.0.0 §10.11 Data coverage - \"All areas of a dataset must be covered by a DataCoverage meta feature.\" (dev/pdf-extracts/s201_ps_2_0_0_main_full.txt L991-992); §4.7 Dataset rules (L728-729)",
+    "severity": "critical",
+    "message": "The dataset holds no DataCoverage meta feature - S-201 PS 2.0.0 §10.11 requires all areas of a dataset to be covered by one. Author a Data Coverage feature (a surface drawn around the data, with its maximum and minimum display scales) in the Builder, or add a <DataCoverage> member to the file.",
+    "sourceLayer": "structural"
+  },
+  {
+    "id": "GML-STR-27",
+    "ref": "S-201 PS 2.0.0 §10.13 Data quality - \"One or more QualityOfNonBathymetricData features must cover the dataset.\" (dev/pdf-extracts/s201_ps_2_0_0_main_full.txt L998-999)",
+    "severity": "critical",
+    "message": "The dataset holds no QualityOfNonBathymetricData feature - S-201 PS 2.0.0 §10.13 requires one or more to cover the dataset. Author a Quality of Non-Bathymetric Data feature (a surface drawn around the data, with its category of temporal variation and horizontal position uncertainty) in the Builder, or add a <QualityOfNonBathymetricData> member to the file.",
     "sourceLayer": "structural"
   },
   {

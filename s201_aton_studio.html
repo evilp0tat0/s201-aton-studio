@@ -130,7 +130,7 @@ is dev/HANDOFF.md § 11 "Specification document index")
      ENC-* cross-checks; :102 / :130 / :98 are other products. No IHO
      validation-checks package specifically for S-201 exists yet (no
      S-158:201; the corpus will be cross-referenced when one is published).
-     Our 271-rule validator (219 per-feature + 25 GML structural + 27 exchange-set, current as of pass 810 / v2.26.1) is the first
+     Our 278-rule validator (224 per-feature + 27 GML structural + 27 exchange-set, current as of pass 811 / v2.27.0) is the first
      validation implementation specifically for S-201.
   OGC and W3C (the substrate)
   15. OGC GML 3.2 schemas — the authority for every gml: element we emit
@@ -267,10 +267,10 @@ Tab 2 — Builder
   attributes → light / topmark / fog / AIS → review), the Classic form view
   retained, multi-feature datasets, a shared gated import.
 Tab 3 — Validator
-  219 per-feature rules + 25 document-level structural checks (GML-STR-01..25
+  224 per-feature rules + 27 document-level structural checks (GML-STR-01..27
   in validateGMLStructure) + 27 exchange-set rules (S158-PKG-01..18 +
   S201-ES-01..09 in validateExchangeSet, run when a full Exchange Set ZIP is
-  loaded) = 271 total checks sourced from the IHO/IALA specifications;
+  loaded) = 278 total checks sourced from the IHO/IALA specifications;
   quick-fixes on most rules; Exchange-Set ZIP ingest with package validation;
   SHA-256 delivery-integrity digests; the "Use example" loader and the
   "Run tests" self-test suite.
@@ -318,7 +318,7 @@ KEY ARCHITECTURAL CONVENTIONS (per S-100 5.2.0 Part 10b + production data)
 
 VERSION
 ────────────────────────────────────────────────────────────────────────────────
-See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.26.1. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
+See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.27.0. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
 ================================================================================
 -->
 <html lang="en">
@@ -1289,7 +1289,8 @@ python3 -m http.server 8080
     <div class="sb-section">
       <div class="sb-label">Dataset metadata (DII — S-100 Pt 10b §11.6.1 Table 10b-4 + Pt 17 Discovery — Issue time)</div>
       <div class="field essential"><label for="bDsTitle">Dataset title</label><input type="text" id="bDsTitle" placeholder="e.g. Example Port AtoN" oninput="builderUp()"/></div>
-      <div class="field"><label for="bDsName">Dataset name (short)</label><input type="text" id="bDsName" placeholder="e.g. MyAtoNDataset" oninput="builderUp()"/></div>
+      <!-- the dataset file identifier IS the file's name (S-100 Part 10b Table 10b-4, s100_ed5_2_0_full.txt L33041-33048), named 201CCCCXXXXXXXX_EEE.GML by S-201 PS §11.4: left empty it is built from the agency code, filename stem and edition below (builderUp writes that name into the placeholder), and a typed value is written as typed - the Validator's S201-DII-04 reports one of another form -->
+      <div class="field" title="S-100 Part 10b Table 10b-4: the identifier is the file's own name with its extension. Leave it empty to use the S-201 PS §11.4 name built from the agency code, filename stem and edition below."><label for="bDsName">Dataset file identifier (= file name, 201CCCCXXXXXXXX_EEE.GML)</label><input type="text" id="bDsName" placeholder="built from the fields below" oninput="builderUp()"/></div>
       <div class="field"><label for="bDsAbstract">Dataset abstract (0..1)</label><textarea id="bDsAbstract" class="ta-prose" rows="2" placeholder="Brief description of the dataset contents" oninput="builderUp()" style="resize:vertical;min-height:40px"></textarea></div>
       <div class="row2">
         <div class="field essential"><label for="bDsDate">Reference date (YYYY-MM-DD)</label><input type="date" id="bDsDate" oninput="builderUp()"/></div>
@@ -1693,7 +1694,7 @@ python3 -m http.server 8080
 </div>
 <script>
 /* ════════════════════════════════════════════════════════════════════════ APP VERSION — S-201 AtoN Studio semver ════════════════════════════════════════════════════════════════════════ Format: MAJOR.MINOR.PATCH (semantic versioning per https://semver.org). Bump rules: • MAJOR — Breaking change to GML output format that prior consumers could not parse (root element rename, namespace URI change, element removal). Reserved for substantial milestones. • MINOR — Added a new validator rule, a new feature type in ATYPES, a new UI feature, or a new attribute in the GML output (additive change that prior consumers can ignore). • PATCH — Bug fixes, comment improvements, doc refreshes, refactors that don't change observable behaviour. Track scheme: ONE track — plain semver continues from this constant, and a `-beta` pre-release suffix (semver.org §9) may mark work-in-progress between public release tags. ⚠️ Bump the version on every change. The user has explicitly required this. Even a comment-only change is at minimum a PATCH bump. The badge in the topbar, the generated GML `<!-- comment -->`, the CHANGELOG entry, and the HANDOFF Live State line all reference this constant. Bump checklist: 1. Update the const just below this comment. 2. Update the `Current:` line in the HTML preface (grep `Current:` — precommit check 1 and the self-test both compare it with this constant). 3. Add a per-pass entry at the top of dev/CHANGELOG.md in the development repository (not shipped in the public snapshot; Rule 21: facts only — that file IS the canonical log). 4. Update the Live State row in dev/HANDOFF.md. 5. The topbar version badge + generated-GML watermark auto-update from APP_VERSION (no manual sync needed). Per-pass history lives in dev/CHANGELOG.md. This file intentionally does NOT carry version history — the canonical log is one place. `No comment without spec citation` policy: This file is the entire app. There is no separate documentation generator, no test suite outside the inline smoke tests, no type system. The comments + the docs in dev/ are the only thing keeping this codebase maintainable. Every fix is justified by a spec reference — re-read the comments before changing anything. ════════════════════════════════════════════════════════════════════════ */
-const APP_VERSION = "2.26.1";
+const APP_VERSION = "2.27.0";
 
 /* ════════════════════════════════════════════════════════════════════════ FOUNDATIONAL_RULES — (Rule 19) machine-readable in-app projection of the foundational engineering rules. The CANONICAL machine-readable form lives at `dev/foundational-rules.json` . This in-app constant is the same data, embedded here for sync access (smoke tests can't await fetch). Both surfaces MUST agree on the entry count and, entry by entry, on number / name / theme / addedPass / summary, character for character: pre-commit check #2 reads this const through V8 and compares those five fields with the JSON's by rule number, and the smoke suite verifies the count + entry shape every run (Rule 23: the agreement is stated here because a gate holds it). Authoring direction: HANDOFF.md prose sections are the source of truth. When adding a new foundational rule: 1. Write the section in HANDOFF.md. 2. Append the entry to dev/foundational-rules.json. 3. Append the entry to FOUNDATIONAL_RULES below (the same number / name / theme / addedPass / summary as the JSON, character for character — pre-commit check #2 fails on any difference). 4. Bump the smoke test's expected length from N to N+1 (grep `FOUNDATIONAL_RULES.length!==`) AND its 1..N title/detail phrases in the same edit — the prose phrases are pre-commit-gated, the length literal is enforced by the suite itself at runtime, and the per-entry loop derives its bound from the array. ════════════════════════════════════════════════════════════════════════ */
 const FOUNDATIONAL_RULES = [
@@ -1716,7 +1717,7 @@ const FOUNDATIONAL_RULES = [
   {number:14,name:"Error messages teach the spec",theme:"Spec authority",addedPass:81,summary:"Every validator msg cites the source in prose AND ref resolves to a bundled-doc range. 'invalid value' alone is forbidden."},
   {number:15,name:"No hidden state",theme:"Code correctness",addedPass:81,summary:"Feature object is the single source of truth. Builder UI is a view; module-scope state arrays must serialize to/from feat keys; DOM is not state."},
   {number:16,name:"Structured finding fields",theme:"Code correctness",addedPass:100,summary:"Every validator finding carries actual + expected as structured fields, not prose embedded in messages. Prose is generated from these fields, not the other way around."},
-  {number:17,name:"Layered validation hierarchy",theme:"Quality & naming",addedPass:100,summary:"Every validator rule lives in exactly one of 4 layers — syntax (GML-STR-01) → schema (GML-STR-02..25, S100-*, S158-*) → FC semantic (S201-*) → business (R1001-*, R0106-*, R0110-*, R0126-*, R0201-*, R0108-*, RNG-*, GEO-*, ENC-* — the business-layer prefix set per the Rule-3 taxonomy). Fix order follows layer order."},
+  {number:17,name:"Layered validation hierarchy",theme:"Quality & naming",addedPass:100,summary:"Every validator rule lives in exactly one of 4 layers — syntax (GML-STR-01) → schema (GML-STR-02..27, S100-*, S158-*) → FC semantic (S201-*) → business (R1001-*, R0106-*, R0110-*, R0126-*, R0201-*, R0108-*, RNG-*, GEO-*, ENC-* — the business-layer prefix set per the Rule-3 taxonomy). Fix order follows layer order."},
   /* 18-23: as above; a rule's wording changes in the JSON and here in the same edit, or check #2 fails naming the rule and the field */
   {number:18,name:"Determinism guarantee",theme:"Code correctness",addedPass:100,summary:"Identical input must produce byte-identical output across runs. No network calls, no random values, no date/time-dependent behavior in validation, parser, or generator."},
   {number:19,name:"Machine-readable foundational rules",theme:"Process discipline",addedPass:100,summary:"HANDOFF foundational-rule sections mirrored in dev/foundational-rules.json + in-app FOUNDATIONAL_RULES const. Pre-commit check #2 holds the JSON and the const equal, entry by entry, on number, name, theme, addedPass and summary; the smoke suite holds the const's count and shape. No gate compares the HANDOFF prose with either: it is kept in step by hand. HANDOFF is canonical, JSON + in-app const are downstream."},
@@ -3803,6 +3804,95 @@ function _featHasChildren(f,all){
   if(Array.isArray(f.componentRefs)&&f.componentRefs.some(r=>{const id=strip(r);return !!id&&id!==me;}))return true;
   return !!(me&&Array.isArray(all)&&_friSome(all,ix=>[ix.stripPar(me)],x=>x!==f&&Array.isArray(x.parentRefs)&&x.parentRefs.some(r=>strip(r)===me)));
 }
+/* The S-201 dataset file name, S-201 PS 2.0.0 §11.4 (s201_ps_2_0_0_main_full.txt L1135-1159): "201", the four-character
+   IHO producer code, eight producer characters, "_", the three-digit edition and ".GML" or ".gml", from A-Z, 0-9 and "_"
+   only. One pattern for the receive side (S158-PKG-15 on an exchange set's entries, S201-DII-04 on the identifier
+   inside a dataset) and for the names the app builds (buildDatasetFilename), so no two sites can disagree on the shape
+   (Rule 23). */
+const _S201_FILE_NAME=/^201[A-Z0-9]{4}[A-Z0-9_]{8}_[0-9]{3}\.(GML|gml)$/;
+/* Coverage of a dataset by its meta surfaces, S-201 PS 2.0.0 §10.11 ("All areas of a dataset must be covered by a
+   DataCoverage meta feature", s201_ps_2_0_0_main_full.txt L991-992) and §10.13 ("One or more QualityOfNonBathymetricData
+   features must cover the dataset", L998-999). GML-STR-26 / GML-STR-27 hold the presence of each kind once per dataset;
+   S201-COV-01 / S201-COV-02 hold each geographic feature's positions inside one surface of the kind. */
+/* the exterior rings of every member of type `ft` drawn as a surface, each a list of [lat, lon] pairs as the parser
+   reads them (the parser reads a surface's exterior ring only, so a hole in a coverage is not seen - disclosed) */
+function _coverageRings(all,ft){
+  if(!Array.isArray(all))return[];
+  const out=[];
+  for(const x of all){const g=x&&x.featureType===ft?x.geometry:null;if(g&&g.type==="surface"&&Array.isArray(g.coordinates)&&g.coordinates.length>=3)out.push(g.coordinates);}
+  return out;
+}
+/* a position inside a ring, or on its boundary: the even-odd ray cast (a ray along +longitude), with a position on an
+   edge counted as inside so a mark on the coverage's edge is covered. Longitudes are compared as read: a ring across
+   the 180th meridian would be misread, which S-201 PS §10.14 rules out (GML-STR-23 reports a crossing). */
+function _ptInRing(lat,lon,ring){
+  let inside=false;
+  const n=ring.length;
+  for(let i=0,j=n-1;i<n;j=i++){
+    const yi=+ring[i][0],xi=+ring[i][1],yj=+ring[j][0],xj=+ring[j][1];
+    if(!isFinite(yi)||!isFinite(xi)||!isFinite(yj)||!isFinite(xj))continue;
+    /* on the edge itself: collinear with it and within its extent */
+    const cross=(xj-xi)*(lat-yi)-(yj-yi)*(lon-xi);
+    if(Math.abs(cross)<1e-12&&lon>=Math.min(xi,xj)-1e-12&&lon<=Math.max(xi,xj)+1e-12&&lat>=Math.min(yi,yj)-1e-12&&lat<=Math.max(yi,yj)+1e-12)return true;
+    /* an edge that straddles the position's latitude and crosses the ray east of it flips the parity */
+    if((yi>lat)!==(yj>lat)){const x=xi+(lat-yi)*(xj-xi)/(yj-yi);if(lon<x)inside=!inside;}
+  }
+  /* an odd number of crossings puts the position inside */
+  return inside;
+}
+/* the positions a feature occupies for coverage: the vertices of its own geometry (a point's one pair), or its
+   parent's when an equipment child carries none (S100-GML-03 lets a linked child inherit); null when neither is known */
+function _coveragePositions(f,all){
+  let g=f&&f.geometry;
+  if(!g){const p=_compParent(f,all);g=p&&p.geometry;}
+  if(!g)return null;
+  /* a curve or surface gives its vertices; a point its one pair, when both numbers are there */
+  if(Array.isArray(g.coordinates)&&g.coordinates.length)return g.coordinates;
+  return(isFinite(+g.lat)&&isFinite(+g.lon))?[[+g.lat,+g.lon]]:null;
+}
+/* the first of f's positions that no `ft` surface covers, as [lat, lon]; null when every position is covered, when the
+   dataset has no such surface (its absence is GML-STR-26 / -27's finding) or when f's position is unknown (S100-GML-03's).
+   Every vertex inside one ring is the test: an edge of a curve or surface feature that leaves the coverage between two
+   vertices is not seen - disclosed. */
+function _firstUncovered(f,all,ft){
+  const rings=_coverageRings(all,ft);
+  if(!rings.length)return null;
+  const pts=_coveragePositions(f,all);
+  if(!pts)return null;
+  /* the first position no ring covers; none when every position is covered */
+  for(const p of pts){const la=+p[0],lo=+p[1];if(!isFinite(la)||!isFinite(lo))continue;if(!rings.some(r=>_ptInRing(la,lo,r)))return[la,lo];}
+  return null;
+}
+/* the features the coverage clauses speak of: the S-201 geographic types - not the meta surfaces themselves, not the
+   information or collection types, not the FC's no-geometry types, not a type outside S-201 */
+function _coverageApplies(f){
+  const at=f&&ATYPES.find(t=>t.id===f.featureType);
+  return !!at&&!at.nonS201&&at.g!=="meta"&&at.g!=="info"&&at.g!=="itype"&&!_isNoGeometryFT(f.featureType);
+}
+/* The DCEG's radar-reflector rule (dceg_annex_a.txt L435-436; §2.4.8 L348-349; §8.8.1 L8019-8021): a point or area
+   feature fitted with a reflector says so with radarConspicuous, and a separate RadarReflector feature is for a curve
+   feature. The two helpers below serve S201-REL-05, its quick fix's preview and the Builder's equipment row. */
+/* the linked children of `type` a feature has, from either end of the StructureEquipment association: its own
+   <child> / <component> links that resolve to a member of the type, and the members of the type whose <parent> /
+   <buoyPart> link names it (each once) */
+function _linkedChildrenOfType(f,all,type){
+  if(!f||!Array.isArray(all))return[];
+  /* ids compared without their "#", as the parser keeps both forms */
+  const strip=r=>String(r).replace(/^#/,""),me=f.gmlId?strip(f.gmlId):null,out=[];
+  /* the forward end: this feature's own links that resolve to a member of the type */
+  if(Array.isArray(f.componentRefs))for(const r of f.componentRefs){const id=strip(r);const c=id&&_friFind(all,ix=>[ix.stripId(id)],x=>x!==f&&x.featureType===type&&x.gmlId&&strip(x.gmlId)===id);if(c&&!out.includes(c))out.push(c);}
+  /* the back end: the members of the type whose own parent link names this feature */
+  if(me)for(const c of _friFilter(all,ix=>[ix.stripPar(me)],x=>x!==f&&x.featureType===type&&Array.isArray(x.parentRefs)&&x.parentRefs.some(r=>strip(r)===me)))if(!out.includes(c))out.push(c);
+  return out;
+}
+/* whether a feature is, or may be, a curve: its geometry's kind when it has one, else whether its type's FC permitted
+   primitives (GEOM_PRIM) admit a curve - a Landmark without geometry is left possible (S100-GML-03 reports the gap) */
+function _mayBeCurve(f){
+  if(!f)return false;
+  if(f.geometry&&f.geometry.type)return f.geometry.type==="curve";
+  const pr=GEOM_PRIM[f.featureType];
+  return Array.isArray(pr)&&pr.includes("curve");
+}
 /* the bindings with a finite upper multiplicity a type carries (FC_ROLE_BINDINGS), as {role, kind, targets, upper,
    inverse, sole (the type carries no other binding of that role)}; parent and buoyPart, whose count S201-EQP-PARENT-01
    checks, are left out */
@@ -3966,7 +4056,7 @@ const GEOM_PRIM=(()=>{const m=Object.create(null);
   m["Landmark"]=["point","curve","surface"];
   ["Bridle","Building","CableSubmarine","CardinalBeacon","CardinalBuoy","CounterWeight","DangerousFeature","Daymark","EmergencyWreckMarkingBuoy","EnvironmentObservationEquipment","FogSignal","InstallationBuoy","IsolatedDangerBeacon","IsolatedDangerBuoy","LateralBeacon","LateralBuoy","LightAirObstruction","LightAllAround","LightFloat","LightFogDetector","LightSectored","LightVessel","MooringBuoy","MooringShackle","PhysicalAISAidToNavigation","Pile","PowerSource","RadarReflector","RadarTransponderBeacon","RadioStation","Retroreflector","SafeWaterBeacon","SafeWaterBuoy","SinkerAnchor","SpecialPurposeGeneralBeacon","SpecialPurposeGeneralBuoy","Swivel","SyntheticAISAidToNavigation","Topmark","VirtualAISAidToNavigation"].forEach(t=>m[t]=["point"]);
   return m;})();
-/* ════════════════════════════════════════════════════════════════════════ VALIDATION RULES ARRAY ════════════════════════════════════════════════════════════════════════ 219 per-feature rules + 25 structural checks + 27 exchange-set rules (validateExchangeSet) = 271 total. Rules worth knowing when reading the corpus: S201-FEA-35a (ChangeDetails empty-wrapper advisory, info severity, sister to S201-FEA-35); S201-DEP-01 (orphan/legacy attribute finding — typeOfLight + valueOfGeographicRange + valueOfLuminousRange are silently dropped on save, so their presence is reported); S201-REL-01 (DCEG §3.2: a feature cannot be both parent and child); S201-FEA-45 (horizontalDatum enum-membership on AtoNFixingMethod); S201-LGT-09 (LightSectored ObscuredSector.sectorLimit 1..1 mandatory inner); S201-LGT-08 (lightSector multi-cardinality); S201-FEA-44 marksNavigationalSystemOf per-FT subset; S201-COL-05 Daymark/Light colour STD13 subset; S201-COL-06 Retroreflector colour subset + S201-STA-02 status `experimental` value; GML-STR-17 xlink:href fragment must resolve. Per-pass history of rule additions, splits, and predicate-scope refinements lives in the development repository's dev/CHANGELOG.md (not shipped in the public snapshot) per Rule 21 — only the current rule set is described here. Rules are organised by specification source. THIS IS THE CORE VALIDATION ENGINE. Every rule is a self-contained declaration with: - id : stable identifier, used by downstream tooling. NEVER renumber or rename without bumping MAJOR version (rule IDs are part of the public API). - ref : the specific spec citation that justifies this rule (e.g., "S-201 FC 2.0.0 / DCEG §4.2", "IALA R1001 Ed.2.0 §2.1.3 Table 1"). When you read a rule, this tells you EXACTLY which page of which spec to open if you need to verify it. - s : severity — "critical" | "error" | "warning" | "info" — the first three ARE the IHO S-158 Table 7-1 classifications, applied natively (S-158 Introduction Ed 1.0.0 clause 7, s158_intro_structure_full.txt L991-1014; adopted by S-158:100 §6 "The check classification conforms to the scheme described in S-158", s158_100_full.txt L454-455; normative for S-201 via PS §6.2, s201_ps_2_0_0_main_full.txt L812-822): critical = S-158 C (Critical Error) — would make the dataset unusable in an end-user system: not loading (incl. anything an XSD-validating importer rejects: schema-invalid content, per check 100_0164 C), crashing, or presenting unsafe/unintelligible data. FC mandatory-presence/multiplicity (100_0004 C), enum/permittedValues membership (100_0005 C), value-format validity (100_0006 C) and content-not-in-FC (100_0001 C) all carry the letter C in S-158:100. PS §6.2: datasets must not be published with a failing Critical check. error = S-158 E (Error) — may degrade quality/usability, no significant danger (e.g. cross-attribute consistency, DCEG encoding-remark mandates, duplicate objects 100_0002 E). warning = S-158 W (Warning) — duplication or inconsistency that will not noticeably degrade usability; also spec "should"-strength requirements. info = ADVISORY, outside the S-158 conformance ring (Table 7-1 has no such tier — S-158:100's 412 check rows use only C/E/W): rules whose normative basis is an IALA recommendation/guideline (R1001, R0110, R0106, R0201, R0108, R0126 — best practice for real-world aids, not S-201 dataset conformance), the ENC-* S-158:101 cross-checks (not part of S-201), informative computations (GEO-RNG, RNG-ORD, engineering bands), FC "recommended"-only guidance on optional bindings, and authoring aids on schema-valid content. A rule whose ref cites an S-158 check ID carries that check's own Classification letter unless a disclosed adaptation is stated at the rule (e.g. S158-PKG-18). - t : test function `(feat, allFeats) → boolean` true = rule passes (no violation) false = rule fails (violation, message shown to user) The function receives both the individual feature being validated AND the full array of all features in the dataset. Cross-feature rules (R0106 retroreflector, R1001 light/topmark consistency) walk allFeats to resolve parent↔child component relationships via the _compLight/_compTopmark/_compParent helpers. - m : human-readable error message shown in the validator UI WHY THE GUARD PATTERN `if(!preCondition) return true;`? Every rule must SKIP (return true = pass) for features it doesn't apply to. Example: R1001-LAT-01 (lateral mark colour by region) returns true for any non-Lateral feature. Without this pattern, rules would fire on every feature, producing false-positive errors. NEVER remove a guard without understanding which features the rule is meant to validate. BREAKDOWN BY SOURCE (re-derive on every rule add — only the TOTALS are gate-protected (precommit check #5 + the smoke `RULES.length` assertion); the per-family sub-counts here are informational, refreshed by hand, and must sum to the per-feature total 219): ── S-100 5.2.0 (per-feature data checks) — S100-GML-01, S100-GML-03, S100-GML-05, S100-CRS-01, S100-CRS-02, S100-NIL-01, S100-DII-01, S100-DII-04, S100-BB-01, S100-BB-02 (10 rules) S100-GML-02/04 + S100-NS-01/02 moved to structural validator (GML-STR-15 / GML-STR-05+06) to avoid duplicate work. Sources: dev/spec-sources/S-100 Ed5.2.0...pdf Pt.10b §11.3 (spatial types), §11.6.1 (DII), §11.7 (CRS), §10b-10.1.5 (envelope), §10b-11.4.1 (parent-child); OGC GML 3.2.2 XSDs (gml.xsd, gmlBase.xsd, geometryBasic0d1d.xsd) ── S-201 FC 2.0.0 / DCEG 2.0.0 — 17 sub-prefixes: S201-FEA-* / S201-COL-* / S201-SHP-* / S201-LGT-* / S201-TOP-* / S201-FOG-* / S201-LV-* / S201-HGT-* / S201-ATON-* / S201-STA-* / S201-CON-* / S201-ENUM-* / S201-DII-* / S201-REL-* / S201-DEP-* / S201-EQP-* / S201-NAV-* (125 rules) Sources: dev/spec-sources/201_Feature_Catalogue_2.0.0.xml (machine-readable); dev/spec-sources/S-201 DCEG - Annex A-1.pdf (encoding rules); dev/spec-sources/S-201 Product Specification...pdf (multiplicities) ── IALA R1001 Ed.2.0 (June 2023) Maritime Buoyage System (urn:mrn:iala:pub:r1001:ed2.0) — R1001-LAT-* (8) / R1001-CAR-* (6) / R1001-IDM-* (3) / R1001-SWM-* (4) / R1001-SPM-* (5) / R1001-EWM-* (3) (29 rules) Source: dev/spec-sources/IALA R1001 Ed2.0...pdf §2.1.3 Region A lateral (Table 1); §2.1.4 Region B (Table 2); §2.1.5 preferred channel (Tables 3+4); §2.2.4 cardinal (Tables 5+6); §2.3.2.2 isolated danger (Table 7); §2.4.2.2 safe water (Table 8); §2.5.2.5 special (Table 9); §2.6.2.1 emergency wreck (Table 11) ── S-158:101 ENC cross-checks (NOT in S-201, additional) — ENC-LGT-*, ENC-SWM-*, ENC-COL-* (5 rules) Source: S-158:101 Ed.1.0.0 Conformance checks for ENC products. Adapted as cross-checks even though S-201 is not S-101. ── Geographic horizon sanity check — GEO-RNG-* (1 rule) Source: standard sea-level + standard-refraction approximation, formula d_nm = 2.08 × √h_m + 4.65 (widely published in NP74 Admiralty List of Lights, Bowditch American Practical Navigator Vol. II, Admiralty Distance Tables — none bundled here; the citation is intentionally to "standard sea-level + standard-refraction approximation" rather than a specific unbundled primary source, per Rule 5 — the formula itself is standard math; R0202 Ed.2.1 covers only Allard's law for luminous range, not the geographic horizon, so it is not the source). ── IHO S-158:100 Ed 1.0.0 Collection A (normative via PS §6.2) — S158-DUP-* / S158-ASSOC-* / S158-CRS-* / S158-GEOM-* / S158-FMT-* (22 rules) Source: dev/pdf-extracts/s158_100_checks_table.txt + s158_100_full.txt ── IALA R0126 (A-126) Ed.2.0 AIS-AtoN MMSI identity — R0126-AIS-* (1 rule) Source: dev/pdf-extracts/r0126_ed2_0_full.txt §4.3.1 + Table 2 ── IALA R0201 (E200-1) Ed.3.1 signal-light colour system — R0201-COL-* (1 rule) Source: dev/pdf-extracts/r0201_ed3_1_full.txt RECOMMENDS L138-144 + Annex Table 1 L180-235 Advisory membership: FC-valid light-colour tokens outside the five R0201 signal colours (amber/violet/orange; per-sector additionally black/grey/brown/magenta/pink). ── IALA R0108 (E-108) Ed.4.1 ordinary surface colours — R0108-COL-* (1 rule) Source: dev/pdf-extracts/r0108_ed4_1_full.txt RECOMMENDS L120-131 + Annex A Table 2 L244-315 Advisory membership: FC-valid surface-colour tokens outside the seven R0108 ordinary colours (grey/brown/amber/violet/magenta/pink) on the signal-function FTs. ── IALA R0202 Ed.2.1 Allard's law range ordering — RNG-ORD-* (1 rule) Source: dev/spec-sources/IALA R0202...pdf Allard's law: I = E_t × d² × T^(-d) — luminous range ordering check (luminous ≥ nominal in clear weather) ── IALA R0106 Ed.2.1 retroreflector colour — R0106-RFL-* (3 rules) Source: dev/spec-sources/IALA R0106...pdf Retroreflector colour must match parent body colour for lateral/special/safe-water/cardinal/IDM marks. ── IALA R0110 Ed.5.0 (June 2021) Rhythmic Characters of Lights on Marine AtoN (urn:mrn:iala:pub:r0110:ed5.0) — R0110-CHR-* (1) / R0110-IDM-* (1) / R0110-SWM-* (1) / R0110-LAT-* (1) / R0110-SPM-* (1) / R0110-FIX-* (1) / R0110-GRP-* (5) / R0110-TIM-* (5) / R0110-SEC-* (1) (17 rules) Source: dev/pdf-extracts/r0110_ed5_full.txt (extracted from R0110-Ed5.0 PDF) — Table 1 maximum periods (P5), Table 2 character classification (P6-15), Table 3 per-MBS-mark assignments (P16-17). Checks period ceilings + per-mark period assignments + character exclusions + group-size advisories + signalSequence light/dark timing ratios (TIM, computed from the per-segment sequence) + a derived sector-character-consistency heuristic (SEC); the flash-rate-per-minute bands and per-flash sub-timing the segment list cannot resolve are deliberately not validated. Current rule count: 219 per-feature (in RULES below) + 25 structural (pushed inside validateGMLStructure) + 27 exchange-set (validateExchangeSet) = 271 total. Per-pass history of rule additions and removals lives in dev/CHANGELOG.md. Layer separation: structural checks (GML-STR-01..25, document-level shape — XML well-formedness, namespace declarations, gml:id presence + NCName + uniqueness, members wrapper) run BEFORE this per-feature RULES loop. Per-feature data-quality checks here never duplicate a structural check. HOW THE VALIDATOR INVOKES THESE RULES: runVal at the bottom of this file does: const feats = parseAllGML(textareaContent); lastValAll = feats.map(feat => { const results = RULES.map(r => ({...r, pass, actual})); return { feat, results, crits, errs, warns, infos }; }); — where pass = r.t(feat, feats) evaluated under try/catch (a throwing rule yields pass:false + _threwException; a nilled fix.field yields the "void" pseudo-severity) and crits counts the S-158 critical tier. Then renderAllVal draws the UI with summary stat boxes + filter chips (a severity chip lists only the features that carry a finding of that tier). ════════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════ VALIDATION RULES ARRAY ════════════════════════════════════════════════════════════════════════ 224 per-feature rules + 27 structural checks + 27 exchange-set rules (validateExchangeSet) = 278 total. Rules worth knowing when reading the corpus: S201-FEA-35a (ChangeDetails empty-wrapper advisory, info severity, sister to S201-FEA-35); S201-DEP-01 (orphan/legacy attribute finding — typeOfLight + valueOfGeographicRange + valueOfLuminousRange are silently dropped on save, so their presence is reported); S201-REL-01 (DCEG §3.2: a feature cannot be both parent and child); S201-FEA-45 (horizontalDatum enum-membership on AtoNFixingMethod); S201-LGT-09 (LightSectored ObscuredSector.sectorLimit 1..1 mandatory inner); S201-LGT-08 (lightSector multi-cardinality); S201-FEA-44 marksNavigationalSystemOf per-FT subset; S201-COL-05 Daymark/Light colour STD13 subset; S201-COL-06 Retroreflector colour subset + S201-STA-02 status `experimental` value; GML-STR-17 xlink:href fragment must resolve. Per-pass history of rule additions, splits, and predicate-scope refinements lives in the development repository's dev/CHANGELOG.md (not shipped in the public snapshot) per Rule 21 — only the current rule set is described here. Rules are organised by specification source. THIS IS THE CORE VALIDATION ENGINE. Every rule is a self-contained declaration with: - id : stable identifier, used by downstream tooling. NEVER renumber or rename without bumping MAJOR version (rule IDs are part of the public API). - ref : the specific spec citation that justifies this rule (e.g., "S-201 FC 2.0.0 / DCEG §4.2", "IALA R1001 Ed.2.0 §2.1.3 Table 1"). When you read a rule, this tells you EXACTLY which page of which spec to open if you need to verify it. - s : severity — "critical" | "error" | "warning" | "info" — the first three ARE the IHO S-158 Table 7-1 classifications, applied natively (S-158 Introduction Ed 1.0.0 clause 7, s158_intro_structure_full.txt L991-1014; adopted by S-158:100 §6 "The check classification conforms to the scheme described in S-158", s158_100_full.txt L454-455; normative for S-201 via PS §6.2, s201_ps_2_0_0_main_full.txt L812-822): critical = S-158 C (Critical Error) — would make the dataset unusable in an end-user system: not loading (incl. anything an XSD-validating importer rejects: schema-invalid content, per check 100_0164 C), crashing, or presenting unsafe/unintelligible data. FC mandatory-presence/multiplicity (100_0004 C), enum/permittedValues membership (100_0005 C), value-format validity (100_0006 C) and content-not-in-FC (100_0001 C) all carry the letter C in S-158:100. PS §6.2: datasets must not be published with a failing Critical check. error = S-158 E (Error) — may degrade quality/usability, no significant danger (e.g. cross-attribute consistency, DCEG encoding-remark mandates, duplicate objects 100_0002 E). warning = S-158 W (Warning) — duplication or inconsistency that will not noticeably degrade usability; also spec "should"-strength requirements. info = ADVISORY, outside the S-158 conformance ring (Table 7-1 has no such tier — S-158:100's 412 check rows use only C/E/W): rules whose normative basis is an IALA recommendation/guideline (R1001, R0110, R0106, R0201, R0108, R0126 — best practice for real-world aids, not S-201 dataset conformance), the ENC-* S-158:101 cross-checks (not part of S-201), informative computations (GEO-RNG, RNG-ORD, engineering bands), FC "recommended"-only guidance on optional bindings, and authoring aids on schema-valid content. A rule whose ref cites an S-158 check ID carries that check's own Classification letter unless a disclosed adaptation is stated at the rule (e.g. S158-PKG-18). - t : test function `(feat, allFeats) → boolean` true = rule passes (no violation) false = rule fails (violation, message shown to user) The function receives both the individual feature being validated AND the full array of all features in the dataset. Cross-feature rules (R0106 retroreflector, R1001 light/topmark consistency) walk allFeats to resolve parent↔child component relationships via the _compLight/_compTopmark/_compParent helpers. - m : human-readable error message shown in the validator UI WHY THE GUARD PATTERN `if(!preCondition) return true;`? Every rule must SKIP (return true = pass) for features it doesn't apply to. Example: R1001-LAT-01 (lateral mark colour by region) returns true for any non-Lateral feature. Without this pattern, rules would fire on every feature, producing false-positive errors. NEVER remove a guard without understanding which features the rule is meant to validate. BREAKDOWN BY SOURCE (re-derive on every rule add — only the TOTALS are gate-protected (precommit check #5 + the smoke `RULES.length` assertion); the per-family sub-counts here are informational, refreshed by hand, and must sum to the per-feature total 224): ── S-100 5.2.0 (per-feature data checks) — S100-GML-01, S100-GML-03, S100-GML-05, S100-CRS-01, S100-CRS-02, S100-NIL-01, S100-DII-01, S100-DII-04, S100-BB-01, S100-BB-02 (10 rules) S100-GML-02/04 + S100-NS-01/02 moved to structural validator (GML-STR-15 / GML-STR-05+06) to avoid duplicate work. Sources: dev/spec-sources/S-100 Ed5.2.0...pdf Pt.10b §11.3 (spatial types), §11.6.1 (DII), §11.7 (CRS), §10b-10.1.5 (envelope), §10b-11.4.1 (parent-child); OGC GML 3.2.2 XSDs (gml.xsd, gmlBase.xsd, geometryBasic0d1d.xsd) ── S-201 FC 2.0.0 / DCEG 2.0.0 — 18 sub-prefixes: S201-FEA-* / S201-COL-* / S201-SHP-* / S201-LGT-* / S201-TOP-* / S201-FOG-* / S201-LV-* / S201-HGT-* / S201-ATON-* / S201-STA-* / S201-CON-* / S201-ENUM-* / S201-DII-* / S201-REL-* / S201-DEP-* / S201-EQP-* / S201-NAV-* / S201-COV-* (130 rules) Sources: dev/spec-sources/201_Feature_Catalogue_2.0.0.xml (machine-readable); dev/spec-sources/S-201 DCEG - Annex A-1.pdf (encoding rules); dev/spec-sources/S-201 Product Specification...pdf (multiplicities) ── IALA R1001 Ed.2.0 (June 2023) Maritime Buoyage System (urn:mrn:iala:pub:r1001:ed2.0) — R1001-LAT-* (8) / R1001-CAR-* (6) / R1001-IDM-* (3) / R1001-SWM-* (4) / R1001-SPM-* (5) / R1001-EWM-* (3) (29 rules) Source: dev/spec-sources/IALA R1001 Ed2.0...pdf §2.1.3 Region A lateral (Table 1); §2.1.4 Region B (Table 2); §2.1.5 preferred channel (Tables 3+4); §2.2.4 cardinal (Tables 5+6); §2.3.2.2 isolated danger (Table 7); §2.4.2.2 safe water (Table 8); §2.5.2.5 special (Table 9); §2.6.2.1 emergency wreck (Table 11) ── S-158:101 ENC cross-checks (NOT in S-201, additional) — ENC-LGT-*, ENC-SWM-*, ENC-COL-* (5 rules) Source: S-158:101 Ed.1.0.0 Conformance checks for ENC products. Adapted as cross-checks even though S-201 is not S-101. ── Geographic horizon sanity check — GEO-RNG-* (1 rule) Source: standard sea-level + standard-refraction approximation, formula d_nm = 2.08 × √h_m + 4.65 (widely published in NP74 Admiralty List of Lights, Bowditch American Practical Navigator Vol. II, Admiralty Distance Tables — none bundled here; the citation is intentionally to "standard sea-level + standard-refraction approximation" rather than a specific unbundled primary source, per Rule 5 — the formula itself is standard math; R0202 Ed.2.1 covers only Allard's law for luminous range, not the geographic horizon, so it is not the source). ── IHO S-158:100 Ed 1.0.0 Collection A (normative via PS §6.2) — S158-DUP-* / S158-ASSOC-* / S158-CRS-* / S158-GEOM-* / S158-FMT-* (22 rules) Source: dev/pdf-extracts/s158_100_checks_table.txt + s158_100_full.txt ── IALA R0126 (A-126) Ed.2.0 AIS-AtoN MMSI identity — R0126-AIS-* (1 rule) Source: dev/pdf-extracts/r0126_ed2_0_full.txt §4.3.1 + Table 2 ── IALA R0201 (E200-1) Ed.3.1 signal-light colour system — R0201-COL-* (1 rule) Source: dev/pdf-extracts/r0201_ed3_1_full.txt RECOMMENDS L138-144 + Annex Table 1 L180-235 Advisory membership: FC-valid light-colour tokens outside the five R0201 signal colours (amber/violet/orange; per-sector additionally black/grey/brown/magenta/pink). ── IALA R0108 (E-108) Ed.4.1 ordinary surface colours — R0108-COL-* (1 rule) Source: dev/pdf-extracts/r0108_ed4_1_full.txt RECOMMENDS L120-131 + Annex A Table 2 L244-315 Advisory membership: FC-valid surface-colour tokens outside the seven R0108 ordinary colours (grey/brown/amber/violet/magenta/pink) on the signal-function FTs. ── IALA R0202 Ed.2.1 Allard's law range ordering — RNG-ORD-* (1 rule) Source: dev/spec-sources/IALA R0202...pdf Allard's law: I = E_t × d² × T^(-d) — luminous range ordering check (luminous ≥ nominal in clear weather) ── IALA R0106 Ed.2.1 retroreflector colour — R0106-RFL-* (3 rules) Source: dev/spec-sources/IALA R0106...pdf Retroreflector colour must match parent body colour for lateral/special/safe-water/cardinal/IDM marks. ── IALA R0110 Ed.5.0 (June 2021) Rhythmic Characters of Lights on Marine AtoN (urn:mrn:iala:pub:r0110:ed5.0) — R0110-CHR-* (1) / R0110-IDM-* (1) / R0110-SWM-* (1) / R0110-LAT-* (1) / R0110-SPM-* (1) / R0110-FIX-* (1) / R0110-GRP-* (5) / R0110-TIM-* (5) / R0110-SEC-* (1) (17 rules) Source: dev/pdf-extracts/r0110_ed5_full.txt (extracted from R0110-Ed5.0 PDF) — Table 1 maximum periods (P5), Table 2 character classification (P6-15), Table 3 per-MBS-mark assignments (P16-17). Checks period ceilings + per-mark period assignments + character exclusions + group-size advisories + signalSequence light/dark timing ratios (TIM, computed from the per-segment sequence) + a derived sector-character-consistency heuristic (SEC); the flash-rate-per-minute bands and per-flash sub-timing the segment list cannot resolve are deliberately not validated. Current rule count: 224 per-feature (in RULES below) + 27 structural (pushed inside validateGMLStructure) + 27 exchange-set (validateExchangeSet) = 278 total. Per-pass history of rule additions and removals lives in dev/CHANGELOG.md. Layer separation: structural checks (GML-STR-01..27, document-level shape — XML well-formedness, namespace declarations, gml:id presence + NCName + uniqueness, members wrapper) run BEFORE this per-feature RULES loop. Per-feature data-quality checks here never duplicate a structural check. HOW THE VALIDATOR INVOKES THESE RULES: runVal at the bottom of this file does: const feats = parseAllGML(textareaContent); lastValAll = feats.map(feat => { const results = RULES.map(r => ({...r, pass, actual})); return { feat, results, crits, errs, warns, infos }; }); — where pass = r.t(feat, feats) evaluated under try/catch (a throwing rule yields pass:false + _threwException; a nilled fix.field yields the "void" pseudo-severity) and crits counts the S-158 critical tier. Then renderAllVal draws the UI with summary stat boxes + filter chips (a severity chip lists only the features that carry a finding of that tier). ════════════════════════════════════════════════════════════════════════ */
 /* S158-DUP-01 census cache: frozen feature array → Map(featureType + serialization → count); see the rule */
 const _dupCensus=new WeakMap();
 /* feature object → its S158-DUP-01 census key, recorded only for a deep-frozen feature (its key cannot change) */
@@ -3980,7 +4070,7 @@ function _isDeepFrozen(o,seen){
   return true;
 }
 const RULES=[
-  /* ═══════════════════════════════════════════════════════════════════════ S-100 5.2.0 per-feature rules — the DATA-LEVEL checks that operate on each parsed feature object. Document-level structure checks (XML well- formedness, namespace declarations, DII shape, <members> wrapper, feature gml:id presence + NCName) live in validateGMLStructure as GML-STR-01..25 and run BEFORE parsing; the structural and per-feature validators never duplicate work — the structural validator owns document-level shape, the per-feature validator owns per-feature data quality. Four former per-feature IDs are owned by the structural validator and are retired, never re-minted (rule IDs are public API, see the array header): S100-GML-02 (gml:id presence) and S100-GML-04 (gml:id NCName) → GML-STR-15; S100-NS-01 (S-201 namespace declared) → GML-STR-05; S100-NS-02 (GML namespace declared) → GML-STR-06. ═══════════════════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════════════════ S-100 5.2.0 per-feature rules — the DATA-LEVEL checks that operate on each parsed feature object. Document-level structure checks (XML well- formedness, namespace declarations, DII shape, <members> wrapper, feature gml:id presence + NCName) live in validateGMLStructure as GML-STR-01..27 and run BEFORE parsing; the structural and per-feature validators never duplicate work — the structural validator owns document-level shape, the per-feature validator owns per-feature data quality. Four former per-feature IDs are owned by the structural validator and are retired, never re-minted (rule IDs are public API, see the array header): S100-GML-02 (gml:id presence) and S100-GML-04 (gml:id NCName) → GML-STR-15; S100-NS-01 (S-201 namespace declared) → GML-STR-05; S100-NS-02 (GML namespace declared) → GML-STR-06. ═══════════════════════════════════════════════════════════════════════ */
   /* noFix, two reasons: (1) the old fix was unreachable dead config — the feature type IS the feature element's NAME: _findFeatures (all 3 strategies) returns only elements whose name maps to a known ATYPES/ALT_FEAT_NAMES id, _parseFeEl sets featureType from that id unconditionally (grep "featureType:ft"), and every RULES-executing site (runVal, the _importGMLTextToBuilder import core) sources its feats from parseAllGML — so f.featureType is truthy on every validated feat and this predicate can never fail post-parse (the rule itself stays: rule IDs are public API, and the predicate documents the feat-shape contract); (2) even if it ever rendered, the generic per-feature write would fabricate a <featureType> CHILD element no parser path ever reads back (the element name is the only featureType source) — the finding could never clear; same disease as the S100-CRS-01/S100-NIL-01 conversions. */
   {id:"S100-GML-01",noFix:"The feature type IS the feature element's name in the GML (LateralBuoy, Lighthouse, Topmark, ...) — it is not a value stored inside the feature, so no single field can be written: a generic quick-fix would only fabricate a featureType child element the parser never reads back. Rename the feature element to an S-201 type name, or rebuild the feature in the Builder.",ref:"S-100 5.2.0 Pt.10b §8.1",s:"critical",t:f=>!!f.featureType,m:"Feature type is required — S-100 GML profile encodes feature and information types per Pt.10b §8.1",
    actualOf:f=>f.featureType?String(f.featureType):"(missing)",
@@ -4621,6 +4711,23 @@ const RULES=[
    /* quick-fix: FC 2.0.0 XML lines 7429-7433 define AtoNNumber as a SimpleAttribute with valueType=URI — emitted as direct text content (`<AtoNNumber>XX-LB-001</AtoNNumber>`), not wrapped; the generator uses the PascalCase element name per the FC code. Format is producer-specific (typically country-code + mark-type + sequence, e.g. "XX-LB-001" for an example Lateral-Buoy-001). The expected.regex above ([A-Za-z0-9_-]) is this app's producer-identifier convention for the structured finding line, deliberately narrower than the FC URI type — the predicate itself tests presence only. */
    /* fix label = FC `S100FC:name` "AtoN Number" (Title Case). */
    fix:{field:"AtoNNumber",inputType:"text",label:"AtoN Number",placeholder:"e.g. XX-LB-001"}},
+  /* S201-ATON-02 — the MRN identifier of a geographic feature. S-201 PS 2.0.0 §10.9: "All geographic feature classes in
+     S-201 have the idCode attribute. This attribute shall be used to hold the Maritime Resource Name (MRN) identifier for
+     the feature instance." (s201_ps_2_0_0_main_full.txt L983-984). The FC binds iDCode 0..1 on AidsToNavigation (FC XML
+     L10503-10507), so the attribute is optional and its absence is no error (the FC is the source of multiplicity, Rule
+     5); the PS sentence says what the attribute is for, so a feature without one is told so at the advisory tier (info,
+     outside the S-158 ring). The S-201 types that carry the AidsToNavigation attributes are judged
+     (_inheritsFromAidsToNav); the meta, information and collection types bind no iDCode. */
+  {id:"S201-ATON-02",fix:{field:"iDCode",inputType:"text",label:"ID code - the feature's Maritime Resource Name (iDCode)",placeholder:"e.g. urn:mrn:xx:aton:xx-lb-001"},
+   ref:"S-201 PS 2.0.0 §10.9 Object identifiers (s201_ps_2_0_0_main_full.txt L983-984) - advisory: S-201 FC 2.0.0 binds iDCode 0..1 on AidsToNavigation (FC XML L10503-10507)",s:"info",t:f=>{
+    /* an S-201 type that carries the AidsToNavigation attributes; a non-blank value passes */
+    if(!_inheritsFromAidsToNav(f.featureType)||!ATYPES.some(t=>t.id===f.featureType&&!t.nonS201))return true;
+    return !!(f.iDCode&&String(f.iDCode).trim());
+  },m:"No iDCode on this feature. S-201 PS 2.0.0 §10.9 says every geographic feature class has the idCode attribute and that it shall hold the feature's Maritime Resource Name (MRN); the FC binds it 0..1, so the dataset is valid without one - add the MRN (urn:mrn:...) when the feature is identified.",
+   /* the structured finding line (Rule 16): the value seen, then the form expected */
+   actualOf:f=>f.iDCode?String(f.iDCode):"(absent)",
+   expected:{kind:"text",description:"a Maritime Resource Name in <iDCode> (urn:mrn:...), S-201 PS 2.0.0 §10.9; optional per the FC (0..1)"}},
+  /* S201-FEA-06 — categoryOfSpecialPurposeMark 1..* on the two special-purpose types */
   {id:"S201-FEA-06",ref:"S-201 FC 2.0.0 / DCEG §4.1, §5.6 (1..*)",s:"critical",t:f=>{
     if(!f.featureType?.includes("SpecialPurpose"))return true;
     return!!f.categoryOfSpecialPurposeMark;
@@ -5081,6 +5188,60 @@ const RULES=[
   },m:"One-sided aggregation link: this feature's <child xlink:href> points at a feature that carries no matching <parent xlink:href> back-link. S-201 emits the StructureEquipment association from BOTH ends; a forward-only ref is usually a stale link left behind after the child side was edited, and it can demote the target in parent/child tree views. Remove the dangling <child> element (quick fix), or — if the link is intended — author the <parent> back-link on the target feature in the Builder. (Child-side-only <parent> without a parent-side <child> is the tolerated S-100 unidirectional form and is not flagged. For an Equipment-subtype or Topmark target the <child> link is its parent — removing it leaves the target with no parent unless the <parent> back-link is authored on it.)",
    actualOf:(f,all)=>{const d=_danglingChildRefs(f,all);return d.length?`<child> refs without a <parent> back-link: ${d.map(x=>"#"+x).join(", ")}`:"all <child> refs are paired with <parent> back-links ✓";},
    expected:{kind:"text",description:"every <child xlink:href> whose target resolves in the dataset is answered by a <parent xlink:href> on that target pointing back at this feature (FC StructureEquipment binds both ends; Annex B2 expects the mandatory child-side end to be checked by constraint)"}},
+  /* S201-REL-05 — a RadarReflector feature on a point or area aid. The DCEG makes the reflector of a point or surface
+     feature an attribute of that feature: "If it is required to encode an area or point feature which is radar
+     conspicuous because it is fitted with a radar reflector, it must be indicated using radar conspicuous on the
+     feature. A Radar Reflector feature must not be encoded in this case." (§8.8.1 Remarks, dceg_annex_a.txt
+     L8019-8021; §2.4.8 L348-349 says the same of a surface or point feature), and its encoding rules say "Radar
+     reflectors must not be encoded as separate features when attached to navigational aids. If it is required to
+     encode their existence, it must be done using the attribute radar conspicuous." (L435-436); the feature is for
+     curve features such as overhead cables (L351-352, L8010-8011). The FC binds radarConspicuous on GenericBeacon (FC
+     XML L10895), GenericBuoy (L11089), Landmark (L11515), LightFloat (L13972), LightVessel (L14161), OffshorePlatform
+     (L14395) and SiloTank (L14653) - the hosts judged here (_bindsRadarConspicuous); of them only a Landmark may be a
+     curve (permittedPrimitives L11674), so a Landmark drawn as a curve keeps its reflector feature and one with no
+     geometry is left possible (_mayBeCurve). A Pile, Bridge or Building binds no radarConspicuous, so a reflector
+     feature is its only encoding and is not judged. The rule fires on the HOST, where the attribute is written, counts
+     the children linked from either end (_linkedChildrenOfType) and the flat legacy <radarReflector> shorthand the
+     parser still reads (Rule 4). Severity: a DCEG encoding mandate, S-158 E (error). The fix writes the attribute and
+     removes the feature(s) with their links in one click (kind foldChild). */
+  {id:"S201-REL-05",fix:{kind:"foldChild",childType:"RadarReflector",fields:[{field:"radarConspicuous",value:"true"}],label:"Set <radarConspicuous>true</radarConspicuous> on this aid and remove its Radar Reflector feature(s) - DCEG §8.8.1"},
+   ref:"S-201 DCEG 2.0.0 §8.8.1 Radar reflectors, Remarks (dceg_annex_a.txt L8019-8021) + §2.4.8 Radar conspicuous features (L348-349) + encoding rule L435-436 + S-201 FC 2.0.0 radarConspicuous bindings (FC XML L10895, L11089, L11515, L13972, L14161, L14395, L14653)",s:"error",t:(f,all)=>{
+    /* a host the FC lets say radarConspicuous, that is not (or may not be) a curve */
+    if(!_bindsRadarConspicuous(f.featureType)||_mayBeCurve(f))return true;
+    /* no reflector feature linked from either end, and no flat legacy shorthand */
+    return _linkedChildrenOfType(f,all,"RadarReflector").length===0&&f.radarReflector!==true;
+  },m:"A Radar Reflector is encoded as a separate feature on a point or area aid. S-201 DCEG §8.8.1: an area or point feature fitted with a radar reflector is encoded with radarConspicuous = true on the feature itself, and \"A Radar Reflector feature must not be encoded in this case\" - the RadarReflector feature is for curve features such as overhead cables. Set radarConspicuous on this aid and remove the RadarReflector feature (the quick fix does both).",
+   /* the structured finding line (Rule 16): the value seen, then the form expected */
+   actualOf:(f,all)=>{const k=_linkedChildrenOfType(f,all,"RadarReflector").map(c=>"#"+(c.gmlId||"?"));if(f.radarReflector===true)k.push("<radarReflector>true</radarReflector> (legacy shorthand)");return `${f.featureType} (${f.geometry&&f.geometry.type?f.geometry.type:"geometry by type"}) with RadarReflector ${k.join(", ")||"(none)"}; radarConspicuous=${f.radarConspicuous==null?"(absent)":String(f.radarConspicuous)}`;},
+   expected:{kind:"text",description:"no RadarReflector feature linked to a point or surface aid; the aid carries <radarConspicuous>true</radarConspicuous> instead (DCEG §8.8.1 Remarks; §2.4.8). A RadarReflector feature is encoded only on a curve feature."}},
+  /* S201-COV-01 / S201-COV-02 — every geographic feature's position inside the dataset's coverage. S-201 PS 2.0.0
+     §10.11 "All areas of a dataset must be covered by a DataCoverage meta feature." (s201_ps_2_0_0_main_full.txt
+     L991-992) and §10.13 "One or more QualityOfNonBathymetricData features must cover the dataset." (L998-999). The
+     presence of each kind is the dataset-level GML-STR-26 / GML-STR-27 (one finding per dataset); these two hold each
+     geographic feature's positions inside one surface of the kind and stand down when the dataset has none of the kind
+     (the structural finding says so - presence is asserted there, so this is not a silent pass, Rule 9). A feature
+     with no own geometry is judged at its parent's (the S100-GML-03 inheritance); one whose position is unknown is
+     S100-GML-03's. Severity: a PS "must" on what the dataset covers, the tier of the DataCoverage's own mandatory
+     attributes (S201-FEA-11, S-158 C). Not seen, disclosed: an interior ring (hole) of a coverage, an edge that leaves
+     the coverage between two vertices of a curve or surface feature, and the dataset envelope - the clause speaks of
+     the data's areas, and the features are the data. */
+  {id:"S201-COV-01",noFix:"Which is wrong - the coverage surface or the feature's position - is a fact about your data: widen the DataCoverage surface (the Builder's Data Coverage type, drawn as a surface) to take the feature in, or correct the feature's position.",
+   ref:"S-201 PS 2.0.0 §10.11 Data coverage - \"All areas of a dataset must be covered by a DataCoverage meta feature.\" (s201_ps_2_0_0_main_full.txt L991-992); §4.7 Dataset rules (L728-729)",s:"critical",t:(f,all)=>{
+    if(!_coverageApplies(f))return true;
+    return _firstUncovered(f,all,"DataCoverage")===null;
+  },m:"This feature lies outside every DataCoverage surface in the dataset. S-201 PS 2.0.0 §10.11: all areas of a dataset must be covered by a DataCoverage meta feature - a feature outside the declared coverage is data the dataset does not say it holds. Widen the DataCoverage surface to take the feature in, or correct its position.",
+   /* the structured finding line (Rule 16): the value seen, then the form expected */
+   actualOf:(f,all)=>{const p=_firstUncovered(f,all,"DataCoverage");const n=_coverageRings(all,"DataCoverage").length;return p?`position ${p[0]}, ${p[1]} outside ${n===1?"the DataCoverage surface":"all "+n+" DataCoverage surfaces"}`:"(covered)";},
+   expected:{kind:"text",description:"every position of the feature (its point, or each vertex of its curve or surface; a geometry-less child at its parent's) inside the exterior ring of a DataCoverage surface of the dataset, boundary included (S-201 PS §10.11)"}},
+  /* S201-COV-02 — the same judgment against the dataset's QualityOfNonBathymetricData surfaces (PS §10.13) */
+  {id:"S201-COV-02",noFix:"Which is wrong - the quality surface or the feature's position - is a fact about your data: widen the QualityOfNonBathymetricData surface (the Builder's Quality of Non-Bathymetric Data type, drawn as a surface) to take the feature in, or correct the feature's position.",
+   ref:"S-201 PS 2.0.0 §10.13 Data quality - \"One or more QualityOfNonBathymetricData features must cover the dataset.\" (s201_ps_2_0_0_main_full.txt L998-999)",s:"critical",t:(f,all)=>{
+    if(!_coverageApplies(f))return true;
+    return _firstUncovered(f,all,"QualityOfNonBathymetricData")===null;
+  },m:"This feature lies outside every QualityOfNonBathymetricData surface in the dataset. S-201 PS 2.0.0 §10.13: one or more QualityOfNonBathymetricData features must cover the dataset - a feature outside them has no stated positional quality. Widen the quality surface to take the feature in, or correct its position.",
+   /* the structured finding line (Rule 16): the value seen, then the form expected */
+   actualOf:(f,all)=>{const p=_firstUncovered(f,all,"QualityOfNonBathymetricData");const n=_coverageRings(all,"QualityOfNonBathymetricData").length;return p?`position ${p[0]}, ${p[1]} outside ${n===1?"the QualityOfNonBathymetricData surface":"all "+n+" QualityOfNonBathymetricData surfaces"}`:"(covered)";},
+   expected:{kind:"text",description:"every position of the feature (its point, or each vertex of its curve or surface; a geometry-less child at its parent's) inside the exterior ring of a QualityOfNonBathymetricData surface of the dataset, boundary included (S-201 PS §10.13)"}},
   /* ══════════════════════════════════════════════════════════════════════ S201-NAV-* — navigation-line / aggregation encoding rules (DCEG §10 + §11.2). Note the boundary they hold: the R0112 "front+rear light pair aligned on the navigation-line bearing" idea is deliberately NOT a rule here — R0112 is design photometry with no data mandate, and S-201 encodes no front/rear light binding (the FC RangeSystem association links NavigationLine↔RecommendedTrack only; Aggregation membership is unordered), so "the pair" is not identifiable from data (see the HANDOFF spec-index R0112 row). These rules cover the grounded encoding MUSTs the DCEG does state. ══════════════════════════════════════════════════════════════════════ */
   /* S201-NAV-01 — orientationValue vs the encoded line's own bearing (mod 180). Grounding chain, every link a bundled primary source: the FC defines orientationValue as "The angular distance measured from true north to the major axis of the feature" (FC XML L3263-3273) and NavigationLine as "A straight line…" (L11723) — for a straight curve feature the major axis IS the line; the DCEG mandates "The value populated for the mandatory complex attribute orientation must be the value of the bearing from seaward" (dceg_annex_a.txt L9961-9963, NavigationLine; the two-way RecommendedTrack twin at L9812-9817) — the from-seaward bearing is by construction one of the line's two reciprocal chord bearings, so mod-180 agreement with the chord is a NECESSARY condition of the MUST; PS §5.4 fixes degrees (L796) and PS §4 loxodromic interpolation (L757) makes the chord bearing well-defined. Compared mod 180 ON PURPOSE: the seaward sense is not encoded, so the directed (mod-360) form is not checkable — a pure reciprocal-bearing error is structurally undetectable here (stated in expected). Tolerance: no bundled source states a conformance tolerance; the check uses max(the feature's own orientationUncertainty when numeric (FC L7836-7845 "the best estimate of the accuracy of a bearing" — the dataset's OWN declared bound), 5°), the 5° floor being THIS VALIDATOR'S disclosed implementation slack for digitisation/rounding (RNG-ORD-01's disclosed-slack precedent), not spec text. Severity error (S-158 Table 7-1 class E — a DCEG encoding mandate whose breach degrades quality but leaves the data loadable, s158_intro_structure_full.txt L999-1001), not critical: the mandated referent (the real-world bearing from seaward) lies outside the GML, and a mismatch proves only that ONE of two authored data (attribute or geometry) is wrong — the S201-REL-02 consistency-class ceiling. FT-gated BEFORE trusting f.orientationValue (the parser's flat descendant read could carry a nested orientation on other FTs). */
   {id:"S201-NAV-01",noFix:"Which of the two is wrong — the orientation attribute or the drawn line — is an authoring fact only the producer knows; correct the orientation value (the bearing from seaward, in degrees) or redraw the line's vertices in the Builder.",
@@ -5524,6 +5685,26 @@ const RULES=[
   },m:"Agency code (CCCC) must be 4 chars A-Z/0-9 and should not be placeholder 'XX00' — configure your IHO producer code per S-201 §11.4 before delivery",
    actualOf:f=>f.agencyCode?String(f.agencyCode):"(missing)",
    expected:{kind:"pattern",regex:"^[A-Z0-9]{4}$",description:"4-char IHO producer code (A-Z / 0-9 only, no placeholder 'XX00') per S-201 PS 2.0.0 §11.4 — registered via IHO S-62 Producer-Code registry"}},
+  /* S201-DII-04 — the dataset file identifier has the S-201 file name's form. S-100 Part 10b Table 10b-4 defines
+     datasetFileIdentifier as "The file name including the extension but excluding any path information"
+     (s100_ed5_2_0_full.txt L33041-33048), and S-201 PS 2.0.0 §11.4 names the file 201CCCCXXXXXXXX_EEE.GML
+     (s201_ps_2_0_0_main_full.txt L1135-1159), so an identifier of another shape names the file in a way S-201 does not
+     allow - the fault S158-PKG-15 reports on an exchange set's entry name, here on the name the dataset itself declares,
+     checked wherever the dataset is validated, a loose file included (the app keeps no loose file's own name). Presence
+     is GML-STR-11's finding (the DII fields), so an absent identifier passes here. Severity follows S-158:100 check
+     100_0303 (C), "Dataset name does not conform to product specification" (s158_100_checks_table.txt L318). The fix
+     writes the identifier into the DII block (target dii); the Builder's File settings derive it from the agency code,
+     filename stem and edition (buildDatasetFilename), which the generator writes when none is set. */
+  {id:"S201-DII-04",fix:{target:"dii",field:"datasetFileIdentifier",inputType:"text",pattern:"^201[A-Z0-9]{4}[A-Z0-9_]{8}_[0-9]{3}\\.(GML|gml)$",label:"Dataset file identifier - the file's own name, 201CCCCXXXXXXXX_EEE.GML (corrects <S100:datasetFileIdentifier> in the DII block)",placeholder:"e.g. 201XX01HARBOUR1_000.GML"},
+   ref:"S-201 PS 2.0.0 §11.4 Dataset file naming (s201_ps_2_0_0_main_full.txt L1135-1159) + S-100 Ed.5.2.0 Pt 10b §11.6.1 Table 10b-4 datasetFileIdentifier = the file name with its extension (s100_ed5_2_0_full.txt L33041-33048) + S-158:100 check 100_0303 (C) dataset name does not conform to product specification (s158_100_checks_table.txt L318)",s:"critical",t:f=>{
+    /* the identifier as the parser read it (datasetFileIdentifier, or the legacy datasetName); absence is GML-STR-11's */
+    const n=f.dsName==null?"":String(f.dsName).trim();
+    if(!n)return true;
+    return _S201_FILE_NAME.test(n);
+  },m:"The dataset file identifier does not have the S-201 file name form. S-100 Part 10b Table 10b-4 makes <S100:datasetFileIdentifier> the file's own name with its extension, and S-201 PS 2.0.0 §11.4 names a dataset file 201CCCCXXXXXXXX_EEE.GML - \"201\", the 4-character IHO producer code (zero-padded), 8 producer characters, \"_\", the 3-digit edition (000 for a first edition) and .GML or .gml, from A-Z, 0-9 and _ only. Write the identifier in that form (the quick fix), or clear it in the Builder's File settings, where the agency code, filename stem and edition build it.",
+   /* the structured finding line (Rule 16): the value seen, then the form expected */
+   actualOf:f=>f.dsName?String(f.dsName):"(absent)",
+   expected:{kind:"pattern",regex:"^201[A-Z0-9]{4}[A-Z0-9_]{8}_\\d{3}\\.(GML|gml)$",description:"201 + CCCC (4-char IHO S-62 producer code, zero-padded) + XXXXXXXX (8 producer characters, A-Z 0-9 _) + _EEE (3-digit edition, 000 first) + .GML or .gml (S-201 PS 2.0.0 §11.4)"}},
   /* S201-STA-01 + S201-STA-02 split-and-validate the slash-joined multi-value status (FC 0..* on AidsToNavigation). Segmentation goes through `_enumSegs` because THREE FC status labels contain a literal "/" (FC XML "Periodic/Intermittent" L6421, "Under Removal / Deletion" L6736, "Removed / Deleted" L6745) — a naive split("/") would fragment those FC-valid values (which the quick-fix select itself offers) into out-of-enum segments. */
   {id:"S201-STA-01",ref:"S-201 FC 2.0.0 status",s:"critical",t:f=>{if(!f.status)return true;return _enumSegs(f.status,STATUSES).every(c=>_inEnum(STATUSES,c));},m:"status must be from S-201 FC 2.0.0 enumeration",
    actualOf:f=>f.status?String(f.status):"(missing)",
@@ -6451,18 +6632,18 @@ const RULES=[
    expected:{kind:"text",description:"no inline wrapper — each component written as its own feature type and linked by <child> / <parent>"}},
 ];
 /* The bundled examples (exGML) use the S-201 2.0 / S-100 5.2.0 format — default namespace, unprefixed elements, <members> wrapper, <S100:pointProperty> geometry. */
-/* exGML[0..3]: the bundled S-201 2.0.0 sample datasets (a lateral buoy, a cardinal buoy and an isolated-danger buoy, each with LightAllAround + Topmark children, and a lighthouse with a LightAllAround child; fictional names, synthetic positions). Loaded by loadEx (Drawing tab) and — exGML[0] only — the Validator "Use example" button, and locked by the smoke suite: each must parse, survive parse → generate → parse deep-equal, and validate with zero errors — every parser/generator change must keep all four passing (Rule 10). */
+/* exGML[0..3]: the bundled S-201 2.0.0 sample datasets (a lateral buoy, a cardinal buoy and an isolated-danger buoy, each with LightAllAround + Topmark children, and a lighthouse with a LightAllAround child; fictional names, synthetic positions). Each dataset carries a DataCoverage and a QualityOfNonBathymetricData surface drawn 0.01° around its aid (S-201 PS 2.0.0 §10.11 and §10.13, s201_ps_2_0_0_main_full.txt L991-992 and L998-999; the display scales per the FC definitions, FC XML L7915 maximum = the largest scale, L7925 minimum = the smallest; the fixed uncertainty FC L9752-9758), an envelope that takes the surface in, and a §11.4 file identifier under the fictional producer code XX01. Loaded by loadEx (Drawing tab) and — exGML[0] only — the Validator "Use example" button, and locked by the smoke suite: each must parse, survive parse → generate → parse deep-equal, and validate with zero errors — every parser/generator change must keep all four passing (Rule 10). */
 const exGML=[
 `<?xml version="1.0" encoding="UTF-8"?>
 <Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.001">
-  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.0000000 1.0000000</gml:lowerCorner><gml:upperCorner>1.0000000 1.0000000</gml:upperCorner></gml:Envelope></gml:boundedBy>
+  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>0.9900000 0.9900000</gml:lowerCorner><gml:upperCorner>1.0100000 1.0100000</gml:upperCorner></gml:Envelope></gml:boundedBy>
   <S100:DatasetIdentificationInformation>
     <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
     <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
     <S100:productIdentifier>S-201</S100:productIdentifier>
     <S100:productEdition>2.0.0</S100:productEdition>
     <S100:applicationProfile>1</S100:applicationProfile>
-    <S100:datasetFileIdentifier>DS.001.gml</S100:datasetFileIdentifier>
+    <S100:datasetFileIdentifier>201XX01EXAMPL01_000.GML</S100:datasetFileIdentifier>
     <S100:datasetTitle>S-201 AtoN Dataset</S100:datasetTitle>
     <S100:datasetReferenceDate>1970-01-01</S100:datasetReferenceDate>
     <S100:datasetLanguage>ENG</S100:datasetLanguage>
@@ -6475,18 +6656,20 @@ const exGML=[
     <LateralBuoy gml:id="BL.001"><featureName><name>ALFA</name></featureName><AtoNNumber>XX-LB-001</AtoNNumber><child xlink:href="#TM.001"/><child xlink:href="#LT.001"/><colour>Red</colour><buoyShape>Can</buoyShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark><geometry><S100:pointProperty><S100:Point gml:id="P.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.0000000 1.0000000</gml:pos></S100:Point></S100:pointProperty></geometry></LateralBuoy>
     <Topmark gml:id="TM.001"><parent xlink:href="#BL.001"/><topmarkDaymarkShape>Cylinder</topmarkDaymarkShape><colour>Red</colour><geometry><S100:pointProperty><S100:Point gml:id="P.TM.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.0000000 1.0000000</gml:pos></S100:Point></S100:pointProperty></geometry></Topmark>
     <LightAllAround gml:id="LT.001"><parent xlink:href="#BL.001"/><colour>Red</colour><valueOfNominalRange>5</valueOfNominalRange><rhythmOfLight><lightCharacteristic>Flashing</lightCharacteristic><signalGroup>2</signalGroup><signalPeriod>5</signalPeriod></rhythmOfLight><geometry><S100:pointProperty><S100:Point gml:id="P.LT.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.0000000 1.0000000</gml:pos></S100:Point></S100:pointProperty></geometry></LightAllAround>
+    <DataCoverage gml:id="DC.001"><maximumDisplayScale>4000</maximumDisplayScale><minimumDisplayScale>250000</minimumDisplayScale><geometry><S100:surfaceProperty><S100:Surface gml:id="S.DC.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>0.9900000 0.9900000 0.9900000 1.0100000 1.0100000 1.0100000 1.0100000 0.9900000 0.9900000 0.9900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></DataCoverage>
+    <QualityOfNonBathymetricData gml:id="QN.001"><categoryOfTemporalVariation>Unlikely To Change</categoryOfTemporalVariation><horizontalPositionUncertainty><uncertaintyFixed>5.0</uncertaintyFixed></horizontalPositionUncertainty><geometry><S100:surfaceProperty><S100:Surface gml:id="S.QN.001" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>0.9900000 0.9900000 0.9900000 1.0100000 1.0100000 1.0100000 1.0100000 0.9900000 0.9900000 0.9900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></QualityOfNonBathymetricData>
   </members>
 </Dataset>`,
 `<?xml version="1.0" encoding="UTF-8"?>
 <Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.002">
-  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.1000000 1.1000000</gml:lowerCorner><gml:upperCorner>1.1000000 1.1000000</gml:upperCorner></gml:Envelope></gml:boundedBy>
+  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.0900000 1.0900000</gml:lowerCorner><gml:upperCorner>1.1100000 1.1100000</gml:upperCorner></gml:Envelope></gml:boundedBy>
   <S100:DatasetIdentificationInformation>
     <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
     <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
     <S100:productIdentifier>S-201</S100:productIdentifier>
     <S100:productEdition>2.0.0</S100:productEdition>
     <S100:applicationProfile>1</S100:applicationProfile>
-    <S100:datasetFileIdentifier>DS.002.gml</S100:datasetFileIdentifier>
+    <S100:datasetFileIdentifier>201XX01EXAMPL02_000.GML</S100:datasetFileIdentifier>
     <S100:datasetTitle>S-201 AtoN Dataset</S100:datasetTitle>
     <S100:datasetReferenceDate>1970-01-01</S100:datasetReferenceDate>
     <S100:datasetLanguage>ENG</S100:datasetLanguage>
@@ -6499,18 +6682,20 @@ const exGML=[
     <CardinalBuoy gml:id="BC.001"><featureName><name>BRAVO</name></featureName><AtoNNumber>XX-CB-002</AtoNNumber><child xlink:href="#TM.002"/><child xlink:href="#LT.002"/><colour>Black</colour><colour>Yellow</colour><colourPattern>Horizontal Stripes</colourPattern><buoyShape>Pillar</buoyShape><categoryOfCardinalMark>North Cardinal Mark</categoryOfCardinalMark><geometry><S100:pointProperty><S100:Point gml:id="P.002" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.1000000 1.1000000</gml:pos></S100:Point></S100:pointProperty></geometry></CardinalBuoy>
     <Topmark gml:id="TM.002"><parent xlink:href="#BC.001"/><topmarkDaymarkShape>2 Cones (Points Upward)</topmarkDaymarkShape><colour>Black</colour><geometry><S100:pointProperty><S100:Point gml:id="P.TM.002" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.1000000 1.1000000</gml:pos></S100:Point></S100:pointProperty></geometry></Topmark>
     <LightAllAround gml:id="LT.002"><parent xlink:href="#BC.001"/><colour>White</colour><valueOfNominalRange>4</valueOfNominalRange><rhythmOfLight><lightCharacteristic>Quick-Flashing</lightCharacteristic><signalPeriod>1</signalPeriod></rhythmOfLight><geometry><S100:pointProperty><S100:Point gml:id="P.LT.002" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.1000000 1.1000000</gml:pos></S100:Point></S100:pointProperty></geometry></LightAllAround>
+    <DataCoverage gml:id="DC.002"><maximumDisplayScale>4000</maximumDisplayScale><minimumDisplayScale>250000</minimumDisplayScale><geometry><S100:surfaceProperty><S100:Surface gml:id="S.DC.002" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.0900000 1.0900000 1.0900000 1.1100000 1.1100000 1.1100000 1.1100000 1.0900000 1.0900000 1.0900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></DataCoverage>
+    <QualityOfNonBathymetricData gml:id="QN.002"><categoryOfTemporalVariation>Unlikely To Change</categoryOfTemporalVariation><horizontalPositionUncertainty><uncertaintyFixed>5.0</uncertaintyFixed></horizontalPositionUncertainty><geometry><S100:surfaceProperty><S100:Surface gml:id="S.QN.002" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.0900000 1.0900000 1.0900000 1.1100000 1.1100000 1.1100000 1.1100000 1.0900000 1.0900000 1.0900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></QualityOfNonBathymetricData>
   </members>
 </Dataset>`,
 `<?xml version="1.0" encoding="UTF-8"?>
 <Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.003">
-  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.2000000 1.2000000</gml:lowerCorner><gml:upperCorner>1.2000000 1.2000000</gml:upperCorner></gml:Envelope></gml:boundedBy>
+  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.1900000 1.1900000</gml:lowerCorner><gml:upperCorner>1.2100000 1.2100000</gml:upperCorner></gml:Envelope></gml:boundedBy>
   <S100:DatasetIdentificationInformation>
     <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
     <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
     <S100:productIdentifier>S-201</S100:productIdentifier>
     <S100:productEdition>2.0.0</S100:productEdition>
     <S100:applicationProfile>1</S100:applicationProfile>
-    <S100:datasetFileIdentifier>DS.003.gml</S100:datasetFileIdentifier>
+    <S100:datasetFileIdentifier>201XX01EXAMPL03_000.GML</S100:datasetFileIdentifier>
     <S100:datasetTitle>S-201 AtoN Dataset</S100:datasetTitle>
     <S100:datasetReferenceDate>1970-01-01</S100:datasetReferenceDate>
     <S100:datasetLanguage>ENG</S100:datasetLanguage>
@@ -6523,18 +6708,20 @@ const exGML=[
     <IsolatedDangerBuoy gml:id="ID.001"><featureName><name>CHARLIE</name></featureName><AtoNNumber>XX-IB-003</AtoNNumber><child xlink:href="#TM.003"/><child xlink:href="#LT.003"/><colour>Black</colour><colour>Red</colour><colour>Black</colour><colourPattern>Horizontal Stripes</colourPattern><buoyShape>Pillar</buoyShape><geometry><S100:pointProperty><S100:Point gml:id="P.003" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.2000000 1.2000000</gml:pos></S100:Point></S100:pointProperty></geometry></IsolatedDangerBuoy>
     <Topmark gml:id="TM.003"><parent xlink:href="#ID.001"/><topmarkDaymarkShape>2 Spheres</topmarkDaymarkShape><colour>Black</colour><geometry><S100:pointProperty><S100:Point gml:id="P.TM.003" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.2000000 1.2000000</gml:pos></S100:Point></S100:pointProperty></geometry></Topmark>
     <LightAllAround gml:id="LT.003"><parent xlink:href="#ID.001"/><colour>White</colour><valueOfNominalRange>5</valueOfNominalRange><rhythmOfLight><lightCharacteristic>Flashing</lightCharacteristic><signalGroup>2</signalGroup><signalPeriod>5</signalPeriod></rhythmOfLight><geometry><S100:pointProperty><S100:Point gml:id="P.LT.003" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.2000000 1.2000000</gml:pos></S100:Point></S100:pointProperty></geometry></LightAllAround>
+    <DataCoverage gml:id="DC.003"><maximumDisplayScale>4000</maximumDisplayScale><minimumDisplayScale>250000</minimumDisplayScale><geometry><S100:surfaceProperty><S100:Surface gml:id="S.DC.003" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.1900000 1.1900000 1.1900000 1.2100000 1.2100000 1.2100000 1.2100000 1.1900000 1.1900000 1.1900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></DataCoverage>
+    <QualityOfNonBathymetricData gml:id="QN.003"><categoryOfTemporalVariation>Unlikely To Change</categoryOfTemporalVariation><horizontalPositionUncertainty><uncertaintyFixed>5.0</uncertaintyFixed></horizontalPositionUncertainty><geometry><S100:surfaceProperty><S100:Surface gml:id="S.QN.003" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.1900000 1.1900000 1.1900000 1.2100000 1.2100000 1.2100000 1.2100000 1.1900000 1.1900000 1.1900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></QualityOfNonBathymetricData>
   </members>
 </Dataset>`,
 `<?xml version="1.0" encoding="UTF-8"?>
 <Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.004">
-  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.3000000 1.3000000</gml:lowerCorner><gml:upperCorner>1.3000000 1.3000000</gml:upperCorner></gml:Envelope></gml:boundedBy>
+  <gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:lowerCorner>1.2900000 1.2900000</gml:lowerCorner><gml:upperCorner>1.3100000 1.3100000</gml:upperCorner></gml:Envelope></gml:boundedBy>
   <S100:DatasetIdentificationInformation>
     <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>
     <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>
     <S100:productIdentifier>S-201</S100:productIdentifier>
     <S100:productEdition>2.0.0</S100:productEdition>
     <S100:applicationProfile>1</S100:applicationProfile>
-    <S100:datasetFileIdentifier>DS.004.gml</S100:datasetFileIdentifier>
+    <S100:datasetFileIdentifier>201XX01EXAMPL04_000.GML</S100:datasetFileIdentifier>
     <S100:datasetTitle>S-201 AtoN Dataset</S100:datasetTitle>
     <S100:datasetReferenceDate>1970-01-01</S100:datasetReferenceDate>
     <S100:datasetLanguage>ENG</S100:datasetLanguage>
@@ -6546,6 +6733,8 @@ const exGML=[
   <members>
     <Lighthouse gml:id="LH.001"><featureName><name>DELTA LIGHTHOUSE</name></featureName><AtoNNumber>XX-LH-004</AtoNNumber><child xlink:href="#LT.004"/><categoryOfLandmark>Tower</categoryOfLandmark><visualProminence>Visually Conspicuous</visualProminence><colour>White</colour><geometry><S100:pointProperty><S100:Point gml:id="P.004" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.3000000 1.3000000</gml:pos></S100:Point></S100:pointProperty></geometry></Lighthouse>
     <LightAllAround gml:id="LT.004"><parent xlink:href="#LH.001"/><colour>White</colour><valueOfNominalRange>23</valueOfNominalRange><rhythmOfLight><lightCharacteristic>Flashing</lightCharacteristic><signalGroup>4</signalGroup><signalPeriod>15</signalPeriod></rhythmOfLight><geometry><S100:pointProperty><S100:Point gml:id="P.LT.004" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>1.3000000 1.3000000</gml:pos></S100:Point></S100:pointProperty></geometry></LightAllAround>
+    <DataCoverage gml:id="DC.004"><maximumDisplayScale>4000</maximumDisplayScale><minimumDisplayScale>250000</minimumDisplayScale><geometry><S100:surfaceProperty><S100:Surface gml:id="S.DC.004" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.2900000 1.2900000 1.2900000 1.3100000 1.3100000 1.3100000 1.3100000 1.2900000 1.2900000 1.2900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></DataCoverage>
+    <QualityOfNonBathymetricData gml:id="QN.004"><categoryOfTemporalVariation>Unlikely To Change</categoryOfTemporalVariation><horizontalPositionUncertainty><uncertaintyFixed>5.0</uncertaintyFixed></horizontalPositionUncertainty><geometry><S100:surfaceProperty><S100:Surface gml:id="S.QN.004" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:patches><gml:PolygonPatch><gml:exterior><gml:LinearRing><gml:posList>1.2900000 1.2900000 1.2900000 1.3100000 1.3100000 1.3100000 1.3100000 1.2900000 1.2900000 1.2900000</gml:posList></gml:LinearRing></gml:exterior></gml:PolygonPatch></gml:patches></S100:Surface></S100:surfaceProperty></geometry></QualityOfNonBathymetricData>
   </members>
 </Dataset>`
 ];
@@ -11104,7 +11293,11 @@ function generateGML(f){
   if(_diiHas("dsSpec",f.dsSpec))ls.push(`    <S100:productEdition>${_xmlEsc(f.dsSpec||"2.0.0")}</S100:productEdition>`);
   /* applicationProfile is MANDATORY (Mult.=1) per S-100 Ed5.2.0 Pt 10b §10b-11.6.1 Table 10b-4: its Description prescribes the literal values "1" = base datasets and "2" = update datasets. Default derived from f.dsPurpose to match the datasetPurpose emission below (base→"1", update→"2"). A producer override typed into the Builder field f.dsAppProfile still wins. */
   if(_diiHas("dsAppProfile",f.dsAppProfile))ls.push(`    <S100:applicationProfile>${_xmlEsc(f.dsAppProfile||(String(f.dsPurpose||"Base").toLowerCase()==="update"?"2":"1"))}</S100:applicationProfile>`);
-  if(_diiHas("dsName",f.dsName))ls.push(`    <S100:datasetFileIdentifier>${_xmlEsc(f.dsName||(f.dsId||"DS.001")+".gml")}</S100:datasetFileIdentifier>`);
+  /* the identifier is the file's own name (S-100 Part 10b Table 10b-4, s100_ed5_2_0_full.txt L33041-33048): a set one is
+     written as held (an imported value is kept, Rule 25); with none set, the S-201 PS §11.4 name the File settings build
+     (buildDatasetFilename: agency code, filename stem, edition) - the former "<gml:id>.gml" default was a name §11.4
+     does not allow, which S201-DII-04 now reports */
+  if(_diiHas("dsName",f.dsName))ls.push(`    <S100:datasetFileIdentifier>${_xmlEsc(f.dsName||buildDatasetFilename(f))}</S100:datasetFileIdentifier>`);
   if(_diiHas("dsTitle",f.dsTitle))ls.push(`    <S100:datasetTitle>${_xmlEsc(f.dsTitle||f.dsName||"S-201 AtoN Dataset")}</S100:datasetTitle>`);
   /* deterministic Unix-epoch placeholder `1970-01-01` when `f.dsDate` is unset — a today's-date fallback would violate Rule 18 (Determinism guarantee): identical input producing different output across days. The epoch date is unambiguously "uninitialized", so the user sees it and sets Reference date in the Builder's File settings. The parser handles a missing field gracefully. */
   if(_diiHas("dsDate",f.dsDate))ls.push(`    <S100:datasetReferenceDate>${_xmlEsc(f.dsDate||"1970-01-01")}</S100:datasetReferenceDate>`);
@@ -12346,7 +12539,7 @@ function validateExchangeSet(ctx){
     /* dataset filename shape per S-201 PS §11.4: 201 + CCCC agency + XXXXXXXX producer field + _EEE edition + .GML.
        Validated by SHAPE only — the EEE↔editionNumber cross-check is deliberately absent (see the header comment). */
     const dsNames=[...new Set([...ctx.declaredDatasets.map(d=>d.fileName).filter(Boolean),...ctx.datasetEntries.map(e=>e.name)])].map(n=>String(n).split("/").pop());
-    const bad=[...new Set(dsNames.filter(n=>!/^201[A-Z0-9]{4}[A-Z0-9_]{8}_\d{3}\.(GML|gml)$/.test(n)))];
+    const bad=[...new Set(dsNames.filter(n=>!_S201_FILE_NAME.test(n)))];   /* the one §11.4 pattern, shared with S201-DII-04 and the names the app builds (Rule 23) */
     push("S158-PKG-15","critical","S-158:100 checks 100_0303 (C) + 100_0284 (E) Collection A (PS §6.2) — dev/pdf-extracts/s158_100_checks_table.txt L318 + L299; S-201 PS 2.0.0 §11.4 (s201_ps_2_0_0_main_full.txt L1135-1159)",
       !bad.length?(dsNames.length?"All "+dsNames.length+" dataset filename(s) match the §11.4 convention 201CCCCXXXXXXXX_EEE.GML.":"No dataset files to check (see S201-ES-04).")
         :"Dataset filename(s) do not match the S-201 PS §11.4 convention 201CCCCXXXXXXXX_EEE.GML (201 + 4-char IHO S-62 agency code + 8 producer characters from A-Z 0-9 _ + _ + 3-digit edition field + .GML/.gml): "+lst(bad)+".",
@@ -12702,6 +12895,9 @@ function downloadExchangeSet(rawGmlText){
       ?`Issue time "${_itRaw}" is not a valid S-100 Time (expected HH:MM:SSZ or HH:MM:SS±hh:mm) — CATALOG.XML will carry the placeholder 00:00:00Z instead (S-201 PS 2.0.0 §12.2.3 makes issueTime mandatory in the Exchange Set metadata).`
       :`Issue time is not set — CATALOG.XML will carry the placeholder 00:00:00Z (S-201 PS 2.0.0 §12.2.3 makes issueTime MANDATORY in the Exchange Set discovery metadata; optional in generic S-100).`);
     if(!_agRaw||_agRaw==="XX00")_gaps.push(`Producer agency code is not set — the dataset filename and CATALOG.XML producerCode will carry the "XX00" placeholder (IHO S-62 producer code, S-201 PS 2.0.0 §11.4).`);
+    /* the dataset is copied into the set as validated (Rule 10), so an identifier that is not the entry's own name is
+       named here: S-100 Part 10b Table 10b-4 makes datasetFileIdentifier the file name with its extension */
+    {const _idn=first.dsName==null?"":String(first.dsName).trim(),_fn=buildDatasetFilename(first);if(_idn&&_idn!==_fn)_gaps.push(`The dataset's datasetFileIdentifier "${_idn}" is not the name it is delivered under, ${_fn} — S-100 Part 10b Table 10b-4 makes the identifier the file's own name. Clear the Dataset file identifier in the Builder's ⚙ File settings (the agency code, filename stem and edition then name it), or apply the S201-DII-04 fix in the Validator.`);}
     /* the dataset's own identification values the catalogue and the ISO metadata repeat — each mandatory (1) in the
        dataset per S-100 Ed 5.2.0 Part 10b Table 10b-4 (datasetReferenceDate s100_ed5_2_0_full.txt L33057-33060,
        datasetLanguage L33073-33076, datasetPurpose L33102-33105): a value the dataset does not have is written there as
@@ -15252,7 +15448,7 @@ function bld3LegendRefresh(){
    cites the bundled IALA source that does define the term (Synthetic AIS — R0143 Ed 2.0 §3.1, dev/pdf-extracts/
    r0143_ed2_0_full.txt L260-268) or names only what the form records (PowerSource, CounterWeight) — Rule 8. Lit aids'
    flare colour follows the app's own Annex D portrayal (see the LightAllAround entry). */
-const _BEQ_WHY={LightAllAround:"Does it light up at night? Lit aids are drawn with a small light flare on charts — coloured for red, green, white or yellow lights, magenta otherwise.",/* flare colour per the bundled Annex D Lights.xsl L33-53 (colour 3 red → LIGHTS11, 4 green → LIGHTS12, 1 white / 6 yellow / 11 orange → LIGHTS13, anything else → LITDEF11 chart magenta) — the mapping the app's own preview follows (SYMBOL_RULES) */LightSectored:"Shows different colours toward different directions?",Topmark:"Does it wear a shape on top? Topmarks make marks recognisable at a distance.",FogSignal:"Does it make a sound in fog (horn, bell, whistle)?",RadarTransponderBeacon:"Answers a ship's radar with a Morse reply (racon)?",RadarReflector:"Carries a passive reflector so it shows up better on radar?",Retroreflector:"Reflective strips so torchlight picks it out at night?",Daymark:"A daytime board or shape that makes it easier to spot?",PowerSource:"Record what powers it (solar, battery, mains)?",RadioStation:"Transmits a radio signal?",
+const _BEQ_WHY={LightAllAround:"Does it light up at night? Lit aids are drawn with a small light flare on charts — coloured for red, green, white or yellow lights, magenta otherwise.",/* flare colour per the bundled Annex D Lights.xsl L33-53 (colour 3 red → LIGHTS11, 4 green → LIGHTS12, 1 white / 6 yellow / 11 orange → LIGHTS13, anything else → LITDEF11 chart magenta) — the mapping the app's own preview follows (SYMBOL_RULES) */LightSectored:"Shows different colours toward different directions?",Topmark:"Does it wear a shape on top? Topmarks make marks recognisable at a distance.",FogSignal:"Does it make a sound in fog (horn, bell, whistle)?",RadarTransponderBeacon:"Answers a ship's radar with a Morse reply (racon)?",RadarReflector:"Carries a passive reflector so it shows up better on radar? On a buoy, beacon or other point mark S-201 says this with the Radar conspicuous box (Status section), not a separate Radar Reflector feature (DCEG §8.8.1) - so this row is offered for a Landmark drawn as a curve, or keeps a reflector that came in from a file.",Retroreflector:"Reflective strips so torchlight picks it out at night?",Daymark:"A daytime board or shape that makes it easier to spot?",PowerSource:"Record what powers it (solar, battery, mains)?",RadioStation:"Transmits a radio signal?",
   LightAirObstruction:"Carries a light that warns AIRCRAFT of the structure? (FC 2.0.0 L12323: a light marking an obstacle which constitutes a danger to air navigation.)",
   LightFogDetector:"Carries a fog-detector light — one that senses visibility and switches a sound signal on or off? (FC 2.0.0 L12395.)",
   EnvironmentObservationEquipment:"Carries a sensor that observes the environment — the FC's own examples are an anemometer or a fog monitor? (FC 2.0.0 L12703: a sensor used to observe the environment; L4054 for the examples.)",
@@ -15910,7 +16106,7 @@ const _BFIELD_HELP={
   "feature name":"A name for this feature (and its language) — usually the same as the Name above.",
   "geometry type":"Whether this feature is a point, a line or an area. A single aid is normally a point.",
   // — Dataset / producer (advanced, set once for the whole file) —
-  "dataset name":"<b>Advanced.</b> A short machine-name for the file. Set once.",
+  "#bDsName":"<b>Advanced.</b> The file's own name, <span class='eg'>201CCCCXXXXXXXX_EEE.GML</span> (S-201 PS §11.4). Leave it empty: the agency code, filename stem and edition below name the file. A typed value is written as typed.",
   "dataset abstract":"<b>Advanced.</b> A one-line summary of the file. Optional.",
   "reference date":"<b>Advanced.</b> The date the dataset applies from <span class='eg'>(YYYY-MM-DD)</span>.",
   "language":"<b>Advanced.</b> The language of the text, as a 3-letter code <span class='eg'>(eng = English)</span>.",
@@ -17263,7 +17459,12 @@ function builderUp(){
    /* the beacon group has its OWN "Visual Prominence" select (bVisP → feat.visualProminence, which the generator
       emits first), so the universal bVisPromAll is a duplicate whose edits the generator silently ignores. Hide it for the
       beacon group; struct/other groups still use bVisPromAll as their primary control. */
-   {const _vpFld=(document.getElementById("bVisPromAll")||{}).closest?document.getElementById("bVisPromAll").closest(".field"):null;if(_vpFld)_vpFld.classList.toggle("hidden",group==="beacon"||!_bindsVisualProminence(ft));}/* the universal Visual Prominence control: shown ⇔ collected ⇔ emitted — hidden (and collected null, below) wherever _bindsVisualProminence(ft) is false (the generator's own emit gate; FC binds visualProminence on GenericBeacon + the listed struct types only) or the group is beacon (beacons author it through their own bVisP, so a hidden universal copy could otherwise outlive a cleared bVisP — Rule 15 display/data equivalence). */
+   {const _vpFld=(document.getElementById("bVisPromAll")||{}).closest?document.getElementById("bVisPromAll").closest(".field"):null;if(_vpFld)_vpFld.classList.toggle("hidden",group==="beacon"||!_bindsVisualProminence(ft));}
+   /* the Radar Reflector equipment row: on a point or surface host the FC lets say radarConspicuous, the DCEG wants that
+      attribute and no RadarReflector feature (dceg_annex_a.txt L435-436; §8.8.1 L8019-8021), so the row is hidden there -
+      unless the stack already carries one (from a file: what a file holds stays visible and editable, Rule 25); a
+      Landmark drawn as a curve, and the types that bind no radarConspicuous (Pile, Bridge, Building, ...), keep the row */
+   {const _rrLbl=document.querySelector('label.tree-toggle-label[data-eqt="RadarReflector"]'),_rrNode=_rrLbl?_rrLbl.closest(".tree-node"):null;if(_rrNode)_rrNode.classList.toggle("hidden",_bindsRadarConspicuous(ft)&&_gtSel().value!=="curve"&&_compInstancesOf("RadarReflector").length===0);}/* the universal Visual Prominence control: shown ⇔ collected ⇔ emitted — hidden (and collected null, below) wherever _bindsVisualProminence(ft) is false (the generator's own emit gate; FC binds visualProminence on GenericBeacon + the listed struct types only) or the group is beacon (beacons author it through their own bVisP, so a hidden universal copy could otherwise outlive a cleared bVisP — Rule 15 display/data equivalence). */
    _toggleEss("bLC",ft==="LightAllAround"||ft==="LightAirObstruction"||ft==="LightFogDetector");
    _toggleEss("bCol",ft==="LightAllAround"||ft==="LightSectored");
    _toggleEss("bTmS",ft==="Topmark"||ft==="Daymark");
@@ -17360,6 +17561,8 @@ function builderUp(){
     var _rc=compStack.find(function(c){return c.type==="RadarTransponderBeacon";});
     if(_rc)feat.racon={code:_rc.fields.rtbSignalGroup||_rc.fields.code||""};/* rtbSignalGroup is the authored/carried key (FC signalGroup 13467-13473); .code is the legacy fallback (Rule 4) */
     if(compStack.some(function(c){return c.type==="RadarReflector";}))feat.radarReflector=true;
+    /* the file name the File settings build (S-201 PS §11.4), shown as the identifier field's placeholder: what the generator writes when the field is empty */
+    {const _dsn=document.getElementById("bDsName");if(_dsn)_dsn.placeholder=buildDatasetFilename(feat);}
   }
   /* ── AtoN Management fields (IALA AtoNs domain) — collected for buoy/beacon/struct ── */
   if(group==="buoy"||group==="beacon"||group==="struct"){
@@ -20212,8 +20415,9 @@ const _S125_FILE_NAME=/^125[A-Z0-9]{4}[A-Z0-9_]{1,10}\.GML$/;
    form (201 + four + up to ten); otherwise nothing is guessed, nothing is written, and the user types the name (planner,
    room #2374: a producer code is never invented, Rule 8) */
 function _s125SuggestName(s201Text){
-  const m=String(s201Text).match(/<(?:\w+:)?datasetFileIdentifier>\s*201([A-Z0-9]{4})([A-Z0-9_]{1,10})/);
-  return m?"125"+m[1]+m[2]+".GML":"";
+  const m=String(s201Text).match(/<(?:\w+:)?datasetFileIdentifier>\s*201([A-Z0-9]{4})([A-Z0-9_]{1,12})/);
+  /* the producer's own part without the S-201 edition field (_EEE, S-201 PS §11.4), which S-125's name does not carry; at most the ten characters the S-125 form admits */
+  return m?"125"+m[1]+m[2].replace(/_[0-9]{3}$/,"").slice(0,10)+".GML":"";
 }
 
 /* the click: converts the dataset in the text area and writes the S-125 file and its report at once under the name
@@ -20367,6 +20571,20 @@ function _s125Download(text,name,type){
   /* the link and the object URL released once the download has started */
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},100);
 }
+/* the name a loose dataset file is written under: its own datasetFileIdentifier when the text declares one (S-100
+   Part 10b Table 10b-4: the identifier IS the file name with its extension), else the dataset gml:id with ".gml" as
+   before, else "dataset.gml"; characters a file name cannot carry become "_", and a name without an extension gets
+   ".gml". A non-§11.4 identifier is still used as the name - the text is written as validated (Rule 25) and
+   S201-DII-04 names the fault; its fix renames both at once. Shared by the Validator and Excel downloads (Rule 23). */
+function _datasetDownloadName(text){
+  const t=String(text||"");
+  const idm=t.match(/<(?:\w+:)?datasetFileIdentifier>\s*([^<]+?)\s*</);
+  const gm=t.match(/<(?:\w+:)?Dataset\b[^>]*\bgml:id="([^"]+)"/);
+  let n=idm?idm[1]:((gm?gm[1]:"dataset")+".gml");
+  /* a file-safe name, with an extension */
+  n=n.replace(/[^A-Za-z0-9_.-]/g,"_");
+  return /\.[A-Za-z0-9]+$/.test(n)?n:n+".gml";
+}
 /* validator-tab download helpers. A dataset must be downloadable right after validating: these two functions let a user who is validating externally-generated or pasted GML download the artefacts directly from the Validator tab (without going through the Builder first). Wired to the two buttons in the Validator btn-row (grep `downloadGMLFromVal()` / `downloadExchangeSetFromVal()` in the markup). Both gate on _ensureValInFresh FIRST — on an accepted refresh the gate rewrites valIn in place, so the verbatim valIn read below then ships the refreshed text (the download-equality invariant is preserved: download === textarea, always). */
 function downloadGMLFromVal(){
   if(!_ensureValInFresh())return;
@@ -20376,10 +20594,8 @@ function downloadGMLFromVal(){
   const u=URL.createObjectURL(b);
   const a=document.createElement("a");
   a.href=u;
-  /* Pick a reasonable filename from the dataset gml:id in the GML, falling back to "dataset.gml" — S-201 PS §11.4 filenames should ideally have the 201CCCCXXXXXXXX_EEE.GML form, but here we preserve whatever the user pasted. */
-  const m=t.match(/<Dataset[^>]*gml:id="([^"]+)"/);
-  const id=m?m[1]:"dataset";
-  a.download=id.replace(/[^A-Za-z0-9_.-]/g,"_")+".gml";
+  /* written under its own identifier (Table 10b-4), the text itself as validated - see _datasetDownloadName */
+  a.download=_datasetDownloadName(t);
   document.body.appendChild(a);a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},100);
   /* Delivery-integrity note: the Blob above serializes `t` as UTF-8, so digesting the same encoding describes the
@@ -22568,10 +22784,13 @@ function _impConvert(){
    from the Validator tab. Returns counts per severity plus the parsed feature count. */
 function _impReadback(gml){
   const counts={critical:0,error:0,warning:0,info:0};
-  let parsedN=0,master=null;
+  let parsedN=0,master=null,coverageGaps=[];
   try{
     const struct=_structOrReuse(gml);
     struct.forEach(r=>{if(r&&r.pass===false&&counts[r.s]!=null)counts[r.s]++;});
+    /* the two dataset-level coverage checks (GML-STR-26 / -27, S-201 PS §10.11 / §10.13) are counted above and told
+       apart here: a sheet holds no coverage surface, so the conversion report names them as the surfaces to author */
+    coverageGaps=struct.filter(r=>r&&r.pass===false&&(r.id==="GML-STR-26"||r.id==="GML-STR-27")).map(r=>r.id);
     const wf=(struct.find(r=>r.id==="GML-STR-01")||{}).pass;
     if(wf){
       const parsed=_parseOrReuse(gml);
@@ -22588,7 +22807,7 @@ function _impReadback(gml){
       }
     }
   }catch(e){counts.error++;}
-  return{counts,parsedN,master};
+  return{counts,parsedN,master,coverageGaps};
 }
 /* ── Required-field checklist — what the FC makes mandatory for the aids this sheet contains, and whether the
    current mapping (columns, fixed values, switches) covers it. Column-level guidance rendered BEFORE conversion;
@@ -22964,8 +23183,10 @@ function impConvert(){
   let gml="";
   /* written with its omissions recorded: each complex attribute the GML leaves out is a note in the report (Rule 25) */
   if(feats.length){try{const _gd=_genDisclosed(()=>generateAllGML(feats));gml=_gd.text;_gd.omitted.forEach(o=>report.notes.push("Not written, incomplete: "+_genOmitLine(o)));}catch(e){report.notes.push("GML generation failed: "+((e&&e.message)||e));}}
-  const rb=gml?_impReadback(gml):{counts:{critical:0,error:0,warning:0,info:0},parsedN:0};
-  st.result={feats,gml,report,counts:rb.counts,parsedN:rb.parsedN,master:rb.master||null};
+  const rb=gml?_impReadback(gml):{counts:{critical:0,error:0,warning:0,info:0},parsedN:0,coverageGaps:[]};
+  /* the coverage surfaces no sheet carries, named once: the readback's dataset-level critical findings are these */
+  if(rb.coverageGaps&&rb.coverageGaps.length)report.notes.push("No coverage surfaces: a sheet holds no DataCoverage or QualityOfNonBathymetricData feature, which S-201 PS 2.0.0 §10.11 and §10.13 require of every dataset - the readback's "+rb.coverageGaps.length+" dataset-level critical finding(s) ("+rb.coverageGaps.join(", ")+") are these; author both surfaces in the Builder after loading the dataset.");
+  st.result={feats,gml,report,counts:rb.counts,parsedN:rb.parsedN,master:rb.master||null,coverageGaps:rb.coverageGaps||[]};
   _impRenderResult();
   return st.result;
 }
@@ -23173,8 +23394,8 @@ function impDownloadGml(){
   const u=URL.createObjectURL(b);
   const a=document.createElement("a");
   a.href=u;
-  const m=gml.match(/<Dataset[^>]*gml:id="([^"]+)"/);
-  a.download=((m?m[1]:"dataset").replace(/[^A-Za-z0-9_.-]/g,"_"))+".gml";
+  /* written under its own identifier (Table 10b-4) - see _datasetDownloadName */
+  a.download=_datasetDownloadName(gml);
   document.body.appendChild(a);a.click();
   setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(u);},100);
   const ib=new TextEncoder().encode(gml);
@@ -25101,7 +25322,10 @@ const _DOC_NOFIX={
   "GML-STR-25":"Which of the >10 ordered signal groups to drop is an authoring decision about the light's rhythm — remove the surplus in the source so the values you keep are the ones you meant.",
   "GML-STR-21":"Which CRS the coordinates are really in is a fact about your data — declare the true srsName; guessing one could silently mislocate every position.",
   "GML-STR-22":"Reorder the dataset's top-level blocks by cut-and-paste so they read gml:boundedBy (if present) → S100:DatasetIdentificationInformation → any root-level S100 geometry → <members>, and move a feature or block that sits outside that order into <members> or out of the dataset — an automatic reorder would have to move whole blocks it cannot verify belong at root level.",
-  "GML-STR-23":"Which side of the 180° meridian each aid belongs to — and how to divide the data — is an authoring decision no tool can make: split the features into one dataset per side, or correct a longitude typed with the wrong sign (e.g. -179.9 for 179.9) and the envelope corner order, then regenerate."
+  /* the texts of the data-extent and coverage checks: each is a producer's decision about the data, not a text fix */
+  "GML-STR-23":"Which side of the 180° meridian each aid belongs to — and how to divide the data — is an authoring decision no tool can make: split the features into one dataset per side, or correct a longitude typed with the wrong sign (e.g. -179.9 for 179.9) and the envelope corner order, then regenerate.",
+  "GML-STR-26":"The coverage is the producer's statement of where the data applies - draw it: add a Data Coverage feature in the Builder (a surface around the aids, with the maximum and minimum display scales the FC makes mandatory), then regenerate.",
+  "GML-STR-27":"The positional quality is the producer's statement about the data - add a Quality of Non-Bathymetric Data feature in the Builder (a surface around the aids, with its category of temporal variation and horizontal position uncertainty), then regenerate.",
 };
 Object.setPrototypeOf(_DOC_NOFIX,null);   /* prototype-safe: indexed with a computed key */
 function applyDocFix(ruleId){
@@ -25260,6 +25484,9 @@ function renderAllVal(){
       toastMsg=`✓ <strong>Removed ${_escHtml(t.count)} one-sided &lt;child&gt; link(s)</strong> from feature ${_escHtml(t.who||"#"+t.featIdx)}: ${_escHtml(t.value)}. Links whose target carries a matching &lt;parent&gt; back-link were kept.`;
     }else if(t.kind==='compound'){
       toastMsg=`✓ <strong>Applied preset</strong> (${_escHtml(t.field)}) to feature ${_escHtml(t.who||"#"+t.featIdx)}.`;
+    }else if(t.kind==='foldChild'){
+      /* the fold receipt (S201-REL-05): what was written on the feature and which child feature(s) left with it */
+      toastMsg=`✓ <strong>Set ${_escHtml(t.field)}</strong> on feature ${_escHtml(t.who||"#"+t.featIdx)} and removed ${_escHtml(t.count)} ${_escHtml(t.child)} feature(s)${t.value?": "+_escHtml(t.value):""}.`;
     }else if(t.kind==='snapshot'){
       /* snapshot confirmation. errCount / warnCount / voidCount are integer counts (Number.toString-clean), but escaped like every other value. */
       toastMsg=`<strong>Snapshot saved</strong> — current state captured (${_escHtml(t.errCount)} errors, ${_escHtml(t.warnCount)} warnings${t.voidCount?", "+_escHtml(t.voidCount)+" voids":""}). Edit the GML and re-run validation, then click <strong>Compare to snapshot</strong> to see what changed.`;
@@ -25440,6 +25667,13 @@ function renderAllVal(){
         }else if(r.fix.kind==="refPrune"){
           /* refPrune-fix UI (S201-REL-04) — button-only like rewrite/removal, but the executor removes ONLY the one-sided forward links (recomputed at apply time), never the symmetric ones — the whole reason this is not kind:"removal" (which deletes ALL same-named elements). */
           fixHtml=`<div class="quick-fix"><label>${lbl}</label><span style="flex:1;font-size:11px;color:var(--muted)">Removes only the &lt;${fld}&gt; link(s) whose target lacks a &lt;parent&gt; back-link — links paired both ways are kept. (To keep a link instead, author the back-link on the target feature in the Builder.)</span><button type="button" class="qfix-btn" onclick="applyQuickFix(${vi},'${r.id}')" style="background:#D9534F">Remove dangling link(s)</button></div>`;
+        }else if(r.fix.kind==="foldChild"){
+          /* foldChild-fix UI (S201-REL-05) - button-only: the executor writes the preset on THIS feature and removes the
+             linked child feature(s) of the named type with their links; the children are previewed from the parsed
+             model so the user sees what goes before the click */
+          const _fcKids=_linkedChildrenOfType(lastValAll[vi].feat,lastValAll.map(v=>v.feat),r.fix.childType).map(c=>"#"+_escHtml(c.gmlId||"?"));
+          const _fcPreset=(r.fix.fields||[]).map(p=>`&lt;${_escHtml(p.field)}&gt;${_escHtml(String(p.value))}&lt;/${_escHtml(p.field)}&gt;`).join(" ");
+          fixHtml=`<div class="quick-fix"><label>${lbl}</label><span style="flex:1;font-size:11px;color:var(--muted)">Writes ${_fcPreset} on this feature and removes its linked &lt;${_escHtml(r.fix.childType)}&gt; feature(s) ${_fcKids.join(", ")||"(the legacy shorthand element)"} with their links.</span><button type="button" class="qfix-btn" onclick="applyQuickFix(${vi},'${r.id}')">Apply fix</button></div>`;
         }else if(r.fix.kind==="rewrite"){
           /* rewrite-fix UI — no input; the button canonicalizes EXISTING offending values in place (never creates elements). */
           fixHtml=`<div class="quick-fix"><label>${lbl}</label><span style="flex:1;font-size:11px;color:var(--muted)">Rewrites the flagged numeric value(s) on this feature to the canonical decimal form.</span><button type="button" class="qfix-btn" onclick="applyQuickFix(${vi},'${r.id}')">Rewrite</button></div>`;
@@ -26092,6 +26326,25 @@ function validateGMLStructure(text){
   }
   push("GML-STR-25","critical","S-201 FC 2.0.0 signalGroup multiplicity 0..10 per wrapper (FC XML lines 9118-9124 inside rhythmOfLight; lines 9192-9198 inside sectorCharacteristics)",_sgOverfull.length===0?"Every <rhythmOfLight> / <sectorCharacteristics> holds at most 10 <signalGroup> children":"wrapper(s) exceed the FC 2.0.0 signalGroup 0..10 bound: "+_sgOverfull.join(", ")+" — FC binds signalGroup to at most 10 ordered values per wrapper. Remove the surplus; every value read is preserved and re-emitted, so none of them is being dropped silently.",_sgOverfull.length===0,_sgOverfull.length?_lineAt(text.indexOf("signalGroup")):null);
 
+  /* ── GML-STR-26 / GML-STR-27: the dataset's coverage meta features. S-201 PS 2.0.0 §10.11 "All areas of a dataset
+     must be covered by a DataCoverage meta feature." (s201_ps_2_0_0_main_full.txt L991-992; §4.7 L728-729: the
+     discovery metadata lists every DataCoverage of the dataset) and §10.13 "One or more QualityOfNonBathymetricData
+     features must cover the dataset." (L998-999). A dataset without one of the kind cannot be covered by it, whatever
+     its features: one finding per dataset here; the per-feature S201-COV-01 / -02 judge each feature's position
+     against the surfaces that exist. The members are found as the parser finds them (_findFeatures, the set RULES[]
+     runs over), so a coverage feature in a legacy wrapper or an alternate namespace counts. Severity: a PS "must" on
+     the dataset, the tier of the DataCoverage's own mandatory attributes (S201-FEA-11, S-158 C). The locus is the
+     <members> wrapper, where a coverage feature belongs, when the text has one. ── */
+  {
+    const _covFound=_findFeatures(doc,_detectNS(text,doc).ns);
+    const _hasDC=_covFound.some(x=>x.ft==="DataCoverage"),_hasQN=_covFound.some(x=>x.ft==="QualityOfNonBathymetricData");
+    const _covLine=_lineAt(text.search(/<(?:\w+:)?members[\s>]/));
+    /* one finding per kind, at the members' line when it is missing */
+    push("GML-STR-26","critical","S-201 PS 2.0.0 §10.11 Data coverage - \"All areas of a dataset must be covered by a DataCoverage meta feature.\" (dev/pdf-extracts/s201_ps_2_0_0_main_full.txt L991-992); §4.7 Dataset rules (L728-729)",_hasDC?"The dataset holds a DataCoverage meta feature (S-201 PS §10.11)":"The dataset holds no DataCoverage meta feature - S-201 PS 2.0.0 §10.11 requires all areas of a dataset to be covered by one. Author a Data Coverage feature (a surface drawn around the data, with its maximum and minimum display scales) in the Builder, or add a <DataCoverage> member to the file.",_hasDC,_hasDC?null:_covLine);
+    push("GML-STR-27","critical","S-201 PS 2.0.0 §10.13 Data quality - \"One or more QualityOfNonBathymetricData features must cover the dataset.\" (dev/pdf-extracts/s201_ps_2_0_0_main_full.txt L998-999)",_hasQN?"The dataset holds a QualityOfNonBathymetricData feature (S-201 PS §10.13)":"The dataset holds no QualityOfNonBathymetricData feature - S-201 PS 2.0.0 §10.13 requires one or more to cover the dataset. Author a Quality of Non-Bathymetric Data feature (a surface drawn around the data, with its category of temporal variation and horizontal position uncertainty) in the Builder, or add a <QualityOfNonBathymetricData> member to the file.",_hasQN,_hasQN?null:_covLine);
+  }
+
+  /* every structural finding, in push order */
   return results;
 }
 
@@ -26210,6 +26463,12 @@ function applyQuickFix(featIdx,ruleId,mode){
     /* a target the FC gives one parent, whose only parent this link is (_featParentsOf counts both ends): it has none after */
     const _pLast=d=>{const t=_pAll.find(x=>x&&x!==_pF&&x.gmlId&&String(x.gmlId).replace(/^#/,"")===d);if(!t||!_EQP_PARENT_TYPES.includes(t.featureType))return false;const ps=_featParentsOf(t,_pAll);return ps.length===1&&ps[0].feat===_pF;};
     if(!confirm(`Remove ${_pDang.length} one-sided <${fx.field}> link(s) from feature #${featIdx+1}?\n\n${_pDang.map(d=>"  • #"+d+(_pLast(d)?" — the only link to its parent: it would have none (give it a <parent> back-link in the Builder instead)":"")).join("\n")||"  (recomputed at apply time)"}\n\nOnly links whose target carries NO matching <parent> back-link are removed — links paired both ways are kept. Click OK to proceed.`))return;
+  }else if(fx.kind==="foldChild"){
+    /* foldChild-fix kind (S201-REL-05): the confirm previews, from the parsed model, the child feature(s) the click
+       removes and the preset it writes on this feature; the execution arm below resolves them again in the live DOM */
+    const _pf=lastValAll[featIdx].feat,_pk=_linkedChildrenOfType(_pf,lastValAll.map(v=>v.feat),fx.childType).map(c=>"#"+(c.gmlId||"?"));
+    const _pp=(fx.fields||[]).map(p=>`  <${p.field}>${p.value}</${p.field}>`).join("\n");
+    if(!confirm(`Apply this fix to feature #${featIdx+1}?\n\nWrites on this feature:\n${_pp}\n\nRemoves the linked ${fx.childType} feature(s) ${_pk.join(", ")||"(the legacy <radarReflector> shorthand)"} and their links.\n\nClick OK to proceed.`))return;
   }else if(fx.kind==="rewrite"){
     /* rewrite-fix kind: nothing to read or confirm here — the quick-fix UI renders only a button (no fix-<idx>-<ruleId>
        input), and the execution branch below canonicalizes the offending values in place (S-158:100 check 100_0006),
@@ -26232,6 +26491,9 @@ function applyQuickFix(featIdx,ruleId,mode){
     if(!value){alert("Please enter a value before clicking Apply fix.");inputEl.focus();return;}
     /* a code point XML 1.0 cannot carry (_XML_ILLEGAL) would leave the dataset not well-formed: refused, named */
     {const cps=_xmlIllegalIn(value);if(cps.length){alert("The value holds "+(cps.length>1?"characters":"a character")+" XML 1.0 cannot carry ("+_cpNames(cps)+"), so no S-201 file could hold "+(cps.length>1?"them":"it")+". Remove "+(cps.length>1?"them":"it")+" and apply the fix again.");inputEl.focus();return;}}
+    /* a fix that names the form its value must take (fix.pattern, a regular expression over the whole value) refuses one
+       of another form here, naming the form, instead of writing a value the rule would report again */
+    if(fx.pattern&&!new RegExp(fx.pattern).test(value)){alert(`"${value}" does not have the form this element needs${fx.placeholder?" ("+fx.placeholder+")":""}. Correct it and apply the fix again.`);inputEl.focus();return;}
     if(fx.inputType==="number"){
       const n=parseFloat(value);
       if(!isFinite(n)){alert("Please enter a valid number.");inputEl.focus();return;}
@@ -26422,6 +26684,28 @@ function applyQuickFix(featIdx,ruleId,mode){
         _qfEnum(featEl,t,p.field,pv);   /* FC-canonical: Title-Case + split a multi-value enum (e.g. colour 'red/white') into separate elements */
       }
     });
+  }else if(fx.kind==="foldChild"){
+    /* foldChild execution (S201-REL-05): the linked child feature(s) of fx.childType go, with the links that bound them
+       to this feature, and the preset is written on this feature. The children are resolved in the live DOM from both
+       ends of the association - this feature's <child> / <component> links whose target is a member of the type, and
+       the members of the type whose <parent> / <buoyPart> link names this feature - the same two ends the predicate's
+       _linkedChildrenOfType reads in the parsed model. */
+    /* this feature's id, a member's id and a link's target, read as the parser reads them */
+    const _myId=featEl.getAttribute("gml:id")||featEl.getAttributeNS(GML_NS,"id")||"";
+    const _idOf=e=>e.getAttribute("gml:id")||e.getAttributeNS(GML_NS,"id")||"";   /* a member's gml:id, either way it is written */
+    const _hrefOf=c=>(c.getAttributeNS(XLINK_NS,"href")||c.getAttribute("xlink:href")||c.getAttribute("href")||"").replace(/^#/,"");   /* a link's target without its "#" */
+    /* the forward links on this feature, and the members of the type they reach or that reach back */
+    const _fwd=[...featEl.children].filter(c=>c.localName==="child"||c.localName==="component");
+    const _fwdIds=new Set(_fwd.map(_hrefOf));
+    const _kids=featureEls.filter(e=>e!==featEl&&e.localName===fx.childType&&(_fwdIds.has(_idOf(e))||[...e.children].some(c=>(c.localName==="parent"||c.localName==="buoyPart")&&_hrefOf(c)===_myId)));
+    /* the flat legacy shorthand element on this feature, which the parser reads as the same reflector (Rule 4) */
+    const _flat=[...featEl.children].filter(c=>c.localName==="radarReflector");
+    if(!_kids.length&&!_flat.length){alert(`No ${fx.childType} feature linked to feature #${featIdx+1} was found in the text (re-run validation; the link may have been edited since).`);return;}
+    /* each child member leaves together with the links on this feature that pointed at it */
+    _kids.forEach(k=>{const kid=_idOf(k);_fwd.filter(c=>_hrefOf(c)===kid).forEach(c=>featEl.removeChild(c));if(k.parentNode)k.parentNode.removeChild(k);prunedIds.push(kid||"?");});
+    _flat.forEach(c=>featEl.removeChild(c));
+    /* the preset, written verbatim: radarConspicuous is an xs:boolean, whose lexical value is not Title-Cased */
+    fx.fields.forEach(p=>{let t=findChild(featEl,p.field);if(!t)t=_qfInsertProperty(featEl,doc.createElementNS(ns,p.field));if(t.hasAttribute("nilReason"))t.removeAttribute("nilReason");t.textContent=String(p.value);});
   }else if(fx.target==="dii"){
     /* dii-target execution — the finding is DATASET-level: the predicate reads f.dsPurpose etc., which the parser's
        _readDII takes from the <S100:DatasetIdentificationInformation> block (S-100 Ed.5.2.0 Pt 10b §11.6.1 Table
@@ -26482,6 +26766,9 @@ function applyQuickFix(featIdx,ruleId,mode){
     _lastQfToast={kind:"refPrune",field:fx.field,value:prunedIds.map(x=>"#"+x).join(", "),count:prunedIds.length,featIdx:featIdx+1};
   }else if(fx.kind==="compound"){
     _lastQfToast={kind:"compound",field:fx.label||(fx.fields&&fx.fields.map(p=>p.field).join("+"))||"preset",featIdx:featIdx+1};
+  /* the fold receipt: the preset written and the child feature(s) that left */
+  }else if(fx.kind==="foldChild"){
+    _lastQfToast={kind:"foldChild",field:(fx.fields||[]).map(p=>p.field+" = "+p.value).join(", "),value:prunedIds.map(x=>"#"+x).join(", "),count:prunedIds.length,child:fx.childType,featIdx:featIdx+1};
   }else if(fx.kind==="rewrite"){
     _lastQfToast={kind:"value",field:"numeric format",value:"canonical decimal form",featIdx:featIdx+1};
   }else{
@@ -26496,7 +26783,7 @@ function applyQuickFix(featIdx,ruleId,mode){
   runVal({keepFilter:true});
 }
 
-/* ════════════════════════════════════════════════════════════════════════ VALIDATION ENTRY POINT — runVal ════════════════════════════════════════════════════════════════════════ The Validator tab's primary action handler. Wired to the "Run validation" button in the Validator tab markup (grep `onclick="runVal()"`). ⚠️ Before changing this function, you MUST understand: 1. The RULES array above (grep `^const RULES=`) — the 219 per-feature rules that get executed here, organised by spec source. Each rule is a self-contained {id, ref, s, t, m} declaration. 2. The parseAllGML pipeline above — what shapes the feature objects are in by the time runVal sees them. 3. The _compLight, _compTopmark, _compParent helpers — used by cross-feature rules (R0106 retroreflector, R1001 lateral light, etc.) to walk from a child feature to its parent and back. FLOW: 1. Read the GML text from the <textarea id="valIn"> in the Validator tab. 2. If empty, show the "Paste GML above..." placeholder. Done. 2a. With no self-check verdict held (lastSmokeResults) and no self-check run in flight (_smokeRunning), queue this call behind the self-checks and return: nothing is validated, stamped or painted, and lastValAll / lastStructResults are as they were; the call runs again from step 1 once the verdict is held (_selfChecksFirst). Every other call goes on and leaves its results before it returns. 3. Call parseAllGML(text) to get an array of feature objects. 4. If parseAllGML returns { error: "..." }, show that error. Done. 5. Reset the activeFilter chip to "all" so a fresh run shows every result (a quick-fix re-run passes {keepFilter:true} and keeps the chip the fix was applied under). 6. For EACH feature, run EACH rule, producing per-rule results: { id, ref, s, t, m, pass: true|false } Then aggregate counts: errs, warns, infos, passed. 7. Store the full array of {feat, results, counts} into lastValAll (module-scoped global, used by the filter chips to re-render without re-parsing/re-validating). 8. Call renderAllVal to draw the UI: stat boxes at top, one severity chip row, then the per-feature sections — under a severity chip only the features carrying that tier. PERFORMANCE NOTE: For N features × 219 rules = N*219 rule evaluations per validation run. Most rules are O(1) — they check a property or compare an enum. Cross-feature rules (R0106, R1001 light/topmark) are O(N) per evaluation because they walk the allFeats array. So worst-case is O(N²) for those. With N=1000 features (typical max for a port-area dataset), this is still fast enough (<200ms) for an interactive UI. No need to defer. ERROR ISOLATION: Each rule predicate runs inside a try/catch (see the rule loop body below). A throwing rule emits an `error`-severity finding tagged with the exception text and the offending rule id, but the rest of the validation run continues. New rules SHOULD still use proper guards (`if(!precondition) return true;`) and optional chaining — try/catch is a safety net, not a substitute for clean predicates. USED BY (plain runVal() — resets the severity chip to All): - the "Run validation" and "Use example" buttons (Validator tab) - sendToVal / sendDrawingToVal / impSendToVal (cross-tab handoffs from Builder, Drawing and Excel → S-201) - _refreshValInFromBuilder (Builder → validator sync) - setRegion (re-run on an IALA region switch) - esLoadDataset (Exchange-Set dataset pick) - downloadValReport (freshness re-run before the report). USED BY with {keepFilter:true} (the severity chip the fix was applied under stays selected): - applyQuickFix (both re-validation sites) - applyDocFix ════════════════════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════════ VALIDATION ENTRY POINT — runVal ════════════════════════════════════════════════════════════════════════ The Validator tab's primary action handler. Wired to the "Run validation" button in the Validator tab markup (grep `onclick="runVal()"`). ⚠️ Before changing this function, you MUST understand: 1. The RULES array above (grep `^const RULES=`) — the 224 per-feature rules that get executed here, organised by spec source. Each rule is a self-contained {id, ref, s, t, m} declaration. 2. The parseAllGML pipeline above — what shapes the feature objects are in by the time runVal sees them. 3. The _compLight, _compTopmark, _compParent helpers — used by cross-feature rules (R0106 retroreflector, R1001 lateral light, etc.) to walk from a child feature to its parent and back. FLOW: 1. Read the GML text from the <textarea id="valIn"> in the Validator tab. 2. If empty, show the "Paste GML above..." placeholder. Done. 2a. With no self-check verdict held (lastSmokeResults) and no self-check run in flight (_smokeRunning), queue this call behind the self-checks and return: nothing is validated, stamped or painted, and lastValAll / lastStructResults are as they were; the call runs again from step 1 once the verdict is held (_selfChecksFirst). Every other call goes on and leaves its results before it returns. 3. Call parseAllGML(text) to get an array of feature objects. 4. If parseAllGML returns { error: "..." }, show that error. Done. 5. Reset the activeFilter chip to "all" so a fresh run shows every result (a quick-fix re-run passes {keepFilter:true} and keeps the chip the fix was applied under). 6. For EACH feature, run EACH rule, producing per-rule results: { id, ref, s, t, m, pass: true|false } Then aggregate counts: errs, warns, infos, passed. 7. Store the full array of {feat, results, counts} into lastValAll (module-scoped global, used by the filter chips to re-render without re-parsing/re-validating). 8. Call renderAllVal to draw the UI: stat boxes at top, one severity chip row, then the per-feature sections — under a severity chip only the features carrying that tier. PERFORMANCE NOTE: For N features × 224 rules = N*219 rule evaluations per validation run. Most rules are O(1) — they check a property or compare an enum. Cross-feature rules (R0106, R1001 light/topmark) are O(N) per evaluation because they walk the allFeats array. So worst-case is O(N²) for those. With N=1000 features (typical max for a port-area dataset), this is still fast enough (<200ms) for an interactive UI. No need to defer. ERROR ISOLATION: Each rule predicate runs inside a try/catch (see the rule loop body below). A throwing rule emits an `error`-severity finding tagged with the exception text and the offending rule id, but the rest of the validation run continues. New rules SHOULD still use proper guards (`if(!precondition) return true;`) and optional chaining — try/catch is a safety net, not a substitute for clean predicates. USED BY (plain runVal() — resets the severity chip to All): - the "Run validation" and "Use example" buttons (Validator tab) - sendToVal / sendDrawingToVal / impSendToVal (cross-tab handoffs from Builder, Drawing and Excel → S-201) - _refreshValInFromBuilder (Builder → validator sync) - setRegion (re-run on an IALA region switch) - esLoadDataset (Exchange-Set dataset pick) - downloadValReport (freshness re-run before the report). USED BY with {keepFilter:true} (the severity chip the fix was applied under stays selected): - applyQuickFix (both re-validation sites) - applyDocFix ════════════════════════════════════════════════════════════════════════ */
 /* _datasetRegion: the buoyage region a dataset declares via the FC `marksNavigationalSystemOf` attribute ('IALA A' /
    'IALA B', stored lowercased by the parser `_norm`). Returns 'A' / 'B' / null (no declaration). A mixed A/B dataset
    resolves conservatively to 'B' so the reversed-colour marks are flagged. Used by runVal so the region-sensitive
@@ -26987,6 +27274,10 @@ async function runSmokeTests(){
     return [{name:"Self-checks skipped — the app screens could not be covered while they run",category:"validator",passed:false,detail:_scrimFault+". The self-checks drive the real screens, so they are not run without an effective cover: they would paint internal test fixtures into the results pane, where a reader cannot tell them from real findings."}];
   }
   const tests=[];
+  /* a bundled example without its two coverage surfaces (its DataCoverage and QualityOfNonBathymetricData members,
+     S-201 PS §10.11 / §10.13), for the locks whose fixture is the example's aid alone: its last feature, its one
+     folded parent, its compare pair, its S-125 conversion */
+  const _exNoCov=t=>String(t).replace(/\n\s*<DataCoverage [\s\S]*?<\/DataCoverage>/,"").replace(/\n\s*<QualityOfNonBathymetricData [\s\S]*?<\/QualityOfNonBathymetricData>/,"");
   const _t=(name,category,fn)=>{
     let passed=false,detail="";
     try{
@@ -27216,10 +27507,10 @@ async function runSmokeTests(){
     });
   });
 
-  /* === 3. Validator rule count === Rule-20 drift detector: the in-app `RULES` array (per-feature rules) and the 25 structural rules pushed inside `validateGMLStructure` are mirrored to `dev/validator-rules.json`. The expected counts here are intentionally hard-coded — the assertion's purpose IS to trip on every rule add/remove so the maintainer is forced to keep four surfaces in lockstep per Rule 13 atomic delivery: 1. The rule definition in RULES[] or validateGMLStructure. 2. The mirrored entry in dev/validator-rules.json (regenerate via dev/scripts/generate-validator-rules-json.py). 3. The expected count in this assertion. 4. The user-facing rule-count references in HANDOFF (development repository only — not shipped in the public snapshot) / READMEs / HTML preface. Total: 271 validator rules = 219 per-feature (in `RULES`) + 25 structural (in `validateGMLStructure`'s push calls) + 27 exchange-set (in `validateExchangeSet`'s push calls). */
-  _t(`RULES.length === 219 per-feature rules`,"rules",()=>{
-    if(RULES.length!==219)return{pass:false,detail:`got ${RULES.length}, expected 219`};   /* the count the title names; it trips on every rule added or removed */
-    return{pass:true,detail:"219 per-feature rules (+ 25 structural in validateGMLStructure + 27 exchange-set in validateExchangeSet = 271 total)"};
+  /* === 3. Validator rule count === Rule-20 drift detector: the in-app `RULES` array (per-feature rules) and the 27 structural rules pushed inside `validateGMLStructure` are mirrored to `dev/validator-rules.json`. The expected counts here are intentionally hard-coded — the assertion's purpose IS to trip on every rule add/remove so the maintainer is forced to keep four surfaces in lockstep per Rule 13 atomic delivery: 1. The rule definition in RULES[] or validateGMLStructure. 2. The mirrored entry in dev/validator-rules.json (regenerate via dev/scripts/generate-validator-rules-json.py). 3. The expected count in this assertion. 4. The user-facing rule-count references in HANDOFF (development repository only — not shipped in the public snapshot) / READMEs / HTML preface. Total: 278 validator rules = 224 per-feature (in `RULES`) + 27 structural (in `validateGMLStructure`'s push calls) + 27 exchange-set (in `validateExchangeSet`'s push calls). */
+  _t(`RULES.length === 224 per-feature rules`,"rules",()=>{
+    if(RULES.length!==224)return{pass:false,detail:`got ${RULES.length}, expected 224`};   /* the count the title names; it trips on every rule added or removed */
+    return{pass:true,detail:"224 per-feature rules (+ 27 structural in validateGMLStructure + 27 exchange-set in validateExchangeSet = 278 total)"};
   });
 
   /* Brief 55: an attribute the FC allows once on a type and several times on another, written twice on the single-valued
@@ -27273,11 +27564,11 @@ async function runSmokeTests(){
     const full=SS(D(1)+ST),durOnly=SS(D(1)),statOnly=SS(ST),empty="<signalSequence/>";
     /* the first bundled example's light with the entries in its rhythmOfLight; and the same light as a LightSectored
        with the entries in one sectorCharacteristics block (no bundled example has either shape) */
-    const rol=seq=>exGML[0].replace(/<rhythmOfLight>[\s\S]*?<\/rhythmOfLight>/,"<rhythmOfLight><lightCharacteristic>Flashing</lightCharacteristic><signalPeriod>4</signalPeriod>"+seq+"</rhythmOfLight>");
+    const rol=seq=>_exNoCov(exGML[0]).replace(/<rhythmOfLight>[\s\S]*?<\/rhythmOfLight>/,"<rhythmOfLight><lightCharacteristic>Flashing</lightCharacteristic><signalPeriod>4</signalPeriod>"+seq+"</rhythmOfLight>");
     /* one sectorCharacteristics block holding the entries and one sector */
     const blk=seq=>"<sectorCharacteristics><lightCharacteristic>Flashing</lightCharacteristic><signalPeriod>4</signalPeriod>"+seq+"<lightSector><colour>Red</colour></lightSector></sectorCharacteristics>";
     /* the light renamed LightSectored, its rhythmOfLight replaced by the block or blocks given */
-    const sec=blocks=>exGML[0].replace(/<LightAllAround /,"<LightSectored ").replace(/<\/LightAllAround>/,"</LightSectored>").replace(/<rhythmOfLight>[\s\S]*?<\/rhythmOfLight>/,blocks);
+    const sec=blocks=>_exNoCov(exGML[0]).replace(/<LightAllAround /,"<LightSectored ").replace(/<\/LightAllAround>/,"</LightSectored>").replace(/<rhythmOfLight>[\s\S]*?<\/rhythmOfLight>/,blocks);
     /* the rule, and what one fixture gives: the verdict, the nested-entry names of the record, the rule's own words */
     const R=RULES.find(r=>r.id==="S201-FEA-41");
     /* parse one fixture and ask the rule about its last feature, the light */
@@ -27834,17 +28125,17 @@ async function runSmokeTests(){
     const ta=document.getElementById("valIn");if(!ta)return{pass:false,detail:"valIn textarea missing"};
     const _prev=ta.value,_prevFilter=activeFilter,_prevSrc=_valInSource;
     try{
-      /* exGML[0] (three features with no finding of any tier) + an appended LateralBuoy carrying only a colour — its FC 1..1 mandates are missing (S-158 class C, the critical tier) — so of the four features only the last one (lastValAll index 3) carries findings; the three ahead of it are exactly what a tier chip must hide. */
+      /* exGML[0] (five features - three aids and the two coverage surfaces - with no finding of any tier) + an appended LateralBuoy carrying only a colour — its FC 1..1 mandates are missing (S-158 class C, the critical tier) — so of the six features only the last one (lastValAll index 5) carries findings; the five ahead of it are exactly what a tier chip must hide. */
       if(exGML[0].split("</members>").length!==2)return{pass:false,detail:"exGML[0] must carry exactly one </members> wrapper for the fixture"};
       ta.value=exGML[0].replace("</members>",'<LateralBuoy gml:id="X.CR1"><colour>red</colour></LateralBuoy>\n  </members>');
       runVal();
-      if(!lastValAll||lastValAll.length!==4)return{pass:false,detail:"fixture must validate as 4 features, got "+(lastValAll&&lastValAll.length)};
+      if(!lastValAll||lastValAll.length!==6)return{pass:false,detail:"fixture must validate as 6 features, got "+(lastValAll&&lastValAll.length)};
       const vr=document.getElementById("valRes");if(!vr)return{pass:false,detail:"valRes missing"};
       const _carrying=s=>lastValAll.filter(v=>v.results.some(r=>!r.pass&&r.s===s));
       /* `.filter-row ~ .rule-list` = the per-feature lists (following siblings of the chip row — the structural / exchange-set / compare-diff lists precede it); the selector needs the chip row, the note and every rule list to stay direct children of #valRes */
       const _view=()=>({heads:vr.querySelectorAll(".vfeat-head").length,rows:vr.querySelectorAll(".filter-row").length,on:[...vr.querySelectorAll(".filter-chip.on")].map(e=>e.textContent.trim()),items:[...vr.querySelectorAll(".filter-row ~ .rule-list .rule-item")].map(e=>e.className),emptyLists:[...vr.querySelectorAll(".filter-row ~ .rule-list")].filter(l=>!l.children.length).length,note:vr.querySelectorAll(".filter-note").length});
       const nCrit=_carrying("critical").length,nInfo=_carrying("info").length;
-      if(!(nCrit>=1&&nCrit<4&&nInfo>=1))return{pass:false,detail:"fixture must leave at least one feature with and one without a critical finding, and one with an info finding (critical "+nCrit+", info "+nInfo+" of 4)"};
+      if(!(nCrit>=1&&nCrit<6&&nInfo>=1))return{pass:false,detail:"fixture must leave at least one feature with and one without a critical finding, and one with an info finding (critical "+nCrit+", info "+nInfo+" of 6)"};
       const bad=[];
       activeFilter="critical";renderAllVal();
       let r=_view();
@@ -27904,7 +28195,7 @@ async function runSmokeTests(){
       if(!r.items.length||r.items.some(c=>c.indexOf("re-info")<0))bad.push("Info: cards "+JSON.stringify(r.items));
       if(r.rows!==1||r.on.length!==1||!/^Info/.test(r.on[0]))bad.push("Info: chip row "+r.rows+", active "+JSON.stringify(r.on));
       activeFilter="all";renderAllVal();r=_view();
-      if(r.heads!==4)bad.push("All: "+r.heads+" heading(s), 4 features");
+      if(r.heads!==6)bad.push("All: "+r.heads+" heading(s), 6 features");   /* the example's five features and the appended buoy */
       if(r.rows!==1||r.on.length!==1||r.on[0]!=="All")bad.push("All: chip row "+r.rows+", active "+JSON.stringify(r.on));
       if(r.note!==0)bad.push("All: the hidden-features note rendered without a tier chip");
       if(bad.length)return{pass:false,detail:bad.join("; ")};
@@ -28847,6 +29138,202 @@ async function runSmokeTests(){
     if(bad.length)return{pass:false,detail:bad.join(" | ")};
     return{pass:true,detail:"a paste of U+0001 and U+FFFF into the name left \"AlfaBravo\", the caret after it, a note (shown with its feature only) and a pane entry naming the feature; a text area the same; a composition cleaned at its end; the GML well-formed and nothing left out by the writer"};
   });
+  /* ── locks of the coverage clauses, the radar-reflector encoding, the file's own name and the MRN advisory ── */
+  /* a dataset text for these locks: a full DII block (the identifier settable), an envelope 1..2, the members given */
+  const _covDoc=(members,ident)=>'<?xml version="1.0" encoding="UTF-8"?>\n<Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:xlink="http://www.w3.org/1999/xlink" gml:id="DS.CV">\n<gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326"><gml:lowerCorner>1 1</gml:lowerCorner><gml:upperCorner>2 2</gml:upperCorner></gml:Envelope></gml:boundedBy>\n<S100:DatasetIdentificationInformation><S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification><S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition><S100:productIdentifier>S-201</S100:productIdentifier><S100:productEdition>2.0.0</S100:productEdition><S100:applicationProfile>1</S100:applicationProfile><S100:datasetFileIdentifier>'+(ident||"201XX01COVLOCK1_000.GML")+'</S100:datasetFileIdentifier><S100:datasetTitle>Cover</S100:datasetTitle><S100:datasetReferenceDate>2026-01-01</S100:datasetReferenceDate><S100:datasetLanguage>ENG</S100:datasetLanguage><S100:datasetTopicCategory>oceans</S100:datasetTopicCategory><S100:datasetPurpose>base</S100:datasetPurpose><S100:updateNumber>0</S100:updateNumber></S100:DatasetIdentificationInformation>\n<members>\n'+members+'\n</members>\n</Dataset>';
+  /* a point geometry block for a member, lat lon as given */
+  const _covPt=(id,lat,lon)=>'<geometry><S100:pointProperty><S100:Point gml:id="P.'+id+'" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>'+lat+' '+lon+'</gml:pos></S100:Point></S100:pointProperty></geometry>';
+  /* S-201 PS §10.11 / §10.13 presence, once per dataset: a dataset without the members fails both (critical) at the <members> line; every bundled example passes both */
+  _t("GML-STR-26/27: a dataset without a DataCoverage / QualityOfNonBathymetricData member fails each (critical, at the <members> line); every bundled example passes both","struct",()=>{
+    /* a one-buoy dataset with no coverage member */
+    const bare=_covDoc('<LateralBuoy gml:id="CV.1"><colour>Red</colour><buoyShape>Can</buoyShape><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark>'+_covPt("CV.1","1.5","1.5")+'</LateralBuoy>');
+    const r=validateGMLStructure(bare),s26=r.find(x=>x.id==="GML-STR-26"),s27=r.find(x=>x.id==="GML-STR-27");
+    if(!s26||!s27)return{pass:false,detail:"GML-STR-26/27 not emitted"};
+    /* both fail as critical, at the members' line, citing the PS lines */
+    if(s26.pass||s27.pass||s26.s!=="critical"||s27.s!=="critical")return{pass:false,detail:"a dataset without coverage members did not fail both as critical: "+JSON.stringify([s26.pass,s26.s,s27.pass,s27.s])};
+    const ml=bare.split("\n").findIndex(l=>/<members/.test(l))+1;
+    if(s26._lineNumber!==ml||s27._lineNumber!==ml)return{pass:false,detail:"locus is not the <members> line "+ml+": "+s26._lineNumber+" / "+s27._lineNumber};
+    if(!/§10\.11/.test(s26.ref)||!/L991-992/.test(s26.ref)||!/§10\.13/.test(s27.ref)||!/L998-999/.test(s27.ref))return{pass:false,detail:"the refs do not cite PS §10.11 L991-992 / §10.13 L998-999"};
+    /* the bundled examples carry both kinds; each check has its no-fix text */
+    for(let i=0;i<exGML.length;i++){const e=validateGMLStructure(exGML[i]);if(!e.find(x=>x.id==="GML-STR-26").pass||!e.find(x=>x.id==="GML-STR-27").pass)return{pass:false,detail:"exGML["+i+"] fails a coverage presence check"};}
+    if(!_DOC_NOFIX["GML-STR-26"]||!_DOC_NOFIX["GML-STR-27"])return{pass:false,detail:"no no-fix text for the two checks"};
+    return{pass:true,detail:"both fail (critical) without the members, at the <members> line; all "+exGML.length+" examples pass"};
+  });
+  /* the per-feature halves: inside / boundary pass, outside fails naming the position, a geometry-less child is judged at its parent's, the meta surfaces and a dataset with no coverage member are not judged */
+  _t("S201-COV-01/02: a position inside or on a coverage surface passes, outside fails (critical) naming the position; a geometry-less child is judged at its parent's; a curve with a vertex outside fails; the meta surfaces themselves and a dataset with no coverage member are not judged","validator",()=>{
+    const c1=RULES.find(r=>r.id==="S201-COV-01"),c2=RULES.find(r=>r.id==="S201-COV-02");
+    if(!c1||!c2||c1.s!=="critical"||c2.s!=="critical"||!c1.noFix||!c2.noFix)return{pass:false,detail:"rules missing, not critical, or without a no-fix text"};
+    /* one square ring 1..2 for both kinds, and the features judged against it */
+    const ring=[[1,1],[1,2],[2,2],[2,1],[1,1]];
+    const dc={featureType:"DataCoverage",gmlId:"DC.T",geometry:{type:"surface",coordinates:ring}},qn={featureType:"QualityOfNonBathymetricData",gmlId:"QN.T",geometry:{type:"surface",coordinates:ring}};
+    const inside={featureType:"LateralBuoy",gmlId:"B.IN",geometry:{type:"point",lat:1.5,lon:1.5}},edge={featureType:"LateralBuoy",gmlId:"B.EDGE",geometry:{type:"point",lat:1,lon:1.5}},outside={featureType:"LateralBuoy",gmlId:"B.OUT",geometry:{type:"point",lat:2.5,lon:1.5}};
+    /* two lights without geometry, one on each buoy, and a line that leaves the square */
+    const kidIn={featureType:"LightAllAround",gmlId:"L.IN",parentRefs:["#B.IN"],geometry:null},kidOut={featureType:"LightAllAround",gmlId:"L.OUT",parentRefs:["#B.OUT"],geometry:null};
+    const curve={featureType:"NavigationLine",gmlId:"NL.T",geometry:{type:"curve",coordinates:[[1.2,1.2],[2.5,1.8]]}};
+    const all=[dc,qn,inside,edge,outside,kidIn,kidOut,curve];
+    const bad=[];
+    for(const [r,nm] of [[c1,"COV-01"],[c2,"COV-02"]]){
+      /* the verdicts on each feature of the fixture */
+      if(r.t(inside,all)!==true)bad.push(nm+": inside failed");
+      if(r.t(edge,all)!==true)bad.push(nm+": on the boundary failed");
+      if(r.t(outside,all)!==false)bad.push(nm+": outside passed");
+      if(r.t(kidIn,all)!==true)bad.push(nm+": the child of an inside parent failed");
+      if(r.t(kidOut,all)!==false)bad.push(nm+": the child of an outside parent passed");
+      /* a curve, the surfaces themselves, a dataset with no surface, and the finding's line */
+      if(r.t(curve,all)!==false)bad.push(nm+": a curve with a vertex outside passed");
+      if(r.t(dc,all)!==true||r.t(qn,all)!==true)bad.push(nm+": judged a meta surface");
+      if(r.t(outside,[outside])!==true)bad.push(nm+": judged with no coverage member (GML-STR-26/27's finding)");
+      if(!/2\.5, 1\.5/.test(r.actualOf(outside,all)))bad.push(nm+": actualOf does not name the position: "+r.actualOf(outside,all));
+    }
+    /* the two kinds are judged apart: with a DataCoverage and no quality surface, COV-02 stands down and COV-01 judges */
+    if(c2.t(outside,[dc,outside])!==true||c1.t(outside,[dc,outside])!==false)bad.push("the two kinds are not judged apart");
+    return bad.length?{pass:false,detail:bad.join("; ")}:{pass:true,detail:"inside and boundary pass, outside fails with the position, inheritance and the skips hold"};
+  });
+  /* the DCEG radar-reflector rule on the host, from either link end, with the legacy shorthand; the curve, no-geometry and no-binding hosts pass */
+  _t("S201-REL-05: a RadarReflector feature on a point buoy (linked from either end) or the legacy flat shorthand is an error on the host; a curve Landmark, a Landmark without geometry, a Pile and a reflector-free buoy pass; actualOf names the child","validator",()=>{
+    const r=RULES.find(x=>x.id==="S201-REL-05");if(!r||r.s!=="error"||!r.fix||r.fix.kind!=="foldChild"||r.fix.childType!=="RadarReflector")return{pass:false,detail:"rule missing, not error, or its fix is not a RadarReflector fold"};
+    /* a buoy linking forward to its reflector, and one whose reflector links back */
+    const buoyF={featureType:"SafeWaterBuoy",gmlId:"SW.1",componentRefs:["#RR.1"],geometry:{type:"point",lat:1,lon:1}},rrF={featureType:"RadarReflector",gmlId:"RR.1",geometry:{type:"point",lat:1,lon:1}};
+    const buoyB={featureType:"SafeWaterBuoy",gmlId:"SW.2",geometry:{type:"point",lat:1,lon:1}},rrB={featureType:"RadarReflector",gmlId:"RR.2",parentRefs:["#SW.2"]};
+    const legacy={featureType:"LateralBuoy",gmlId:"LB.3",radarReflector:true,geometry:{type:"point",lat:1,lon:1}};
+    /* the hosts the rule leaves alone: a curve Landmark, a Landmark without geometry, a Pile, a clean buoy */
+    const lmCurve={featureType:"Landmark",gmlId:"LM.4",componentRefs:["#RR.4"],geometry:{type:"curve",coordinates:[[1,1],[1,2]]}},rr4={featureType:"RadarReflector",gmlId:"RR.4",parentRefs:["#LM.4"]};
+    const lmNone={featureType:"Landmark",gmlId:"LM.5",componentRefs:["#RR.5"],geometry:null},rr5={featureType:"RadarReflector",gmlId:"RR.5"};
+    const pile={featureType:"Pile",gmlId:"PI.6",componentRefs:["#RR.6"],geometry:{type:"point",lat:1,lon:1}},rr6={featureType:"RadarReflector",gmlId:"RR.6",parentRefs:["#PI.6"]};
+    const clean={featureType:"SafeWaterBuoy",gmlId:"SW.7",radarConspicuous:true,geometry:{type:"point",lat:1,lon:1}};
+    const all=[buoyF,rrF,buoyB,rrB,legacy,lmCurve,rr4,lmNone,rr5,pile,rr6,clean];
+    const bad=[];
+    /* the three that fail */
+    if(r.t(buoyF,all)!==false)bad.push("forward-linked reflector passed");
+    if(r.t(buoyB,all)!==false)bad.push("back-linked reflector passed");
+    if(r.t(legacy,all)!==false)bad.push("the legacy shorthand passed");
+    /* the five that pass, and the finding's line */
+    if(r.t(lmCurve,all)!==true)bad.push("a curve Landmark failed");
+    if(r.t(lmNone,all)!==true)bad.push("a Landmark without geometry failed (it is left possible)");
+    if(r.t(pile,all)!==true)bad.push("a Pile (binds no radarConspicuous) failed");
+    if(r.t(clean,all)!==true)bad.push("a reflector-free buoy failed");
+    if(r.t(rrF,all)!==true)bad.push("the reflector itself failed (the host is judged)");
+    if(!/#RR\.1/.test(r.actualOf(buoyF,all)))bad.push("actualOf does not name the child: "+r.actualOf(buoyF,all));
+    /* the DCEG lines in the ref, then the verdict */
+    if(!/L435-436/.test(r.ref)||!/L8019-8021/.test(r.ref))bad.push("the ref does not cite the DCEG lines");
+    return bad.length?{pass:false,detail:bad.join("; ")}:{pass:true,detail:"hosts judged from both link ends; curve, no-geometry Landmark, Pile and clean buoy pass"};
+  });
+  /* the file's own name: the predicate, the generator's default, the loose download's name, the S-125 suggestion */
+  _t("S201-DII-04 and the file's own name: DS.001.gml fails (critical), a §11.4 identifier passes, none passes (GML-STR-11's); generateGML writes the §11.4 name from the File settings when none is set and keeps a set one; the loose download is named by the identifier; the S-125 suggestion drops the edition","validator",()=>{
+    const r=RULES.find(x=>x.id==="S201-DII-04");if(!r||r.s!=="critical"||!r.fix||r.fix.target!=="dii"||r.fix.field!=="datasetFileIdentifier")return{pass:false,detail:"rule missing, not critical, or its fix is not a DII write of datasetFileIdentifier"};
+    const bad=[];
+    /* the shapes the predicate refuses and admits */
+    if(r.t({featureType:"LateralBuoy",dsName:"DS.001.gml"})!==false)bad.push("DS.001.gml passed");
+    if(r.t({featureType:"LateralBuoy",dsName:"DS.001 (3).gml"})!==false)bad.push("'DS.001 (3).gml' passed");
+    if(r.t({featureType:"LateralBuoy",dsName:"201XX01HARBOUR1_000.GML"})!==true)bad.push("a §11.4 name failed");
+    if(r.t({featureType:"LateralBuoy",dsName:"201XX01HARBOUR1_000.gml"})!==true)bad.push("lowercase .gml failed (§11.4 allows it)");
+    if(r.t({featureType:"LateralBuoy",dsName:"201XX01HARBOUR_000.GML"})!==false)bad.push("a 7-character producer part passed");
+    if(r.t({featureType:"LateralBuoy"})!==true)bad.push("an absent identifier failed here (GML-STR-11 holds presence)");
+    /* the fix's own pattern and the S-158 letter in the ref */
+    if(!new RegExp(r.fix.pattern).test("201XX01HARBOUR1_000.GML")||new RegExp(r.fix.pattern).test("DS.001.gml"))bad.push("fix.pattern does not match the rule");
+    if(!/100_0303 \(C\)/.test(r.ref))bad.push("the ref does not carry the S-158:100 check's letter");
+    /* the generator: no identifier set -> the File settings' name; a set one kept as held */
+    const g1=generateGML({featureType:"LateralBuoy",featureId:"G.1",gmlId:"G.1",dsId:"DS.9",agencyCode:"XX01",filenameStem:"HARBOUR1",edition:"002",geometry:{type:"point",lat:1,lon:1}});
+    if(!/<S100:datasetFileIdentifier>201XX01HARBOUR1_002\.GML<\/S100:datasetFileIdentifier>/.test(g1))bad.push("generator default is not the §11.4 name: "+(g1.match(/<S100:datasetFileIdentifier>[^<]*/)||["(none)"])[0]);
+    const g2=generateGML({featureType:"LateralBuoy",featureId:"G.2",gmlId:"G.2",dsId:"DS.9",dsName:"DS.009.gml",geometry:{type:"point",lat:1,lon:1}});
+    if(!/<S100:datasetFileIdentifier>DS\.009\.gml<\/S100:datasetFileIdentifier>/.test(g2))bad.push("a set identifier was not kept as held");
+    /* the loose download name follows the identifier, else the gml:id */
+    if(_datasetDownloadName(g1)!=="201XX01HARBOUR1_002.GML")bad.push("download name: "+_datasetDownloadName(g1));
+    if(_datasetDownloadName(g2)!=="DS.009.gml")bad.push("download name of a held identifier: "+_datasetDownloadName(g2));
+    if(_datasetDownloadName('<Dataset gml:id="DS.X"><members/></Dataset>')!=="DS.X.gml")bad.push("download name without an identifier: "+_datasetDownloadName('<Dataset gml:id="DS.X"><members/></Dataset>'));
+    if(_datasetDownloadName(g1.replace("201XX01HARBOUR1_002.GML","T"))!=="T.gml")bad.push("an extension-less identifier does not get .gml: "+_datasetDownloadName(g1.replace("201XX01HARBOUR1_002.GML","T")));
+    /* the S-125 name suggested from a §11.4 identifier carries the producer part without the edition */
+    if(_s125SuggestName(g1)!=="125XX01HARBOUR1.GML")bad.push("S-125 suggestion: "+_s125SuggestName(g1));
+    if(_s125SuggestName('<S100:datasetFileIdentifier>201XX01ALFA.GML</S100:datasetFileIdentifier>')!=="125XX01ALFA.GML")bad.push("S-125 suggestion for a short identifier changed");
+    /* the bundled examples carry §11.4 names, all read by the parser */
+    for(let i=0;i<exGML.length;i++){const p=parseAllGML(exGML[i]);if(!Array.isArray(p)||!p.length||!_S201_FILE_NAME.test(p[0].dsName||""))bad.push("exGML["+i+"] identifier: "+(Array.isArray(p)&&p.length?p[0].dsName:"(no parse)"));}
+    return bad.length?{pass:false,detail:bad.join("; ")}:{pass:true,detail:"predicate, generator default, download name and S-125 suggestion hold"};
+  });
+  /* the MRN advisory */
+  _t("S201-ATON-02: a buoy or Topmark without iDCode is told so at the info tier, one with an MRN passes, a DataCoverage and an information type are not judged","validator",()=>{
+    const r=RULES.find(x=>x.id==="S201-ATON-02");if(!r||r.s!=="info"||!r.fix||r.fix.field!=="iDCode")return{pass:false,detail:"rule missing, not info, or its fix is not an iDCode write"};
+    const bad=[];
+    /* absent and blank fail, an MRN passes */
+    if(r.t({featureType:"LateralBuoy"})!==false)bad.push("a buoy without iDCode passed");
+    if(r.t({featureType:"LateralBuoy",iDCode:"  "})!==false)bad.push("a blank iDCode passed");
+    if(r.t({featureType:"LateralBuoy",iDCode:"urn:mrn:xx:aton:1"})!==true)bad.push("a buoy with an MRN failed");
+    /* the types judged and the types left alone */
+    if(r.t({featureType:"Topmark"})!==false)bad.push("a Topmark (AidsToNavigation through Equipment) without iDCode passed");
+    if(r.t({featureType:"DataCoverage"})!==true||r.t({featureType:"AtonStatusInformation"})!==true)bad.push("a type that binds no iDCode was judged");
+    if(r.t({featureType:"FloatingDock"})!==true)bad.push("a type outside S-201 was judged");
+    return bad.length?{pass:false,detail:bad.join("; ")}:{pass:true,detail:"advisory on the AidsToNavigation types only"};
+  });
+  /* the Builder's equipment row follows the DCEG rule, and keeps a carried reflector */
+  _t("Builder: the Radar Reflector equipment row is hidden for a point buoy (radarConspicuous is the encoding, DCEG §8.8.1), shown for a Landmark drawn as a curve, and kept when the stack carries a reflector from a file; the identifier field's placeholder is the §11.4 name the File settings build","builder",()=>{
+    if(typeof _swapBuilderToFeat!=="function")return{pass:false,detail:"_swapBuilderToFeat missing"};
+    /* the Builder state held for the restore, and the row looked up live */
+    const _sf=JSON.parse(JSON.stringify(builderFeats)),_si=selBuilderIdx,_sc=JSON.parse(JSON.stringify(compStack)),_sCols=builderColours.slice(),_sCus=_colourUserSet,_sLast=builderUp._lastFeat;
+    const row=()=>{const l=document.querySelector('label.tree-toggle-label[data-eqt="RadarReflector"]');return l?l.closest(".tree-node"):null;};   /* the row's tree node, looked up live */
+    try{
+      /* a point buoy: the row hidden, the identifier placeholder a §11.4 name */
+      builderFeats=[{featureType:"LateralBuoy",gmlId:"RR.B",featureId:"RR.B",colour:"red",buoyShape:"can",categoryOfLateralMark:"port-hand lateral mark",geometry:{type:"point",lat:"1.1",lon:"2.2"}}];selBuilderIdx=0;compStack=[];
+      _swapBuilderToFeat(builderFeats[0]);builderUp();
+      let n=row();if(!n)return{pass:false,detail:"no Radar Reflector row in the equipment list"};
+      if(!n.classList.contains("hidden"))return{pass:false,detail:"the row is offered for a point buoy"};
+      const ph=document.getElementById("bDsName");
+      if(!ph||!_S201_FILE_NAME.test(ph.placeholder))return{pass:false,detail:"the identifier field's placeholder is not a §11.4 name: "+(ph?ph.placeholder:"(no field)")};
+      /* a reflector carried in from a file stays visible and editable */
+      compStack.push({type:"RadarReflector",id:"RR.C",fields:{}});builderUp();
+      n=row();if(!n||n.classList.contains("hidden"))return{pass:false,detail:"the row vanished with a reflector in the stack (custody)"};
+      /* a Landmark drawn as a curve keeps the feature form */
+      builderFeats=[{featureType:"Landmark",gmlId:"RR.L",featureId:"RR.L",categoryOfLandmark:"tower",geometry:{type:"curve",coordinates:[[1,1],[1,2]]}}];selBuilderIdx=0;compStack=[];
+      _swapBuilderToFeat(builderFeats[0]);builderUp();
+      n=row();if(!n)return{pass:false,detail:"no row after mounting a Landmark"};
+      if(n.classList.contains("hidden"))return{pass:false,detail:"the row is hidden for a curve Landmark (geometry type "+_gtSel().value+")"};
+      /* the why-line steers to the attribute */
+      if(!/Radar conspicuous/.test(_BEQ_WHY.RadarReflector)||!/8\.8\.1/.test(_BEQ_WHY.RadarReflector))return{pass:false,detail:"the why-line does not steer to radarConspicuous / DCEG §8.8.1"};
+      return{pass:true,detail:"hidden on a point buoy, kept with a carried reflector, offered for a curve Landmark; placeholder is the §11.4 name"};
+    }finally{builderFeats=_sf;selBuilderIdx=_si;compStack=_sc;try{if(builderFeats[selBuilderIdx])_swapBuilderToFeat(builderFeats[selBuilderIdx]);}catch(e){}builderColours=_sCols.slice();_colourUserSet=_sCus;builderUp._lastFeat=_sLast;}
+  });
+  /* the fold, end to end, on the shape of the reported dataset: a SafeWaterBuoy with a light and a RadarReflector child */
+  await _tAsync("foldChild e2e (S201-REL-05): applyQuickFix writes <radarConspicuous>true</radarConspicuous> on the buoy, removes the RadarReflector member and the <child> link to it, keeps the light child, re-validates with the finding cleared, and the toast names the fold","validator",async()=>{
+    const ta=document.getElementById("valIn");if(!ta)return{pass:false,detail:"#valIn missing"};
+    /* the user's text, dialogs and source held for the restore */
+    const oldVal=ta.value,oldConfirm=window.confirm,oldAlert=window.alert,oldSrc=_valInSource;
+    let alerted=null;
+    try{
+      /* the fixture: the buoy linked forward to a light and a reflector, each linking back */
+      ta.value=_covDoc('<SafeWaterBuoy gml:id="SW.F"><AtoNNumber>1</AtoNNumber><child xlink:href="#LT.F"/><child xlink:href="#RR.F"/><colour>Red</colour><colour>White</colour><colourPattern>Vertical Stripes</colourPattern><buoyShape>Spherical</buoyShape>'+_covPt("SW.F","1.5","1.5")+'</SafeWaterBuoy>\n<LightAllAround gml:id="LT.F"><parent xlink:href="#SW.F"/><colour>White</colour><rhythmOfLight><lightCharacteristic>Isophased</lightCharacteristic><signalPeriod>5</signalPeriod></rhythmOfLight>'+_covPt("LT.F","1.5","1.5")+'</LightAllAround>\n<RadarReflector gml:id="RR.F"><parent xlink:href="#SW.F"/><height>6</height>'+_covPt("RR.F","1.5","1.5")+'</RadarReflector>');
+      _valInSource="paste";
+      /* the fold arm asks once before it writes and alerts when nothing is linked; both answered silently inside the suite */
+      window.confirm=()=>true;window.alert=m=>{alerted=String(m);};
+      runVal();
+      await new Promise(r=>setTimeout(r,50));
+      /* the finding before the click, and its button */
+      const idx=lastValAll.findIndex(v=>v.feat&&v.feat.gmlId==="SW.F");
+      if(idx<0)return{pass:false,detail:"the buoy is not in lastValAll"};
+      const before=lastValAll[idx].results.find(r=>r.id==="S201-REL-05");
+      if(!before||before.pass)return{pass:false,detail:"S201-REL-05 did not fire on the buoy before the fix"};
+      if(!document.querySelector('#valRes [onclick="applyQuickFix('+idx+',\'S201-REL-05\')"]'))return{pass:false,detail:"no Apply fix button rendered for S201-REL-05"};
+      /* one click; applyQuickFix re-validates at its end, the wait is a margin */
+      applyQuickFix(idx,"S201-REL-05");
+      await new Promise(r=>setTimeout(r,80));
+      if(alerted)return{pass:false,detail:"the fix alerted: "+alerted};
+      /* the text after: well-formed, the attribute written, the reflector and its link gone, the light kept */
+      const out=ta.value;
+      if(_xmlIllFormed(out))return{pass:false,detail:"the fixed text is not well-formed"};
+      if(!/<radarConspicuous>true<\/radarConspicuous>/.test(out))return{pass:false,detail:"radarConspicuous=true not written"};
+      if(/<RadarReflector\b/.test(out)||/href="#RR\.F"/.test(out))return{pass:false,detail:"the RadarReflector member or its link survived"};
+      if(!/href="#LT\.F"/.test(out)||!/<LightAllAround\b/.test(out))return{pass:false,detail:"the light child or its link was lost"};
+      /* the re-validation: the finding cleared, the attribute read back, the toast naming the fold */
+      const after=lastValAll.find(v=>v.feat&&v.feat.gmlId==="SW.F");
+      if(!after||!after.results.find(r=>r.id==="S201-REL-05").pass)return{pass:false,detail:"the finding did not clear after the fix"};
+      if(after.feat.radarConspicuous!==true)return{pass:false,detail:"the re-parsed buoy does not carry radarConspicuous=true"};
+      const toast=document.getElementById("qf-toast-banner");
+      if(!toast||!/Set radarConspicuous = true/.test(toast.textContent)||!/removed 1 RadarReflector/.test(toast.textContent)||!/#RR\.F/.test(toast.textContent))return{pass:false,detail:"toast: "+(toast?toast.textContent:"(none)")};
+    }finally{
+      /* put the user's text, the dialogs and the results back */
+      ta.value=oldVal;_valInSource=oldSrc;window.confirm=oldConfirm;window.alert=oldAlert;
+      try{runVal();}catch(e){}
+      await new Promise(r=>setTimeout(r,30));
+    }
+    return{pass:true,detail:"attribute written, member and link removed, light kept, finding cleared, toast names the fold"};
+  });
   await _tAsync("A quick fix refuses a typed value holding a character XML 1.0 cannot carry and names it, and no fix writes a result that is not well-formed, in the value arm or the nilReason arm: the Validator text stays as it was","validator",async()=>{
     const ta=document.getElementById("valIn");if(!ta)return{pass:false,detail:"#valIn missing"};
     const oldVal=ta.value,oldAlert=window.alert,oldSer=_serializeXml,bad=[];let alerted=null;
@@ -29701,20 +30188,21 @@ async function runSmokeTests(){
     return{pass:true,detail:"editionNumber = EEE+1 for 000->1, 001->2, 002->3, 010->11"};
   });
 
-  /* === 12. structural validator returns expected check count === IMPORTANT: validateGMLStructure pushes 22 rules unconditionally + 3 more (GML-STR-11, GML-STR-12, GML-STR-20) ONLY when DII is present. The bundled `exGML[]` samples are FRAGMENTS without DII (DII is added at runtime when generating a full dataset). Test runs on TWO inputs: (a) a fragment without DII expecting 22, (b) a synthetic full dataset with DII expecting 25. Both must pass. Unconditional set: GML-STR-01..10 + 13..19 + 21..25 (GML-STR-22 dataset-level root-child order, GML-STR-23 single-arc data extent and GML-STR-24 feature-level geometry-last order are unconditional — each passes neutrally when its subject elements are absent). So a no-DII fragment fires 22; a full dataset with DII fires 22 unconditional + 3 DII = 25. Per-rule addition history lives in dev/CHANGELOG.md (Rule 21). */
-  _t(`validateGMLStructure on fragment (no DII) returns 22 results`,"struct",()=>{
-    /* exGML[0] carries a DII block (the bundled examples must satisfy the tool's own GML-STR-10). THIS test verifies the no-DII path (22 unconditional structural checks, the 3 DII checks skipped), so strip the DII block first. The with-DII path (25) is covered by the next test using fullGml. */
+  /* === 12. structural validator returns expected check count === IMPORTANT: validateGMLStructure pushes 24 rules unconditionally + 3 more (GML-STR-11, GML-STR-12, GML-STR-20) ONLY when DII is present. The bundled `exGML[]` samples are FRAGMENTS without DII (DII is added at runtime when generating a full dataset). Test runs on TWO inputs: (a) a fragment without DII expecting 24, (b) a synthetic full dataset with DII expecting 27. Both must pass. Unconditional set: GML-STR-01..10 + 13..19 + 21..27 (GML-STR-24 dataset-level root-child order, GML-STR-23 single-arc data extent and GML-STR-24 feature-level geometry-last order are unconditional — each passes neutrally when its subject elements are absent). So a no-DII fragment fires 24; a full dataset with DII fires 24 unconditional + 3 DII = 27. Per-rule addition history lives in dev/CHANGELOG.md (Rule 21). */
+  _t(`validateGMLStructure on fragment (no DII) returns 24 results`,"struct",()=>{
+    /* exGML[0] carries a DII block (the bundled examples must satisfy the tool's own GML-STR-10). THIS test verifies the no-DII path (24 unconditional structural checks, the 3 DII checks skipped), so strip the DII block first. The with-DII path (27) is covered by the next test using fullGml. */
     const r=validateGMLStructure(exGML[0].replace(/\s*<S100:DatasetIdentificationInformation>[\s\S]*?<\/S100:DatasetIdentificationInformation>/,""));
     if(!Array.isArray(r)) return {pass:false,detail:"not array"};
-    if(r.length!==22) return {pass:false,detail:`got ${r.length}, expected 22 (fragment without DII)`};
-    return {pass:true,detail:"22 unconditional checks fired"};
+    if(r.length!==24) return {pass:false,detail:`got ${r.length}, expected 24 (fragment without DII)`};
+    return {pass:true,detail:"24 unconditional checks fired"};
   });
-  _t(`validateGMLStructure on full dataset (with DII) returns 25 results`,"struct",()=>{
+  _t(`validateGMLStructure on full dataset (with DII) returns 27 results`,"struct",()=>{
     const fullGml=`<?xml version="1.0" encoding="UTF-8"?><Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:gml="http://www.opengis.net/gml/3.2" gml:id="DS.1"><gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326"><gml:lowerCorner>51 2</gml:lowerCorner><gml:upperCorner>52 3</gml:upperCorner></gml:Envelope></gml:boundedBy><S100:DatasetIdentificationInformation><S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification><S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition><S100:productIdentifier>S-201</S100:productIdentifier><S100:productEdition>2.0.0</S100:productEdition><S100:applicationProfile>S-201</S100:applicationProfile><S100:datasetFileIdentifier>T</S100:datasetFileIdentifier><S100:datasetTitle>T</S100:datasetTitle><S100:datasetReferenceDate>2026-01-01</S100:datasetReferenceDate><S100:datasetLanguage>ENG</S100:datasetLanguage><S100:datasetTopicCategory>oceans</S100:datasetTopicCategory><S100:datasetPurpose>Base</S100:datasetPurpose><S100:updateNumber>0</S100:updateNumber></S100:DatasetIdentificationInformation><members></members></Dataset>`;
     const r=validateGMLStructure(fullGml);
     if(!Array.isArray(r)) return {pass:false,detail:"not array"};
-    if(r.length!==25) return {pass:false,detail:`got ${r.length}, expected 25 (full dataset with DII)`};
-    return {pass:true,detail:"25 checks (22 unconditional + 3 DII: GML-STR-11/12/20)"};
+    /* the 24 unconditional checks and the three the DII block brings */
+    if(r.length!==27) return {pass:false,detail:`got ${r.length}, expected 27 (full dataset with DII)`};
+    return {pass:true,detail:"27 checks (24 unconditional + 3 DII: GML-STR-11/12/20)"};
   });
 
   /* === Regression fixtures for slash-label enums, the STR-15/22 extensions and the runVal guards. Shared minimal-dataset builders for the structural/predicate tests below (root attrs + members content are injectable so each test mutates exactly one thing). */
@@ -30238,7 +30726,7 @@ async function runSmokeTests(){
   });
   /* design 10.4, the planner's ruling (room #2001): a lighthouse and what is mounted on it are left out and named */
   _t("S-125 export (design 10.4): exGML[3], a lighthouse with its light, converts no feature, leaves out no value of a converted one, and the report carries exactly the two reasons, the light's dropped link under it, and the heading line","s125",()=>{
-    const r=_s125Of(exGML[3]);
+    const r=_s125Of(_exNoCov(exGML[3]));   /* the lighthouse and its light alone: the coverage pair has its own report lines */
     /* nothing converted, and the two lines: the lighthouse (no S-125 type), the light (its parent is not converted) */
     const n=Object.values(r.report.converted).reduce((a,b)=>a+b,0);
     if(n)return{pass:false,detail:n+" feature(s) of exGML[3] converted"};
@@ -30272,7 +30760,7 @@ async function runSmokeTests(){
     if(!/<S100:datasetFileIdentifier>125XX01ALFA\.GML<\/S100:datasetFileIdentifier>/.test(w.text))return{pass:false,detail:"the confirmed name is not the datasetFileIdentifier"};
     /* the change named once, with the source value */
     const c=w.report.changed.find(x=>x.field==="datasetFileIdentifier");
-    return c&&c.from==="DS.001.gml"&&c.to==="125XX01ALFA.GML"&&!r.report.changed.length?true:{pass:false,detail:"report.changed: "+JSON.stringify(w.report.changed)};
+    return c&&c.from==="201XX01EXAMPL01_000.GML"&&c.to==="125XX01ALFA.GML"&&!r.report.changed.length?true:{pass:false,detail:"report.changed: "+JSON.stringify(w.report.changed)};
   });
   /* D4: no representative point is ever chosen */
   _t("S-125 export D4: a surface where S-125 permits only a point is not converted and is reported, no point invented","s125",()=>{
@@ -30304,7 +30792,7 @@ async function runSmokeTests(){
     return r.report.leftOut.some(x=>x.attr==="colour"&&/Red Temporary/.test(x.why))?true:{pass:false,detail:"the report does not name 'Red Temporary'"};
   });
   /* exGML[0]'s document with an S-201-form file identifier `id` (201 + producer + own part), so the export's click
-     has a name to write under (board #72); exGML[0] itself carries DS.001.gml, which gives none */
+     has a name to write under (board #72); the no-name case below puts the pre-§11.4 identifier DS.001.gml back */
   const _s125Named=(t,id)=>t.replace(/(<S100:datasetFileIdentifier>)[^<]*/,"$1"+id);
   /* the panel's text and every element in it, for the summary checks */
   const _s125PanelText=()=>{const p=document.getElementById("s125Panel");return p&&p.style.display!=="none"?p.textContent:"";};
@@ -30405,8 +30893,8 @@ async function runSmokeTests(){
     /* a download recorded by name only, never handed to the browser */
     _s125Download=(text,name)=>{got.push(name);};
     try{
-      /* exGML[0] as shipped: DS.001.gml, no producer code */
-      ta.value=exGML[0];
+      /* exGML[0] under the identifier DS.001.gml it carried before its §11.4 name, which gives no S-125 name and no producer code */
+      ta.value=_s125Named(exGML[0],"DS.001.gml");
       s125ExportOpen();
       const txt=_s125PanelText(),btn=document.getElementById("s125Write");
       if(got.length)return{pass:false,detail:"the click wrote "+got.join(", ")+" with no name from the source"};
@@ -30426,7 +30914,7 @@ async function runSmokeTests(){
     }
   });
 
-  /* === 17. Rule 19 extension — validator-rules.json sync === The 271 validator rules (219 per-feature in RULES + 25 GML-STR structural in validateGMLStructure + 27 exchange-set in validateExchangeSet) are mirrored to dev/validator-rules.json for external tooling that wants to query the rule corpus without parsing JS. The Python generator (dev/scripts/generate-validator-rules-json.py) is the authoritative producer; this smoke test verifies the in-app RULES count matches what the JSON file claims to contain. The pre-commit gate additionally runs the generator in --check mode to catch byte-level drift (a rule edit that changes a message string but doesn't touch the count). Together they form the same Rule-13 atomic-delivery + Rule-19 machine-readable invariant pattern that FOUNDATIONAL_RULES already has. Under file:// — a supported degraded run mode (grep `fileProtoBanner`) — every browser blocks fetch() outright, so the sidecar JSON is unreadable no matter how healthy the app is; the test reports an explicit skip there instead of false-failing the suite (and falsely painting the "findings may be unreliable" banner), the same environment-probe contract as _SRC_COMMENTS_KEPT / _renderedTextRewritten. The http-served dev gate and the tester-bundle build verify both always exercise the full cross-check. */
+  /* === 17. Rule 19 extension — validator-rules.json sync === The 278 validator rules (224 per-feature in RULES + 27 GML-STR structural in validateGMLStructure + 27 exchange-set in validateExchangeSet) are mirrored to dev/validator-rules.json for external tooling that wants to query the rule corpus without parsing JS. The Python generator (dev/scripts/generate-validator-rules-json.py) is the authoritative producer; this smoke test verifies the in-app RULES count matches what the JSON file claims to contain. The pre-commit gate additionally runs the generator in --check mode to catch byte-level drift (a rule edit that changes a message string but doesn't touch the count). Together they form the same Rule-13 atomic-delivery + Rule-19 machine-readable invariant pattern that FOUNDATIONAL_RULES already has. Under file:// — a supported degraded run mode (grep `fileProtoBanner`) — every browser blocks fetch() outright, so the sidecar JSON is unreadable no matter how healthy the app is; the test reports an explicit skip there instead of false-failing the suite (and falsely painting the "findings may be unreliable" banner), the same environment-probe contract as _SRC_COMMENTS_KEPT / _renderedTextRewritten. The http-served dev gate and the tester-bundle build verify both always exercise the full cross-check. */
   await _tAsync("validator-rules.json count matches in-app RULES + structural count (Rule 19 extension)","machine-readable-rules",async()=>{
     if(typeof RULES==="undefined")return{pass:false,detail:"RULES const not defined"};
     if(location.protocol==="file:")return{pass:true,detail:"sync check skipped — the browser blocks fetch() on file:// pages, so dev/validator-rules.json cannot be read (the http-served dev gate + bundle verify still run the full check); to run it here too, serve the app via start-server.bat / start-server.sh or python3 -m http.server 8080"};
@@ -30460,8 +30948,8 @@ async function runSmokeTests(){
     if(perFeatActual!==perFeatExpected){
       return{pass:false,detail:`per-feature drift: in-app RULES.length=${perFeatExpected}, JSON has ${perFeatActual}`};
     }
-    /* Structural-rule count is hardcoded at 25 (GML-STR-01..25). GML-STR-19 enforces lightSector 1..10 per sectorCharacteristics wrapper (FC 9185-9191); GML-STR-20 verifies DII element order (s100gmlbase.xsd DataSetIdentificationType xs:sequence); GML-STR-21 enforces SRS determinability (S-100 Pt.10b §10b-11.7 — geometry srsName or collection Envelope srsName); GML-STR-22 enforces the dataset root's content model (boundedBy? → DII → root-level geometry* → members per the S-201 2.0.0 ThisDatasetType and the S-100 DatasetType); GML-STR-23 enforces the single-arc data extent (S-201 PS §10.14 — dataset must not cross the 180° meridian); GML-STR-24 enforces feature-level geometry-last element order (every geometry-bearing feature type's xs:sequence ends with geometry). STR-11/12/20 are DII-only (push inside `if(diiEls.length>0)`), so a no-DII fragment returns 22 and a full-DII dataset returns 25. If a future structural rule (GML-STR-25 enforces signalGroup 0..10 per rhythmOfLight / sectorCharacteristics wrapper (FC 9118-9124 / 9192-9198). When the next one (GML-STR-26) is added, both this expected count + the JSON regeneration need to update. */
-    const structExpected=25;   /* single-sourced for the assertion AND the message, so the prose can never report a different number than the one compared */
+    /* Structural-rule count is hardcoded at 27 (GML-STR-01..27). GML-STR-19 enforces lightSector 1..10 per sectorCharacteristics wrapper (FC 9185-9191); GML-STR-20 verifies DII element order (s100gmlbase.xsd DataSetIdentificationType xs:sequence); GML-STR-21 enforces SRS determinability (S-100 Pt.10b §10b-11.7 — geometry srsName or collection Envelope srsName); GML-STR-22 enforces the dataset root's content model (boundedBy? → DII → root-level geometry* → members per the S-201 2.0.0 ThisDatasetType and the S-100 DatasetType); GML-STR-23 enforces the single-arc data extent (S-201 PS §10.14 — dataset must not cross the 180° meridian); GML-STR-24 enforces feature-level geometry-last element order (every geometry-bearing feature type's xs:sequence ends with geometry). STR-11/12/20 are DII-only (push inside `if(diiEls.length>0)`), so a no-DII fragment returns 22 and a full-DII dataset returns 25. If a future structural rule (GML-STR-25 enforces signalGroup 0..10 per rhythmOfLight / sectorCharacteristics wrapper (FC 9118-9124 / 9192-9198). When the next one (GML-STR-26) is added, both this expected count + the JSON regeneration need to update. */
+    const structExpected=27;   /* single-sourced for the assertion AND the message, so the prose can never report a different number than the one compared */
     if(structActual!==structExpected){
       return{pass:false,detail:`structural drift: expected ${structExpected}, JSON has ${structActual} — the served dev/validator-rules.json does not match this app build (regenerate it, or the server is rooted at a different copy of the repo)`};
     }
@@ -34042,7 +34530,7 @@ async function runSmokeTests(){
        that list alone, so none may come from it. Both halves of the counter's scan are observable - the memo's own
        value (an early probe with an empty stack, before the ZZ.9000 probe, must be minted 9001: the list's highest id
        is that probe's component) and the running counter (the ZZ.9000 probe's own Topmark is minted the next). */
-    const base=[0,1,2,3].flatMap(k=>{const r=parseAllGML(exGML[k]);return Array.isArray(r)?_buildImportCandidate(r):[];});   /* the four bundled samples fold to one parent each (their lights / topmarks become components) */
+    const base=[0,1,2,3].flatMap(k=>{const r=parseAllGML(_exNoCov(exGML[k]));return Array.isArray(r)?_buildImportCandidate(r):[];});   /* the four bundled samples, their coverage pair out, fold to one parent each (their lights / topmarks become components) */
     if(base.length<2)return{pass:false,detail:"fixture: the bundled samples folded to "+base.length+" parent(s)"};
     const fx=[];
     for(let k=0;k<20;k++)base.forEach((f,j)=>{const c=JSON.parse(JSON.stringify(f));c.featureId="ZZ."+String(5000+k*10+j);c.gmlId=c.featureId;if(Array.isArray(c._compStack))c._compStack.forEach((cm,q)=>{cm.id="ZZ."+String(7000+k*50+j*5+q);});fx.push(c);});
@@ -35421,7 +35909,7 @@ async function runSmokeTests(){
     /* Derive the structural-rule set from validateGMLStructure's ACTUAL output (a full-DII dataset fires all of them, including the DII-only GML-STR-11/12/20), not a literal loop ceiling — a hardcoded upper bound would silently stop covering the next GML-STR-* id when it is added (it matches no count-gate pattern, so nothing would catch the off-by-one). Every emitted GML-STR-* id must be covered by exactly one of _DOC_FIXES / _DOC_NOFIX, so a newly added id is coverage-checked automatically. */
     const _fullDii=`<?xml version="1.0" encoding="UTF-8"?><Dataset xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:gml="http://www.opengis.net/gml/3.2" gml:id="DS.1"><gml:boundedBy><gml:Envelope srsName="http://www.opengis.net/def/crs/EPSG/0/4326"><gml:lowerCorner>51 2</gml:lowerCorner><gml:upperCorner>52 3</gml:upperCorner></gml:Envelope></gml:boundedBy><S100:DatasetIdentificationInformation><S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification><S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition><S100:productIdentifier>S-201</S100:productIdentifier><S100:productEdition>2.0.0</S100:productEdition><S100:applicationProfile>S-201</S100:applicationProfile><S100:datasetFileIdentifier>T</S100:datasetFileIdentifier><S100:datasetTitle>T</S100:datasetTitle><S100:datasetReferenceDate>2026-01-01</S100:datasetReferenceDate><S100:datasetLanguage>ENG</S100:datasetLanguage><S100:datasetTopicCategory>oceans</S100:datasetTopicCategory><S100:datasetPurpose>Base</S100:datasetPurpose><S100:updateNumber>0</S100:updateNumber></S100:DatasetIdentificationInformation><members></members></Dataset>`;
     const _structIds=[...new Set(validateGMLStructure(_fullDii).map(x=>x.id).filter(id=>/^GML-STR-/.test(id)))];
-    if(_structIds.length<25)return{pass:false,detail:"expected >=25 structural ids from a full-DII dataset, got "+_structIds.length+" — fixture no longer triggers every structural rule"};
+    if(_structIds.length<27)return{pass:false,detail:"expected >=27 structural ids from a full-DII dataset, got "+_structIds.length+" — fixture no longer triggers every structural rule"};
     for(const id of _structIds){
       if(!_DOC_FIXES[id]&&!_DOC_NOFIX[id])return{pass:false,detail:"structural rule uncovered: "+id};
       if(_DOC_FIXES[id]&&_DOC_NOFIX[id])return{pass:false,detail:"structural rule doubly covered: "+id};
@@ -42068,17 +42556,20 @@ async function runSmokeTests(){
     }
   });
   _t("Compare engine: A↔A is identical; seeded DII edit + field change + geometry move + feature add/remove are each detected precisely","exchange-set",()=>{
+    const _cmpE0=_exNoCov(exGML[0]);   /* the example's aid, light and topmark: the lock counts one feature unchanged after its surgery */
     if(typeof _gmlCompare!=="function")return{pass:false,detail:"_gmlCompare not defined"};
-    const same=_gmlCompare(exGML[0],exGML[0]);
+    /* the aid against itself, then against a copy edited in five places */
+    const same=_gmlCompare(_cmpE0,_cmpE0);
     if(!same.identical)return{pass:false,detail:"A vs A must report identical"};
-    let b=exGML[0]
+    let b=_cmpE0
       .replace("<S100:datasetTitle>S-201 AtoN Dataset</S100:datasetTitle>","<S100:datasetTitle>S-201 AtoN Dataset Edition 2</S100:datasetTitle>")
       .replace("<colour>Red</colour><buoyShape>","<colour>Green</colour><buoyShape>")
       .replace("<gml:pos>1.0000000 1.0000000</gml:pos>","<gml:pos>1.0000000 1.5000000</gml:pos>")
       .replace(/\s*<Topmark gml:id="TM\.001">[\s\S]*?<\/Topmark>/,"")
       .replace("</members>",'  <CardinalBuoy gml:id="CB.900"><featureName><name>NEWMARK</name></featureName><colour>Black</colour></CardinalBuoy>\n  </members>');
-    if(b===exGML[0])return{pass:false,detail:"fixture surgery failed — B side is unchanged"};
-    const rep=_gmlCompare(exGML[0],b);
+    /* the surgery took, and the report of the pair */
+    if(b===_cmpE0)return{pass:false,detail:"fixture surgery failed — B side is unchanged"};
+    const rep=_gmlCompare(_cmpE0,b);
     if(rep.identical||rep.error)return{pass:false,detail:"diff report degenerate: "+(rep.error||"identical")};
     if(!rep.diiChanges.some(c=>c.field==="datasetTitle"&&c.b.indexOf("Edition 2")>=0))return{pass:false,detail:"DII datasetTitle change not detected"};
     if(rep.added.length!==1||rep.added[0].id!=="CB.900")return{pass:false,detail:"added-feature detection wrong: "+JSON.stringify(rep.added.map(r=>r.id))};
@@ -42656,7 +43147,8 @@ async function runSmokeTests(){
     if(_impNumStr(1e-5)!=="0.00001"||_impNumStr(10.5)!=="10.5"||_impColIdx("AB")!==27||_impColLetter(27)!=="AB"||_impColIdx("A")!==0)return{pass:false,detail:"numeric/column helpers"};
     return{pass:true,detail:"colours/patterns/shapes/status/dates/serials/numbers; slash-bearing FC labels kept whole; unknowns reported"};
   });
-  _t("Excel tab e2e: the bundled sample list converts to a CLEAN dataset — 12 aids + children, zero critical/error in the validator readback, conventions and unresolved cells disclosed","spreadsheet-import",()=>{
+  /* the bundled sample list converted whole: clean beyond the coverage pair a sheet cannot hold, every convention disclosed */
+  _t("Excel tab e2e: the bundled sample list converts to a CLEAN dataset — 12 aids + children, no critical/error in the validator readback beyond the two coverage surfaces a sheet cannot hold (GML-STR-26/27, named in the report), conventions and unresolved cells disclosed","spreadsheet-import",()=>{
     try{
       _impMount(_impFixtureState());
       const res=impConvert();
@@ -42666,7 +43158,9 @@ async function runSmokeTests(){
       const kids=f.flatMap(x=>x._compStack),lights=kids.filter(c=>c.type==="LightAllAround").length,sect=kids.filter(c=>c.type==="LightSectored").length,tms=kids.filter(c=>c.type==="Topmark").length;
       if(lights!==11||sect!==1||tms!==8)return{pass:false,detail:"children: LightAllAround "+lights+" (want 11), LightSectored "+sect+" (want 1), Topmark "+tms+" (want 8 — \"cone\"/\"can\" alone are body shapes; lateral buoys get the R1001 topmark through the opt-in light reading)"};
       if(res.parsedN!==32)return{pass:false,detail:"readback parsed "+res.parsedN+" features, expected 32"};
-      if(res.counts.critical!==0||res.counts.error!==0)return{pass:false,detail:"readback critical="+res.counts.critical+" error="+res.counts.error+" (must both be 0); row notes: "+JSON.stringify(res.report.rows.filter(r=>r.issues.length).map(r=>[r.row,r.issues]))};
+      /* the only criticals are the two coverage surfaces a sheet cannot hold (GML-STR-26 / -27), and the report names them */
+      if(res.coverageGaps.length!==2||!res.report.notes.some(n=>/No coverage surfaces/.test(n)))return{pass:false,detail:"coverage gaps "+JSON.stringify(res.coverageGaps)+", report note "+res.report.notes.some(n=>/No coverage surfaces/.test(n))};
+      if(res.counts.critical!==res.coverageGaps.length||res.counts.error!==0)return{pass:false,detail:"readback critical="+res.counts.critical+" error="+res.counts.error+" (must be the coverage pair and 0); row notes: "+JSON.stringify(res.report.rows.filter(r=>r.issues.length).map(r=>[r.row,r.issues]))};
       const types=f.map(x=>x.featureType).join(",");
       const wantTypes="SafeWaterBuoy,LateralBuoy,LateralBuoy,CardinalBuoy,CardinalBuoy,SpecialPurposeGeneralBuoy,SpecialPurposeGeneralBeacon,SpecialPurposeGeneralBeacon,LateralBuoy,SpecialPurposeGeneralBeacon,SpecialPurposeGeneralBeacon,LateralBeacon";
       if(types!==wantTypes)return{pass:false,detail:"types "+types};
@@ -42700,7 +43194,7 @@ async function runSmokeTests(){
       if(_stableStr(p1)!==_stableStr(p2))return{pass:false,detail:"parse(generate(parse(t))) !== parse(t) on the converted dataset"};
       if(p1.length!==32)return{pass:false,detail:"expected 32 parsed features, got "+p1.length};
       const rb=_impReadback(g2);
-      if(rb.counts.critical!==0||rb.counts.error!==0)return{pass:false,detail:"re-emitted text is not clean: critical "+rb.counts.critical+" error "+rb.counts.error};
+      if(rb.counts.critical!==rb.coverageGaps.length||rb.counts.error!==0)return{pass:false,detail:"re-emitted text is not clean: critical "+rb.counts.critical+" (coverage pair "+rb.coverageGaps.length+") error "+rb.counts.error};   /* clean beyond the coverage pair a sheet cannot hold */
       return{pass:true,detail:p1.length+" features deep-equal across the hop; re-emission clean"};
     }finally{_impUnmount();}
   });
@@ -43710,7 +44204,7 @@ async function runSmokeTests(){
       if(Math.abs(a.geometry.lat-16.9268333)>1e-6||Math.abs(a.geometry.lon-53.9933333)>1e-6)return{pass:false,detail:"glued-hemisphere position: "+JSON.stringify(a.geometry)};
       const dk=Object.keys(res.report.defaults);for(const k of["inferType","inferSide","tm:lateral","availSuffix","inferTypeY"]){if(!dk.includes(k))return{pass:false,detail:"reading not disclosed: "+k+" (have "+dk.join(",")+")"};}
       const pk=Object.keys(res.report.proposals);if(!pk.includes("(blank)→LateralBuoy")||!pk.includes("(blank)→SpecialPurposeGeneralBuoy"))return{pass:false,detail:"blank-type readings must be listed per inferred type: "+pk.join(" | ")};
-      const rb=res.counts;if(rb.critical!==0||rb.error!==0)return{pass:false,detail:"readback critical "+rb.critical+" error "+rb.error+": "+JSON.stringify(res.report.rows.map(r=>r.missing))};
+      const rb=res.counts;if(rb.critical!==res.coverageGaps.length||rb.error!==0)return{pass:false,detail:"readback critical "+rb.critical+" (coverage pair "+res.coverageGaps.length+") error "+rb.error+": "+JSON.stringify(res.report.rows.map(r=>r.missing))};   /* clean beyond the coverage pair a sheet cannot hold */
       res=mk("B");
       const a2=res.feats[0],b2=res.feats[1];
       if(a2.categoryOfLateralMark!=="port-hand lateral mark"||a2.colour!=="green")return{pass:false,detail:"Region B green light → port: "+JSON.stringify([a2.categoryOfLateralMark,a2.colour])};
@@ -44360,7 +44854,7 @@ async function runSmokeTests(){
       if(c.colour!=="white")return{pass:false,detail:"same-for-all colour did not fill the family-less beacon: "+c.colour};
       if(d.visualProminence!=="visually conspicuous"||a.visualProminence||b.visualProminence)return{pass:false,detail:"struct scope: "+JSON.stringify([d.visualProminence,a.visualProminence,b.visualProminence])};
       if(d.status!=="permanent"||a.status||b.status||c.status)return{pass:false,detail:"ft:Lighthouse scope: "+JSON.stringify([d.status,a.status,b.status,c.status])};
-      if(res.counts.critical!==0||res.counts.error!==0)return{pass:false,detail:"readback critical "+res.counts.critical+" error "+res.counts.error};
+      if(res.counts.critical!==res.coverageGaps.length||res.counts.error!==0)return{pass:false,detail:"readback critical "+res.counts.critical+" (coverage pair "+res.coverageGaps.length+") error "+res.counts.error};   /* clean beyond the coverage pair a sheet cannot hold */
       const dk=Object.keys(res.report.defaults);if(!dk.includes("colour:same"))return{pass:false,detail:"same-for-all colour not disclosed: "+dk.join(",")};
       /* the scoped values survive a mapping profile; then a filled cell wins over the value: row 1 gets a Shape column with "spar" */
       const prof=_impProfileFromState("scoped");
@@ -44504,7 +44998,7 @@ async function runSmokeTests(){
       if(K.naBlank.n!==5||!/IALA Category: 1/.test(K.naBlank.label)||!/Shape and Topmark: 2/.test(K.naBlank.label)||!/Type of Material: 1/.test(K.naBlank.label)||!/Characteristic: 1/.test(K.naBlank.label))return{pass:false,detail:"naBlank tally: "+JSON.stringify(K.naBlank)};
       if(K.shapeHeight.n!==6||K.natCon.n!==13||K.equipAttached.n!==1||K.raconFromChar.n!==1||K.tmConesFromCat.n!==1||K.lightCat.n!==2)return{pass:false,detail:"counts: "+JSON.stringify([K.shapeHeight.n,K.natCon.n,K.equipAttached.n,K.raconFromChar.n,K.tmConesFromCat.n,K.lightCat.n])};
       /* the readback names only the genuine gaps: the two sector-light bodies, Papa's colour, shape and character-less light; Delta's colour pattern */
-      if(res.counts.critical!==5||res.counts.error!==1)return{pass:false,detail:"readback critical "+res.counts.critical+" (want 5) error "+res.counts.error+" (want 1: Delta's colour pattern)"};
+      if(res.counts.critical-res.coverageGaps.length!==5||res.counts.error!==1)return{pass:false,detail:"readback critical "+res.counts.critical+" less the coverage pair "+res.coverageGaps.length+" (want 5) error "+res.counts.error+" (want 1: Delta's colour pattern)"};   /* the five the sheet owes, beyond the coverage pair */
       /* Rule 10: the new fields survive parse → generate → parse and the Builder hop (a buoy's natureOfConstruction included) */
       const p1=parseAllGML(res.gml);if(!Array.isArray(p1))return{pass:false,detail:"parse failed: "+(p1&&p1.error)};
       const p2=parseAllGML(generateAllGML(p1));if(!Array.isArray(p2)||_stableStr(p1)!==_stableStr(p2))return{pass:false,detail:"parse(generate(parse(t))) !== parse(t)"};
@@ -44804,7 +45298,7 @@ async function runSmokeTests(){
        125_1.0.0.xsd (featureName left out: S-125 asks a language 1..1 the sample has none of, design 6.2), with the
        one report line that says so. Each variant changes the file in one place and must give exactly one fault. */
     if(typeof S125_MAP!=="object"||!S125_MAP)return{pass:false,detail:"S125_MAP is not in the app (brief 61)"};
-    const feats=parseAllGML(exGML[0]).filter(f=>_fcIsType(f.featureType));
+    const feats=parseAllGML(_exNoCov(exGML[0])).filter(f=>_fcIsType(f.featureType));   /* the hand-made S-125 file holds the aid alone */
     const t="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Dataset xmlns=\"http://www.iho.int/S125/1.0\" xmlns:S100=\"http://www.iho.int/s100gml/5.0\" xmlns:gml=\"http://www.opengis.net/gml/3.2\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" gml:id=\"DS.1\">\n  <S100:DatasetIdentificationInformation>\n    <S100:encodingSpecification>S-100 Part 10b</S100:encodingSpecification>\n    <S100:encodingSpecificationEdition>1.0</S100:encodingSpecificationEdition>\n    <S100:productIdentifier>S-125</S100:productIdentifier>\n    <S100:productEdition>1.0.0</S100:productEdition>\n    <S100:applicationProfile>1</S100:applicationProfile>\n    <S100:datasetFileIdentifier>125XX00ALFA</S100:datasetFileIdentifier>\n    <S100:datasetTitle>Alfa</S100:datasetTitle>\n    <S100:datasetReferenceDate>2026-01-01</S100:datasetReferenceDate>\n    <S100:datasetLanguage>eng</S100:datasetLanguage>\n    <S100:datasetTopicCategory>transportation</S100:datasetTopicCategory>\n    <S100:datasetPurpose>base</S100:datasetPurpose>\n    <S100:updateNumber>0</S100:updateNumber>\n  </S100:DatasetIdentificationInformation>\n  <members>\n    <LateralBuoy gml:id=\"BL.001\">\n      <atoNNumber>XX-LB-001</atoNNumber>\n      <child xlink:href=\"#TM.001\"/>\n      <child xlink:href=\"#LT.001\"/>\n      <buoyShape code=\"2\">Can</buoyShape>\n      <colour code=\"3\">Red</colour>\n      <categoryOfLateralMark code=\"1\">Port-Hand Lateral Mark</categoryOfLateralMark>\n      <geometry>\n        <S100:pointProperty>\n          <S100:Point gml:id=\"P.BL.001\" srsName=\"http://www.opengis.net/def/crs/EPSG/0/4326\" srsDimension=\"2\">\n            <gml:pos>1.0000000 1.0000000</gml:pos>\n          </S100:Point>\n        </S100:pointProperty>\n      </geometry>\n    </LateralBuoy>\n    <Topmark gml:id=\"TM.001\">\n      <parent xlink:href=\"#BL.001\"/>\n      <colour code=\"3\">Red</colour>\n      <topmarkDaymarkShape code=\"5\">Cylinder</topmarkDaymarkShape>\n      <geometry>\n        <S100:pointProperty>\n          <S100:Point gml:id=\"P.TM.001\" srsName=\"http://www.opengis.net/def/crs/EPSG/0/4326\" srsDimension=\"2\">\n            <gml:pos>1.0000000 1.0000000</gml:pos>\n          </S100:Point>\n        </S100:pointProperty>\n      </geometry>\n    </Topmark>\n    <LightAllAround gml:id=\"LT.001\">\n      <parent xlink:href=\"#BL.001\"/>\n      <colour code=\"3\">Red</colour>\n      <valueOfNominalRange>5</valueOfNominalRange>\n      <rhythmOfLight>\n        <lightCharacteristic code=\"2\">Flashing</lightCharacteristic>\n        <signalGroup>2</signalGroup>\n        <signalPeriod>5</signalPeriod>\n      </rhythmOfLight>\n      <geometry>\n        <S100:pointProperty>\n          <S100:Point gml:id=\"P.LT.001\" srsName=\"http://www.opengis.net/def/crs/EPSG/0/4326\" srsDimension=\"2\">\n            <gml:pos>1.0000000 1.0000000</gml:pos>\n          </S100:Point>\n        </S100:pointProperty>\n      </geometry>\n    </LightAllAround>\n  </members>\n</Dataset>\n";
     const rep={leftOut:[{id:"BL.001",ft:"LateralBuoy",attr:"featureName",why:"S-125 asks language 1..1 (design 6.2)"}]};
     /* the faithful file first: no fault at all */
