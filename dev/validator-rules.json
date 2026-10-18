@@ -589,15 +589,19 @@
     },
     "fix": {
       "field": "topmarkDaymarkShape",
-      "inputType": "select",
-      "label": "Topmark shape (on child)",
+      "label": "Lateral topmark preset on the child (shape by side, colour by region — Tables 1+2)",
+      "kind": "compound",
       "target": "child",
-      "options": [
-        "cylinder",
-        "cone (point up)"
-      ],
       "childType": [
         "Topmark"
+      ],
+      "fields": [
+        {
+          "field": "topmarkDaymarkShape"
+        },
+        {
+          "field": "colour"
+        }
       ]
     }
   },
