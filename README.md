@@ -2,7 +2,7 @@
 
 A single-file web app for **IHO/IALA S-201 Aids to Navigation** data: it parses S-201 GML datasets, draws every aid with its official Annex D chart symbol, authors new datasets through a guided form, validates them against the IHO and IALA sources it cites, packages and checks S-100 Exchange Sets, compares two editions, converts spreadsheet AtoN lists into S-201 (the spreadsheet conversion still needs some work — it is not finished), and exports a dataset as IHO S-125 Edition 1.0.0.
 
-Version **2.25.1**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
+Version **2.26.0**. No install, no internet needed at runtime (one optional base-map overlay is the only feature that fetches anything).
 
 See [DEVELOPER-NOTES.md](DEVELOPER-NOTES.md) for how the code is organised and how to change it safely.
 
@@ -64,7 +64,7 @@ This tree holds what the app needs to run: the HTML file, `Annex_D/`, `lib/` for
 
 ## Check that it works
 
-Open the Validator tab and click **Use example** — a bundled three-feature dataset loads and validates cleanly. The first validation after the page is opened runs the built-in self-test suite first, behind a cover, and shows its result in a banner above the findings. Click **Run tests** at the top of that tab (or open the app with `?test=1`) to run the built-in self-test suite; it should report every invariant passed.
+The page opens on the Validator tab. Click **Use example** — a bundled three-feature dataset loads and validates cleanly. The first validation after the page is opened runs the built-in self-test suite first, behind a cover, and shows its result in a banner above the findings. Click **Run tests** at the top of that tab (or open the app with `?test=1`) to run the built-in self-test suite; it should report every invariant passed.
 
 ---
 

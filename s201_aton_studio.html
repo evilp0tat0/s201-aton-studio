@@ -130,7 +130,7 @@ is dev/HANDOFF.md § 11 "Specification document index")
      ENC-* cross-checks; :102 / :130 / :98 are other products. No IHO
      validation-checks package specifically for S-201 exists yet (no
      S-158:201; the corpus will be cross-referenced when one is published).
-     Our 271-rule validator (219 per-feature + 25 GML structural + 27 exchange-set, current as of pass 808 / v2.25.1) is the first
+     Our 271-rule validator (219 per-feature + 25 GML structural + 27 exchange-set, current as of pass 809 / v2.26.0) is the first
      validation implementation specifically for S-201.
   OGC and W3C (the substrate)
   15. OGC GML 3.2 schemas — the authority for every gml: element we emit
@@ -318,7 +318,7 @@ KEY ARCHITECTURAL CONVENTIONS (per S-100 5.2.0 Part 10b + production data)
 
 VERSION
 ────────────────────────────────────────────────────────────────────────────────
-See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.25.1. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
+See APP_VERSION below (drift-tracked by precommit gate check #1 (APP_VERSION consistency); grep "const APP_VERSION " for the live anchor). Current: 2.26.0. Semver: MAJOR breaks GML output, MINOR adds rules/types/UI, PATCH is fixes. Bump on every change. Update dev/HANDOFF.md + dev/CHANGELOG.md in same commit.
 ================================================================================
 -->
 <html lang="en">
@@ -821,15 +821,17 @@ python3 -m http.server 8080
 
 <!-- WCAG AA fix: tab triggers use `<button role="tab">` per WAI-ARIA tab pattern (keyboard users need Tab focus + Enter/Space activation, which native buttons give for free; `<div onclick>` doesn't). Container `role="tablist"`; the `.ntab` CSS applies identically. `aria-selected` toggled by `showTab()` to mirror the `.on` class; `tabindex="0"` on the active tab + `tabindex="-1"` on inactive tabs is the canonical roving-focus pattern but for the simple no-arrow-keys version a static `tabindex="0"` is acceptable. -->
 <div class="nav" role="tablist" aria-label="App tabs">
-  <button class="ntab on" type="button" role="tab" aria-selected="true" onclick="showTab(0)"><span class="ntab-dot d-ok"></span>GML → Drawing</button>
+  <!-- The page opens on the Validator tab (user decision): the markup alone chooses the opening tab - the `on` class and aria-selected="true" sit on its button here and on the #t2 panel below, and no script selects a tab at load; showTab moves both. The gate's fresh-page leg and an in-suite lock hold this. -->
+  <button class="ntab" type="button" role="tab" aria-selected="false" onclick="showTab(0)"><span class="ntab-dot d-ok"></span>GML → Drawing</button>
   <button class="ntab" type="button" role="tab" aria-selected="false" onclick="showTab(1)"><span class="ntab-dot d-info"></span>Builder</button>
-  <button class="ntab" type="button" role="tab" aria-selected="false" onclick="showTab(2)"><span class="ntab-dot d-err" id="valDot"></span>Validator</button>
+  <button class="ntab on" type="button" role="tab" aria-selected="true" onclick="showTab(2)"><span class="ntab-dot d-err" id="valDot"></span>Validator</button>
   <button class="ntab" type="button" role="tab" aria-selected="false" onclick="showTab(3)"><span class="ntab-dot d-info"></span>Compare</button>
   <button class="ntab" type="button" role="tab" aria-selected="false" onclick="showTab(4)"><span class="ntab-dot d-info"></span>Excel → S-201</button>
 </div>
 
 <!-- TAB 0 -->
-<div class="panel on" id="t0">
+<!-- the Drawing panel is hidden until its tab is clicked: only the Validator panel (#t2) carries `on` in the markup -->
+<div class="panel" id="t0">
   <div class="main">
     <div class="main-body">
       <div class="content-area">
@@ -1493,7 +1495,8 @@ python3 -m http.server 8080
 </div>
 
 <!-- TAB 2 -->
-<div class="panel" id="t2">
+<!-- the Validator panel is the one shown on a fresh page: `on` here pairs with `on` on its tab button (the page opens on the Validator, user decision) -->
+<div class="panel on" id="t2">
   <div class="content-area" style="max-width:460px;border-right:1px solid var(--border)">
     <!-- line-number gutter (surfaces line numbers for easy error-location). The gutter is updated on `oninput` (text changed) and scroll-synced via `onscroll`. Helper: syncLineGutter / syncGutterScroll. -->
     <div class="with-line-gutter">
@@ -1690,7 +1693,7 @@ python3 -m http.server 8080
 </div>
 <script>
 /* ════════════════════════════════════════════════════════════════════════ APP VERSION — S-201 AtoN Studio semver ════════════════════════════════════════════════════════════════════════ Format: MAJOR.MINOR.PATCH (semantic versioning per https://semver.org). Bump rules: • MAJOR — Breaking change to GML output format that prior consumers could not parse (root element rename, namespace URI change, element removal). Reserved for substantial milestones. • MINOR — Added a new validator rule, a new feature type in ATYPES, a new UI feature, or a new attribute in the GML output (additive change that prior consumers can ignore). • PATCH — Bug fixes, comment improvements, doc refreshes, refactors that don't change observable behaviour. Track scheme: ONE track — plain semver continues from this constant, and a `-beta` pre-release suffix (semver.org §9) may mark work-in-progress between public release tags. ⚠️ Bump the version on every change. The user has explicitly required this. Even a comment-only change is at minimum a PATCH bump. The badge in the topbar, the generated GML `<!-- comment -->`, the CHANGELOG entry, and the HANDOFF Live State line all reference this constant. Bump checklist: 1. Update the const just below this comment. 2. Update the `Current:` line in the HTML preface (grep `Current:` — precommit check 1 and the self-test both compare it with this constant). 3. Add a per-pass entry at the top of dev/CHANGELOG.md in the development repository (not shipped in the public snapshot; Rule 21: facts only — that file IS the canonical log). 4. Update the Live State row in dev/HANDOFF.md. 5. The topbar version badge + generated-GML watermark auto-update from APP_VERSION (no manual sync needed). Per-pass history lives in dev/CHANGELOG.md. This file intentionally does NOT carry version history — the canonical log is one place. `No comment without spec citation` policy: This file is the entire app. There is no separate documentation generator, no test suite outside the inline smoke tests, no type system. The comments + the docs in dev/ are the only thing keeping this codebase maintainable. Every fix is justified by a spec reference — re-read the comments before changing anything. ════════════════════════════════════════════════════════════════════════ */
-const APP_VERSION = "2.25.1";
+const APP_VERSION = "2.26.0";
 
 /* ════════════════════════════════════════════════════════════════════════ FOUNDATIONAL_RULES — (Rule 19) machine-readable in-app projection of the foundational engineering rules. The CANONICAL machine-readable form lives at `dev/foundational-rules.json` . This in-app constant is the same data, embedded here for sync access (smoke tests can't await fetch). Both surfaces MUST agree on the entry count and, entry by entry, on number / name / theme / addedPass / summary, character for character: pre-commit check #2 reads this const through V8 and compares those five fields with the JSON's by rule number, and the smoke suite verifies the count + entry shape every run (Rule 23: the agreement is stated here because a gate holds it). Authoring direction: HANDOFF.md prose sections are the source of truth. When adding a new foundational rule: 1. Write the section in HANDOFF.md. 2. Append the entry to dev/foundational-rules.json. 3. Append the entry to FOUNDATIONAL_RULES below (the same number / name / theme / addedPass / summary as the JSON, character for character — pre-commit check #2 fails on any difference). 4. Bump the smoke test's expected length from N to N+1 (grep `FOUNDATIONAL_RULES.length!==`) AND its 1..N title/detail phrases in the same edit — the prose phrases are pre-commit-gated, the length literal is enforced by the suite itself at runtime, and the per-entry loop derives its bound from the array. ════════════════════════════════════════════════════════════════════════ */
 const FOUNDATIONAL_RULES = [
@@ -13048,7 +13051,9 @@ function _genCompIM(comp,parentId,geo){
 /* fillSel: populate a <select> element with <option> items, marking one as selected. Used to fill all dropdowns. */
 function fillSel(id,items,cur){const s=document.getElementById(id);if(!s)return;s.innerHTML=items.map(v=>`<option value="${v}"${v===cur?" selected":""}>${_toTitleCase(v)}</option>`).join("");}
 /* showTab: switch between the 5 tabs (0=Drawing, 1=Builder, 2=Validator, 3=Compare, 4=Excel → S-201) — toggle "on" class on tab buttons and content panes */
-function showTab(n){[0,1,2,3,4].forEach(i=>{document.getElementById("t"+i).classList.toggle("on",i===n);const tab=document.querySelectorAll(".ntab")[i];tab.classList.toggle("on",i===n);/* WCAG AA — keep aria-selected in lockstep with .on class for screen-reader announcement */tab.setAttribute("aria-selected",String(i===n));});if(n===1&&typeof _bld3ExplainApply==="function")try{_bld3ExplainApply();}catch(e){}if(n===1&&typeof _bldPillsKeepInView==="function")try{_bldPillsKeepInView();}catch(e){}/* Builder tab shown: a roster selection change rendered while the tab was hidden (a Validator / Excel load) is applied now that the box has a size *//* Builder tab shown: the explain-all mode re-applies to what is now on screen (a rebuild while the tab was hidden — e.g. the self-test suite — could not explain what was not visible) */if(n===2)try{_updateValStaleNote();}catch(e){}/* Validator-tab entry: recompute the Builder-staleness notice (guarded — showTab has unguarded callers: nav buttons + both send-to-validator handoffs) */}
+function showTab(n){[0,1,2,3,4].forEach(i=>{document.getElementById("t"+i).classList.toggle("on",i===n);const tab=document.querySelectorAll(".ntab")[i];tab.classList.toggle("on",i===n);/* WCAG AA — keep aria-selected in lockstep with .on class for screen-reader announcement */tab.setAttribute("aria-selected",String(i===n));});if(n===1&&typeof _bld3ExplainApply==="function")try{_bld3ExplainApply();}catch(e){}if(n===1&&typeof _bldPillsKeepInView==="function")try{_bldPillsKeepInView();}catch(e){}/* Builder tab shown: a roster selection change rendered while the tab was hidden (a Validator / Excel load) is applied now that the box has a size *//* Builder tab shown: the explain-all mode re-applies to what is now on screen (a rebuild while the tab was hidden — e.g. the self-test suite — could not explain what was not visible) */if(n===2)try{_updateValStaleNote();}catch(e){}/* Validator-tab entry: recompute the Builder-staleness notice (guarded — showTab has unguarded callers: nav buttons + both send-to-validator handoffs) */
+/* Drawing-tab entry: a base-map first render that _renderMapLeaflet deferred while the tab was hidden is started again here - its one-shot requestAnimationFrame skips a zero-size container and nothing else retries, and the page opens on the Validator, so a render made before the Drawing tab is first shown (an Excel handoff, a toggle left on) would otherwise leave the map empty */
+if(n===0&&MAP_LAYER_ON_DRAW&&!_drawMapInstance)try{_renderMapLeaflet();}catch(e){}}
 
 /* ===== Guided Builder wizard (additive presentation layer) =====
    builderUp()/_swapBuilderToFeat() address fields by getElementById, so grouping the existing
@@ -39219,6 +39224,64 @@ async function runSmokeTests(){
       await new Promise(r=>setTimeout(r,30));
     }
     return{pass:true,detail:"a Region-B dataset under a toggle at A got the Table-2 green cylinder, the void colour became the value, and the finding cleared"};
+  });
+
+  /* The page opens on the Validator tab (user decision). The suite fronts tabs itself, so the live DOM cannot show the opening state; the served markup can: it is fetched and read for the one `.ntab` button that carries `on` and aria-selected="true", and the one `.panel` that carries `on`. The gate's fresh-page leg holds the same fact on the live page. */
+  await _tAsync("The page opens on the Validator tab: in the served markup the Validator button alone carries the on class and aria-selected, and #t2 is the one panel shown","validator",async()=>{
+    /* fetch() is blocked on file:// pages, so the markup cannot be read there; the http-served gate reads it */
+    if(location.protocol==="file:")return{pass:true,detail:"skipped — the browser blocks fetch() on file:// pages"};
+    let src;try{src=await (await fetch(location.pathname,{cache:"no-store"})).text();}catch(e){return{pass:false,detail:"the page's own markup could not be fetched: "+e.message};}
+    /* the tab buttons in document order, each with its class list, aria-selected and the tab index its handler names */
+    const tabs=[...src.matchAll(/<button class="(ntab[^"]*)"[^>]*aria-selected="([^"]*)"[^>]*onclick="showTab\((\d)\)"/g)].map(m=>({on:/\bon\b/.test(m[1]),sel:m[2]==="true",n:+m[3]}));
+    if(tabs.length!==5)return{pass:false,detail:tabs.length+" tab buttons matched in the markup, 5 expected"};
+    const onTabs=tabs.filter(t=>t.on),selTabs=tabs.filter(t=>t.sel);
+    if(onTabs.length!==1||onTabs[0].n!==2)return{pass:false,detail:"the on class sits on tab(s) "+onTabs.map(t=>t.n).join(",")+" - the Validator (2) alone must carry it"};
+    if(selTabs.length!==1||selTabs[0].n!==2)return{pass:false,detail:"aria-selected is true on tab(s) "+selTabs.map(t=>t.n).join(",")+" - the Validator (2) alone must announce it"};
+    /* the panels: exactly one carries `on`, and it is #t2 */
+    const panels=[...src.matchAll(/<div class="(panel[^"]*)" id="(t\d)"/g)].map(m=>({on:/\bon\b/.test(m[1]),id:m[2]}));
+    if(panels.length!==5)return{pass:false,detail:panels.length+" tab panels matched in the markup, 5 expected"};
+    const onPanels=panels.filter(p=>p.on);
+    if(onPanels.length!==1||onPanels[0].id!=="t2")return{pass:false,detail:"the on class sits on panel(s) "+onPanels.map(p=>p.id).join(",")+" - #t2 alone must carry it"};
+    return{pass:true,detail:"the served markup opens the page on the Validator: button 2 carries on + aria-selected, #t2 is the one panel on"};
+  });
+
+  /* A Drawing base-map first render deferred while the tab was hidden is started again when the tab is shown: _renderMapLeaflet's one-shot requestAnimationFrame skips a zero-size container, and with the page opening on the Validator a render made before the Drawing tab is first shown would otherwise leave the map empty. The lock turns the map on under a hidden Drawing tab, sees no instance, fronts the tab and sees the instance. */
+  await _tAsync("Drawing base map turned on while the Drawing tab is hidden is rendered when the tab is shown: showTab(0) re-kicks the deferred first render","drawing-map",async()=>{
+    /* saved: the user's Drawing text, the toggle, the fronted tab, the inert cover, and console.warn (the skipped render warns; the gate reads the console) */
+    const ta=document.getElementById("gmlIn");const prev=ta.value;const wasOn=MAP_LAYER_ON_DRAW;
+    const _tabOn=[...document.querySelectorAll(".ntab")].findIndex(t=>t.classList.contains("on"));
+    const _wasInert=!!(_inertEl&&_inertEl.inert);const _warn=console.warn;
+    try{
+      if(_inertEl)_inertEl.inert=false;
+      /* the skipped render warns on the console, and the gate fails on an unlisted console line, so the warning is silenced for the lock's duration */
+      console.warn=function(){};
+      /* the map is off and torn down first, so the first render under the hidden tab is a real first render */
+      if(MAP_LAYER_ON_DRAW)await toggleDrawingMap();
+      if(MAP_LAYER_ON_DRAW||_drawMapInstance)return{pass:false,detail:"the base map could not be turned off before the test"};
+      /* one buoy with a point, loaded while the Validator tab is fronted and the Drawing panel has no box */
+      const NS='xmlns="http://www.iho.int/S-201/gml/cs0/1.0" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:S100="http://www.iho.int/s100gml/5.0" xmlns:xlink="http://www.w3.org/1999/xlink"';
+      ta.value='<Dataset '+NS+' gml:id="DS.MAPKICK"><members><LateralBuoy gml:id="K1"><featureName><name>Buoy K</name></featureName><colour>Red</colour><categoryOfLateralMark>Port-Hand Lateral Mark</categoryOfLateralMark><geometry><S100:pointProperty><S100:Point gml:id="P.K1" srsName="http://www.opengis.net/def/crs/EPSG/0/4326" srsDimension="2"><gml:pos>5.0000000 5.0000000</gml:pos></S100:Point></S100:pointProperty></geometry></LateralBuoy></members></Dataset>';
+      showTab(2);onGmlInput();
+      try{await _loadLeaflet();}catch(e){return{pass:false,detail:"Leaflet did not load ("+e.message+") - lib/leaflet/ must be served beside the HTML"};}
+      /* the toggle's own render runs under the hidden tab: its frame sees a zero-size container and skips */
+      await toggleDrawingMap();
+      if(!MAP_LAYER_ON_DRAW)return{pass:false,detail:"the base map did not come on"};
+      await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+      if(_drawMapInstance)return{pass:false,detail:"a map instance was created under the hidden tab - the fixture no longer reproduces the deferred render"};
+      /* showing the Drawing tab starts the render again; the instance follows within a generous budget */
+      showTab(0);
+      for(let w=0;w<300&&!_drawMapInstance;w++)await new Promise(r=>setTimeout(r,50));
+      if(!_drawMapInstance)return{pass:false,detail:"the map instance was not created after the Drawing tab was shown - showTab(0) did not re-kick the deferred first render"};
+    }finally{
+      /* the toggle back as it was (OFF tears the fixture's map down), then the user's text, tab and cover */
+      if(MAP_LAYER_ON_DRAW!==wasOn){try{await toggleDrawingMap();}catch(e){}}
+      ta.value=prev;try{onGmlInput();}catch(e){}
+      if(_tabOn>=0)showTab(_tabOn);
+      if(_inertEl)_inertEl.inert=_wasInert;
+      console.warn=_warn;
+    }
+    /* both halves held: the deferred render under the hidden tab, and the re-kick on showing the tab */
+    return{pass:true,detail:"no instance under the hidden tab; showTab(0) re-kicked the deferred render and the map instance appeared"};
   });
 
   await _tAsync("Quick-fix enum write clears stale same-name siblings: applying R1001-EWM-01 to a child Light already carrying <colour>blue</colour><colour>yellow</colour> yields exactly blue/yellow, not a duplicate blue/yellow/yellow","validator",async()=>{
