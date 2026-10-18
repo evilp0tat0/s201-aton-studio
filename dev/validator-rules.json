@@ -1894,6 +1894,21 @@
     }
   },
   {
+    "id": "S201-NIL-01",
+    "ref": "S-201 PS 2.0.0 §10.7 Unknown Attribute Values (s201_ps_2_0_0_main_full.txt L939-942: \"Optional attributes must be omitted altogether if the value is unknown or missing. They must not be 'nilled.'\"); S-201 DCEG §2.4.3 (dceg_annex_a.txt L251-252); the lower multiplicity per type from the S-201 FC 2.0.0 attribute bindings (FC_ATTR_LOWER)",
+    "severity": "warning",
+    "message": "An optional attribute carries a nilReason. S-201 PS 2.0.0 §10.7: only a missing mandatory attribute is nilled with a nilReason; an optional attribute whose value is unknown or missing is omitted altogether - it must not be nilled. Remove the element (the quick fix), or give it a value.",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "text",
+      "description": "no nilReason on an attribute the FC binds with lower multiplicity 0 on this feature type; a nilReason belongs on a missing mandatory attribute only (S-201 PS 2.0.0 §10.7)"
+    },
+    "fix": {
+      "label": "Remove the nilReason from the optional attribute(s) (S-201 PS §10.7: an optional attribute whose value is unknown is omitted, not nilled)",
+      "kind": "dropNilled"
+    }
+  },
+  {
     "id": "S201-LGT-07",
     "ref": "S-201 FC 2.0.0 sectorLimit complex — sectorLimitOne (1..1) + sectorLimitTwo (1..1) (FC XML lines 9237-9259)",
     "severity": "critical",
@@ -2065,6 +2080,69 @@
     "expected": {
       "kind": "text",
       "description": "every position of the feature (its point, or each vertex of its curve or surface; a geometry-less child at its parent's) inside the exterior ring of a QualityOfNonBathymetricData surface of the dataset, boundary included (S-201 PS §10.13)"
+    }
+  },
+  {
+    "id": "S201-UOM-01",
+    "ref": "S-201 PS 2.0.0 §5.4 Units of Measure (s201_ps_2_0_0_main_full.txt L790-800: \"For height, depth and vertical length it must be metres.\" L794) + S-201 FC 2.0.0 heightLengthUnits (FC XML L316-354, Metres L324-326) bound 1..1 in sinkerDimensions (L9679-9693) and CableDimensions (L9402-9416)",
+    "severity": "error",
+    "message": "The unit of a sinker's or cable's dimensions is not Metres - S-201 PS 2.0.0 §5.4: for height, depth and vertical length the unit must be metres. Convert the length values to metres and set heightLengthUnits to Metres (the FC's Metres value); a quick fix cannot relabel a value in another unit.",
+    "sourceLayer": "per-feature",
+    "noFix": "A length in another unit cannot be relabelled - convert the value to metres and set heightLengthUnits to Metres in the Builder's sinker / cable dimensions.",
+    "expected": {
+      "kind": "enum",
+      "values": [
+        "Metres"
+      ],
+      "description": "heightLengthUnits = Metres in sinkerDimensions and CableDimensions (S-201 PS 2.0.0 §5.4, L794; FC heightLengthUnits code 1)"
+    }
+  },
+  {
+    "id": "S201-VDT-01",
+    "ref": "S-201 PS 2.0.0 §5.3 Vertical Datum (s201_ps_2_0_0_main_full.txt L785-787) + S-201 FC 2.0.0 verticalDatum Local Datum code 24 (FC XML L5306-5308) and the information complex attribute (L9767-9812, bound 0..* on AidsToNavigation L10514 and DangerousFeature L15795, 0..1 on QualityOfNonBathymetricData L15925)",
+    "severity": "warning",
+    "message": "The vertical datum is Local Datum and the feature carries no information attribute - S-201 PS 2.0.0 §5.3: when the local datum value is used, additional information must be provided in the feature's information attribute or in the comment of the dataset's discovery metadata. Say which datum it is in the information attribute (the dataset text alone cannot show a metadata comment).",
+    "sourceLayer": "per-feature",
+    "noFix": "What the local datum is only the producer can say - write it in the feature's information attribute (Builder: Information headline / text), or in the comment of the dataset's discovery metadata when the data is delivered in an exchange set.",
+    "expected": {
+      "kind": "text",
+      "description": "a feature whose verticalDatum is Local Datum carries an information attribute (headline or text) explaining the datum, or the exchange set's discovery metadata carries the explanation in its comment (S-201 PS 2.0.0 §5.3)"
+    }
+  },
+  {
+    "id": "S201-NSM-01",
+    "ref": "S-201 DCEG §3.3.1 (dceg_annex_a.txt L511-512: Navigational System of Marks features with a value for marks navigational system of must not overlap) + S-201 FC 2.0.0 NavigationalSystemOfMarks (FC XML L15997-16025, surface, marksNavigationalSystemOf 1..1); the identical S-101 check is S-158:101 101_1055, Critical Error (S-158-101_Validation_Checks_Ed_1.0.0.xlsx sheet S101Checks row 78)",
+    "severity": "critical",
+    "message": "This Navigational System of Marks surface overlaps another - S-201 DCEG §3.3.1: Navigational System of Marks features with a value for marks navigational system of must not overlap (adjoining surfaces may share a border). Redraw the surfaces so each place lies in one buoyage system.",
+    "sourceLayer": "per-feature",
+    "noFix": "Where one buoyage system ends and the other begins is a fact about the area - redraw the surfaces in the Builder so they meet without overlapping.",
+    "expected": {
+      "kind": "text",
+      "description": "no two NavigationalSystemOfMarks surfaces whose interiors meet (a shared edge or vertex is not an overlap); each place under one buoyage system (S-201 DCEG §3.3.1)"
+    }
+  },
+  {
+    "id": "S201-NSM-02",
+    "ref": "S-201 DCEG §3.3.1 (dceg_annex_a.txt L514-520: Navigational System of Marks features with a value for orientation must not overlap one another) + S-201 FC 2.0.0 LocalDirectionOfBuoyage (FC XML L15978-15996, surface, orientation 1..1 - the FC's type for the DCEG's orientation areas); the identical S-101 check is S-158:101 101_1057, Error (S-158-101_Validation_Checks_Ed_1.0.0.xlsx sheet S101Checks row 80)",
+    "severity": "error",
+    "message": "This Local Direction of Buoyage surface overlaps another - S-201 DCEG §3.3.1: the areas carrying a direction of buoyage (orientation) must not overlap one another, though they may overlap a Navigational System of Marks surface. Redraw the surfaces so each place has one local direction.",
+    "sourceLayer": "per-feature",
+    "noFix": "Where one local direction of buoyage ends and the next begins is a fact about the area - redraw the surfaces in the Builder so they meet without overlapping.",
+    "expected": {
+      "kind": "text",
+      "description": "no two LocalDirectionOfBuoyage surfaces whose interiors meet (a shared edge or vertex is not an overlap); an overlap with a NavigationalSystemOfMarks surface is allowed (S-201 DCEG §3.3.1)"
+    }
+  },
+  {
+    "id": "S201-CRV-01",
+    "ref": "S-201 PS 2.0.0 §4.8 Geometry (s201_ps_2_0_0_main_full.txt L758-761: the distance between two consecutive control points and 0.3 mm at 1:10000 = 3 m), read as the identical S-101 clause's check S-158:101 101_1003, Warning (S-158-101_Validation_Checks_Ed_1.0.0.xlsx sheet S101Checks row 26: control points at a density greater than 0.3 mm)",
+    "severity": "warning",
+    "message": "Two consecutive control points of this curve or ring are closer than 3 m (0.3 mm at a display scale of 1:10000) - S-201 PS 2.0.0 §4.8 sets 0.3 mm at 1:10000 as the spacing of consecutive control points, which the IHO's S-158:101 check for the same S-101 clause (101_1003, control point density) reads as the density ceiling applied here. Generalise the line: drop the redundant vertex.",
+    "sourceLayer": "per-feature",
+    "noFix": "Which control points to drop is a generalisation decision - thin the curve or ring in the Builder so consecutive vertices are at least 3 m apart.",
+    "expected": {
+      "kind": "text",
+      "description": "every pair of consecutive control points of a curve or surface ring at least 3 m apart (0.3 mm at 1:10000; S-201 PS 2.0.0 §4.8 as S-158:101 101_1003 reads it)"
     }
   },
   {
@@ -2630,6 +2708,52 @@
     }
   },
   {
+    "id": "S201-DII-05",
+    "ref": "S-201 PS 2.0.0 §8.1 Data Maintenance (s201_ps_2_0_0_main_full.txt L871-873: whole new editions, no delta datasets, \"Updates and Reissues are not used in S-201\"); §4.7 (L729-731); S-100 Ed 5.2.0 Part 10b Table 10b-4 datasetPurpose (s100_ed5_2_0_full.txt L33101-33109)",
+    "severity": "critical",
+    "message": "datasetPurpose is \"update\" - S-201 PS 2.0.0 §8.1: updates and reissues are not used in S-201; a dataset is replaced by a whole new edition, so its purpose is base. Set <S100:datasetPurpose> to base (the quick fix) and deliver the whole dataset.",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "enum",
+      "values": [
+        "base"
+      ],
+      "description": "datasetPurpose = base in every S-201 dataset (S-201 PS 2.0.0 §8.1: editions only, no updates)"
+    },
+    "fix": {
+      "field": "datasetPurpose",
+      "inputType": "select",
+      "label": "Dataset purpose - base (S-201 datasets are whole editions; corrects <S100:datasetPurpose> in the DII block)",
+      "target": "dii",
+      "options": [
+        "base"
+      ]
+    }
+  },
+  {
+    "id": "S201-DII-06",
+    "ref": "S-201 PS 2.0.0 §8.1 Data Maintenance (s201_ps_2_0_0_main_full.txt L871-873: \"Updates and Reissues are not used in S-201\"); §4.7 (L729-731); S-100 Ed 5.2.0 Part 10b Table 10b-4 updateNumber (s100_ed5_2_0_full.txt L33110-33116, multiplicity 1, Integer)",
+    "severity": "critical",
+    "message": "updateNumber is not 0 - S-201 PS 2.0.0 §8.1: updates are not used in S-201, so the sequential update number of a dataset is always 0 (S-100 Part 10b Table 10b-4 makes the field mandatory, hence 0 rather than absent). Set <S100:updateNumber> to 0 (the quick fix).",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "enum",
+      "values": [
+        "0"
+      ],
+      "description": "updateNumber = 0 in every S-201 dataset (S-201 PS 2.0.0 §8.1; S-100 Pt 10b Table 10b-4 field, multiplicity 1)"
+    },
+    "fix": {
+      "field": "updateNumber",
+      "inputType": "select",
+      "label": "Update number - 0 (S-201 datasets are whole editions; corrects <S100:updateNumber> in the DII block)",
+      "target": "dii",
+      "options": [
+        "0"
+      ]
+    }
+  },
+  {
     "id": "S201-STA-01",
     "ref": "S-201 FC 2.0.0 status",
     "severity": "critical",
@@ -3038,6 +3162,22 @@
     },
     "fix": {
       "label": "Rewrite to the canonical form (\".6\" → \"0.6\", \"6.\" → \"6\", an integer attribute's \"1e3\" → \"1000\")",
+      "kind": "rewrite",
+      "keysConst": "_S158_REAL_KEYS"
+    }
+  },
+  {
+    "id": "S201-FMT-01",
+    "ref": "S-201 PS 2.0.0 §10.4 Numeric Attribute Encoding (s201_ps_2_0_0_main_full.txt L916-918); the identical S-101 clause is S-158:101 Ed 1.0.0 checks 101_0018 / 101_0019, Error (S-158-101_Validation_Checks_Ed_1.0.0.xlsx, sheet S101Checks rows 19-20)",
+    "severity": "error",
+    "message": "A numeric attribute value is padded with zeros - S-201 PS 2.0.0 §10.4: floating point and integer attribute values must not contain leading zeros, and floating point values must not contain non-significant trailing zeros (\"007\", \"5.0\", \"5.50\"). Write the value without the padding (\"7\", \"5\", \"5.5\"); the quick fix rewrites the flagged values in place.",
+    "sourceLayer": "per-feature",
+    "expected": {
+      "kind": "text",
+      "description": "every FC real or integer attribute value written without leading zeros, and a real without trailing zeros after the point (S-201 PS 2.0.0 §10.4); e.g. 7, 5, 5.5, 0.5"
+    },
+    "fix": {
+      "label": "Remove the padding zeros (\"007\" → \"7\", \"5.0\" → \"5\", \"5.50\" → \"5.5\")",
       "kind": "rewrite",
       "keysConst": "_S158_REAL_KEYS"
     }
@@ -4053,6 +4193,27 @@
     "sourceLayer": "structural"
   },
   {
+    "id": "GML-STR-28",
+    "ref": "S-201 PS 2.0.0 §10.8 Structure of dataset files (s201_ps_2_0_0_main_full.txt L952-975: information objects L971, then meta features L973, geo features L974, S-201 collection objects L975; the structure-information and spatial-record lines L956-967 are ISO 8211 carry-overs with no element in the S-201 2.0.0 schema); S-201 Ed 2.0.0 Annex B XSD MemberObjects xs:choice (L8035-8107, referenced L8117 - the schema itself fixes no order)",
+    "severity": "warning",
+    "message": "The members do not follow the order S-201 PS 2.0.0 §10.8 gives a dataset file - information objects, then meta features, then geo features, then S-201 collection objects: <...>. Reorder the members (the Builder writes them in this order).",
+    "sourceLayer": "structural"
+  },
+  {
+    "id": "GML-STR-29",
+    "ref": "S-201 PS 2.0.0 §4.8 Geometry (s201_ps_2_0_0_main_full.txt L757: \"The interpolation of GM_CurveSegment must be loxodromic.\"); S-100 Ed 5.2.0 Part 10b 10b-10.1.2 item 2 (s100_ed5_2_0_full.txt L32595-32598: linear interpolation in a geographic CRS is loxodromic); S100_gmlProfile.xsd LineStringSegmentType interpolation fixed linear (L919); S-158:100 check 100_0165 (C) (s158_100_checks_table.txt L180)",
+    "severity": "critical",
+    "message": "Curve segment(s) with an interpolation other than loxodromic: <...>. S-201 PS 2.0.0 §4.8 requires every GM_CurveSegment to be loxodromic, which the S-100 GML profile writes as gml:LineStringSegment (interpolation linear, read as loxodromic in a geographic CRS). Re-encode the segment as a LineStringSegment of control points.",
+    "sourceLayer": "structural"
+  },
+  {
+    "id": "GML-STR-30",
+    "ref": "S-201 PS 2.0.0 §10.2 Encoding of Latitude and Longitude (s201_ps_2_0_0_main_full.txt L896-897: a precision of 7 decimal places) and §10.3 Encoding of coordinates as decimals (L902-909: decimal numbers with 7 or fewer digits after the decimal, the \".\" point; trailing zeroes may be omitted)",
+    "severity": "warning",
+    "message": "<...> coordinate value(s) outside the S-201 PS 2.0.0 §10.2-10.3 form (a decimal number with the \".\" point and at most 7 digits after it): <...>. Write each coordinate to 7 decimal places (the document fix rounds them, moving a position by at most 5e-8°, about 5 mm).",
+    "sourceLayer": "structural"
+  },
+  {
     "id": "S158-PKG-01",
     "ref": "S-158:100 check 100_0268 (C) Collection A (PS §6.2) — dev/pdf-extracts/s158_100_checks_table.txt L283; S-100 Pt 17 §17-4.2 rule 1 (s100_ed5_2_0_full.txt L50191-50193)",
     "severity": "critical",
@@ -4239,6 +4400,13 @@
     "ref": "S-201 PS 2.0.0 §11.7 (s201_ps_2_0_0_main_full.txt L1176-1200: support files named 201CCCCXXXXXXXX.EEE, characters A-Z 0-9 _; \"It is not required to use all characters\")",
     "severity": "error",
     "message": "Support-file name(s) do not match the S-201 §11.7 convention 201CCCCXXXXXXXX.EEE (201 + 4-char agency code + up to 8 characters from A-Z 0-9 _ + format extension): <...> (ISO metadata MD_*.XML files are exempt — their name is fixed by Pt 17 §17-4.2 rule 5).",
+    "sourceLayer": "exchange-set"
+  },
+  {
+    "id": "S201-ES-10",
+    "ref": "S-201 PS 2.0.0 §4.7 Dataset rules (s201_ps_2_0_0_main_full.txt L725-728: no overlapping datasets except a 5 metre buffer zone at agreed national limits; a gap and the limit itself are not decidable from the set); §10.11 (L991-992: a dataset's areas are its DataCoverage surfaces)",
+    "severity": "error",
+    "message": "Datasets overlap beyond the 5 m buffer zone S-201 PS 2.0.0 §4.7 allows only at agreed national limits: <...> - datasets must not overlap; split the coverage so each area is delivered once.",
     "sourceLayer": "exchange-set"
   }
 ]

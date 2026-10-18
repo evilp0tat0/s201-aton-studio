@@ -1,6 +1,6 @@
 # Developer notes — S-201 AtoN Studio
 
-For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.27.0`, cut from commit `d138fc6` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
+For someone who wants to run the app from source, change it, or reuse parts of it in another program. They describe the tree you are holding: version `2.28.0`, cut from commit `2c871ae` of the development repository (https://github.com/evilp0tat0/s201-aton-studio-dev). The per-change history, the long architecture reference and the commentary on the engineering rules live in that repository; this tree carries what the code needs and what a reader needs to understand it.
 
 Contents: 1 the shape of the tree · 2 running it · 3 reading the source · 4 the feature object · 5 validator rules · 6 verifying a change · 7 sources and citations · 8 the rules the code was written under · 9 reusing parts elsewhere · 10 known limitations · 11 provenance
 
@@ -104,7 +104,7 @@ A per-feature rule is one object in `RULES`:
 | `t(feat, allFeats)` | The predicate: `true` passes, `false` fails. It asserts **presence before validity** — a missing value must fail a rule that requires one; the shape `!f.x || f.x === "valid"` is forbidden because an empty field would pass silently |
 | `fix`, `actualOf`, `expected` | Optional: the quick-fix declaration (field, input type, options, wrapper, target) and the structured actual / expected values the finding is rendered from |
 
-The corpus totals 278 rules: 224 per-feature entries in `RULES`, 27 structural rules in `validateGMLStructure`, 27 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); it is generated from the source in the development repository, and a built-in self-check compares it with the in-app rules. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
+The corpus totals 291 rules: 233 per-feature entries in `RULES`, 30 structural rules in `validateGMLStructure`, 28 package rules in `validateExchangeSet`. `dev/validator-rules.json` mirrors all of them (id, severity, message, citation, layer, fix declaration); it is generated from the source in the development repository, and a built-in self-check compares it with the in-app rules. The self-test suite also asserts `RULES.length` against a literal, so adding a rule means bumping that assertion.
 
 To add a rule: find the constraint in the source document and note the line range; choose the prefix; write the object with its citation in the inline comment; bring `dev/validator-rules.json` in step (the self-check that reads it reports any drift); bump the length assertion in `runSmokeTests`; run the self-test suite.
 
@@ -112,7 +112,7 @@ To add a rule: find the constraint in the source document and note the line rang
 
 ## 6. Verifying a change
 
-Run the built-in self-test suite: **Run tests** at the top of the Validator tab, or open the app with `?test=1`. It holds 626 invariants and should report every one passed.
+Run the built-in self-test suite: **Run tests** at the top of the Validator tab, or open the app with `?test=1`. It holds 635 invariants and should report every one passed.
 
 The suite covers the round trip of every bundled sample, determinism of the output, the rule corpus size and shape, the structural rules against known-good and known-bad documents, Builder form ↔ feat fidelity, quick fixes, the ZIP encoder and decoder, the SHA-256 implementation against the FIPS vectors, the spreadsheet importer end to end, and XSS inertness of every surface that renders user-file text. When you add an invariant, register it with the suite's `_t` helper next to the region it protects.
 
